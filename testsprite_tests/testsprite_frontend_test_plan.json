@@ -1,0 +1,103 @@
+[
+  {
+    "id": "TC001",
+    "description": "Login with valid credentials",
+    "steps": [
+      "Launch app",
+      "Enter email 'test@bocatta.com'",
+      "Enter password 'test123'",
+      "Click Login button",
+      "Verify navigation to inicio_dia"
+    ],
+    "expected_result": "User should be logged in and see the main dashboard",
+    "priority": "high",
+    "requirement": "User Login"
+  },
+  {
+    "id": "TC002",
+    "description": "Login with invalid credentials",
+    "steps": [
+      "Launch app",
+      "Enter email 'invalid@bocatta.com'",
+      "Enter password 'wrong'",
+      "Click Login button",
+      "Verify error message shown"
+    ],
+    "expected_result": "Error message should be displayed",
+    "priority": "high",
+    "requirement": "User Login"
+  },
+  {
+    "id": "TC003",
+    "description": "Navigate from login to sales screen",
+    "steps": [
+      "Complete login successfully",
+      "Verify navigation to inicio_dia",
+      "Click on Ventas navigation",
+      "Verify sales screen is displayed"
+    ],
+    "expected_result": "Sales screen should be displayed after login",
+    "priority": "medium",
+    "requirement": "Navigation"
+  },
+  {
+    "id": "TC004",
+    "description": "Navigate to inventory from sales",
+    "steps": [
+      "Navigate to sales screen",
+      "Click on inventario button",
+      "Verify inventory screen is displayed"
+    ],
+    "expected_result": "Inventory screen should be accessible",
+    "priority": "medium",
+    "requirement": "Navigation"
+  },
+  {
+    "id": "TC005",
+    "description": "Add product to cart",
+    "steps": [
+      "Navigate to sales screen",
+      "Search for a product",
+      "Click add button on product",
+      "Verify cart counter increases"
+    ],
+    "expected_result": "Product should be added to cart",
+    "priority": "high",
+    "requirement": "Sales Process"
+  },
+  {
+    "id": "TC006",
+    "description": "View cart total",
+    "steps": [
+      "Add product to cart",
+      "View cart",
+      "Verify total is calculated correctly"
+    ],
+    "expected_result": "Cart total should display correct sum",
+    "priority": "high",
+    "requirement": "Sales Process"
+  },
+  {
+    "id": "TC007",
+    "description": "View inventory list",
+    "steps": [
+      "Navigate to inventory",
+      "Verify product list is displayed"
+    ],
+    "expected_result": "Products should be listed",
+    "priority": "medium",
+    "requirement": "Inventory"
+  },
+  {
+    "id": "TC008",
+    "description": "Search product in inventory",
+    "steps": [
+      "Navigate to inventory",
+      "Enter search term",
+      "Verify filtered results"
+    ],
+    "expected_result": "Search should filter products correctly",
+    "priority": "medium",
+    "requirement": "Inventory"
+  }
+]

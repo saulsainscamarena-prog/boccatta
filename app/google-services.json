@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "423680770922",
+    "project_id": "boccata-dce3d",
+    "storage_bucket": "boccata-dce3d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:423680770922:android:8f29cd7068307600b05b13",
+        "android_client_info": {
+          "package_name": "com.bocatta.pos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTS5wGPa60XMaXbqtlCgShn5vqMgVs8yM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

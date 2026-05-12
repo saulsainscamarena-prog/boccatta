@@ -1,0 +1,131 @@
+version: "2"
+type: frontend
+tech_stack:
+  - Kotlin
+  - Android (Jetpack Compose)
+  - Material 3
+  - Firebase Firestore
+  - Koin (Dependency Injection)
+  - Navigation Compose
+
+routes:
+  - path: /login
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/login/LoginScreen.kt
+    auth_required: false
+    description: User login page
+  - path: /inicio_dia
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/InicioDiaScreen.kt
+    auth_required: true
+    description: Daily start screen with inventory overview
+  - path: /apertura
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/operacion/AperturaDiaScreen.kt
+    auth_required: true
+    description: Opening day / register configuration
+  - path: /ventas
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/ventas/SalesScreen.kt
+    auth_required: true
+    description: Main sales interface
+  - path: /inventario
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/InventoryScreen.kt
+    auth_required: true
+    description: Inventory management
+  - path: /reportes
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/reportes/ReportScreen.kt
+    auth_required: true
+    description: Reports and analytics (admin only)
+  - path: /gastos
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/gastos/GastosScreen.kt
+    auth_required: true
+    description: Expense management
+  - path: /admin
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/admin/AdminScreen.kt
+    auth_required: true
+    description: Admin panel (admin only)
+  - path: /devoluciones
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/devoluciones/DevolucionesScreen.kt
+    auth_required: true
+    description: Returns management
+  - path: /caja
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/caja/CierreCajaScreen.kt
+    auth_required: true
+    description: Cash closing / settlement
+  - path: /clientes
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/clientes/ClientesScreen.kt
+    auth_required: true
+    description: Customer management
+  - path: /compras
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/compras/ComprasScreen.kt
+    auth_required: true
+    description: Purchases screen
+  - path: /cierre_inventario
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/CierreInventarioScreen.kt
+    auth_required: true
+    description: Inventory closure
+  - path: /apertura_inventario
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/AperturaInventarioScreen.kt
+    auth_required: true
+    description: Inventory opening
+  - path: /dashboard_bodega
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/bodega/DashboardBodegaScreen.kt
+    auth_required: true
+    description: Warehouse dashboard (admin only)
+  - path: /reportes_inventario
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/ReportesInventarioScreen.kt
+    auth_required: true
+    description: Inventory reports (admin only)
+  - path: /sync_inventario
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/SyncInventarioScreen.kt
+    auth_required: true
+    description: Inventory sync (admin only)
+  - path: /gestionar_sucursales
+    file: app/src/main/java/com/bocatta/pos/presentation/ui/screens/admin/GestionarSucursalesScreen.kt
+    auth_required: true
+    description: Branch management (admin only)
+
+features:
+  - name: User Login
+    description: User authentication with email/password
+    files:
+      - app/src/main/java/com/bocatta/pos/presentation/ui/screens/login/LoginScreen.kt
+    user_interactions:
+      - Fill email input field
+      - Fill password input field
+      - Click Login button to submit
+      - See error message on invalid credentials
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/login
+    auth_required: false
+  - name: Sales Process
+    description: Main point of sale functionality
+    files:
+      - app/src/main/java/com/bocatta/pos/presentation/ui/screens/ventas/SalesScreen.kt
+    user_interactions:
+      - Browse product catalog
+      - Add product to cart
+      - Adjust quantity
+      - View cart total
+      - Apply discount
+      - Initiate checkout
+      - Process payment
+    api_calls:
+      - method: POST
+        endpoint: /api/sales
+    auth_required: true
+
+  - name: Inventory Management
+    description: Stock and product administration
+    files:
+      - app/src/main/java/com/bocatta/pos/presentation/ui/screens/inventario/InventoryScreen.kt
+    user_interactions:
+      - View current stock levels
+      - Search or filter products
+      - Add new product
+      - Adjust stock quantity
+      - Delete product
+    api_calls:
+      - method: POST
+        endpoint: /api/inventory/update
+    auth_required: true
+
+known_limitations: []

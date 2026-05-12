@@ -1,0 +1,228 @@
+# Bocatta POS - Documento de Requisitos del Producto (PRD)
+
+## 1️⃣ Visión General del Proyecto
+
+**Nombre del Proyecto:** Bocatta POS  
+**Tipo:** Aplicación Android nativa (punto de venta)  
+**Descripción:** Sistema de gestión de punto de venta para restaurantes y comercios pequeños medianos, permetiendo control de inventario, ventas, caja, clientes y reportes en tiempo real.
+
+---
+
+## 2️⃣ Funcionalidades Principales
+
+### 2.1 Autenticación
+- Login con email y contraseña
+- Sesión persistente
+- Roles de usuario (ADMIN, VENDEDOR, DUEÑO)
+- Cierre de sesión
+
+### 2.2 Apertura del Día
+- Selección de sucursal
+- Configuración de turno/caja
+- Inicialización de inventario
+- Registro de efectivo inicial
+
+### 2.3 Módulo de Ventas
+- Catálogo de productos con búsqueda
+- Carrito de compras
+- Ajuste de cantidades
+- Aplicar descuentos (porcentaje/fixed)
+- Cálculo automático de totales
+- Procesamiento de pagos (efectivo)
+- Generación de tickets
+
+### 2.4 Gestión de Inventario
+- Vista de productos por categoría
+- Stock en tiempo real
+- Movimientos (entrada/salida)
+- Ajuste de inventario
+- Apertura y cierre de inventario
+- Sincronización con base de datos
+
+### 2.5 Gestión de Caja
+- Apertura de caja
+- Registro de ventas
+- Cierre de caja con resumen
+- Control de efectivo
+
+### 2.6 Gastos
+- Registro de gastos por categoría
+- Historial de gastos
+- Asociación a sucursal
+
+### 2.7 Devoluciones
+- Procesamiento de devoluciones
+- Reasons de devolución
+- Actualización de inventario
+
+### 2.8 Clientes
+- Registro de clientes
+-Historial de compras (futuro)
+
+### 2.9 Módulo Admin (Solo ADMIN/DUEÑO)
+- Configuración de negocio
+- Gestión de sucursales
+- Dashboard de bodega
+- Reportes de inventario
+- Sincronización de datos
+
+### 2.10 Reportes
+- Ventas por período
+- Productos más vendidos
+- Ganancias y pérdidas
+- Exportación de datos
+
+---
+
+## 3️⃣ Flujos de Usuario Críticos
+
+### Flujo 1: Login Exitoso
+1. Usuario lanza la app
+2. Ingresa email y contraseña
+3. Clic en "Iniciar Sesión"
+4. Sistema valida credenciales
+5. Navega a pantalla de inicio del día
+
+### Flujo 2: Realizar una Venta
+1. Usuario inicia día y abre caja
+2. Navega a pantalla de ventas
+3. Busca/selecciona producto
+4. Ajusta cantidad
+5. Clic en "Agregar al carrito"
+6. Repite para más productos
+7. Clic en "Cobrar"
+8. Ingresa monto recibido
+9. Sistema calcula cambio
+10. Imprime ticket
+11. Actualiza inventario
+
+### Flujo 3: Cierre de Caja
+1. Usuario navega a cierre de caja
+2. Sistema muestra resumen del día
+3. Usuario verifica efectivo
+4. Clic en "Cerrar Caja"
+5. Sistema genera reporte
+
+### Flujo 4: Gestión de Inventario
+1. Usuario navega a inventario
+2. Busca producto por nombre
+3. Ajusta cantidad en stock
+4. Guarda cambios
+5. Sistema actualiza Firebase
+
+---
+
+## 4️⃣ Roles de Usuario
+
+| Rol | Descripción | Permisos |
+|-----|-----------|---------|
+| **ADMIN** | Administrador del sistema | Acceso total, configuración, reportes, gestión de usuarios |
+| **DUEÑO** | Propietario del negocio | Acceso total a su sucursal, reportes |
+| **VENDEDOR** | Persona de ventas | Ventas, inventario básica |
+
+---
+
+## 5️⃣ Stack Tecnológico
+
+- **Lenguaje:** Kotlin 1.9.x
+- **UI:** Jetpack Compose (Material 3)
+- **Arquitectura:** MVVM + Clean Architecture
+- **Base de datos:** Firebase Firestore (offline-first)
+- **DI:** Koin 4.0.0
+- **Navegación:** Navigation Compose
+- **Target SDK:** 36
+- **Min SDK:** 24
+
+---
+
+## 6️⃣ Requisitos de Pruebas para TestSprite
+
+### 6.1 Autenticación
+- [ ] Login con credenciales válidas navega a pantalla de inicio
+- [ ] Login con credenciales inválidas muestra mensaje de error
+- [ ] Sesión persiste al cerrar y abrir app
+- [ ] Logout limpia la sesión correctamente
+
+### 6.2 Apertura del Día
+- [ ] Seleccionar sucursal funciona correctamente
+- [ ] Apertura de caja registra monto inicial
+- [ ] Redirección a ventas tras apertura exitosa
+
+### 6.3 Proceso de Ventas
+- [ ] Catálogo de productos se carga correctamente
+- [ ] Búsqueda filtra productos
+- [ ] Agregar producto al carrito incrementa contador
+- [ ] Ajustar cantidad actualiza total
+- [ ] Descuento se aplica correctamente
+- [ ] Cálculo de cambio es correcto
+- [ ] Ticket se genera después de venta
+
+### 6.4 Inventario
+- [ ] Lista de productos se muestra
+- [ ] Búsqueda filtra correctamente
+- [ ] Ajuste de stock guarda correctamente
+- [ ] Sincronización con base de datos
+
+### 6.5 Caja
+- [ ] Apertura registra monto inicial
+- [ ] Cierre genera resumen correcto
+- [ ] Historial de transacciones visible
+
+### 6.6 Navegación
+- [ ] Todos los botones de navegación funcionan
+- [ ] Botón atrás retorna a pantalla anterior
+- [ ] Navegación fluida sin errores
+
+### 6.7 Admin
+- [ ] Acceso restringido a usuarios no ADMIN
+- [ ] Gestión de sucursales funcional
+- [ ] Reportes se generan correctamente
+
+---
+
+## 7️⃣ Credenciales de Prueba
+
+| Email | Contraseña | Rol |
+|-------|----------|-----|
+| admin@bocatta.com | admin123 | ADMIN |
+| dueuno@bocatta.com | due123 | DUEÑO |
+| vendedor@bocatta.com | vend123 | VENDEDOR |
+
+---
+
+## 8️⃣ Dispositivo de Prueba
+
+- **Dispositivo:** Emulador Pixel 8 API 35 o dispositivo físico
+- **Android:** 12+ (API 31+)
+- **Ram:** Mínimo 4GB
+
+---
+
+## 9️⃣ Criterios de Éxito
+
+- Al menos **80%** de los casos de prueba pasan
+- Tiempo de ejecución < 10 minutos
+- Sin crashes durante las pruebas
+- Navigation fluida entre todas las pantallas
+
+---
+
+## 📋 Checklist de Pruebas Prioritarias
+
+| Prioridad | Caso de Prueba | Requisito |
+|-----------|----------------|----------|
+| ALTA | Login exitoso | Autenticación |
+| ALTA | Login fallido muestra error | Autenticación |
+| ALTA | agregar producto al carrito | Ventas |
+| ALTA | Cobrar y generar ticket | Ventas |
+| ALTA | Cierre de caja | Caja |
+| MEDIA | Navegación a inventario | Navegación |
+| MEDIA | Búsqueda de productos | Inventario |
+| MEDIA | Ajuste de stock | Inventario |
+| MEDIA | Registro de gasto | Gastos |
+| BAJA | Ver reportes | Reportes |
+| BAJA | Gestión de clientes | Clientes |
+
+---
+
+*Documento generado para TestSprite - {Fecha actual}*

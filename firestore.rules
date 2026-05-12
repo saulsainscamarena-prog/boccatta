@@ -1,0 +1,192 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers de Seguridad ──────────────────────────────────────────────
+    function esAutenticado() {
+      return request.auth != null;
+    }
+    
+    function getDatosUsuario() {
+      return get(/databases/$(database)/documents/v2_users/$(request.auth.uid)).data;
+    }
+
+    function esAdmin() {
+      return esAutenticado() && getDatosUsuario().rol in ['ADMIN', 'DUEÑO'];
+    }
+    
+    function esVendedor() {
+      return esAutenticado(); // Todo usuario autenticado es al menos VENDEDOR
+    }
+
+    // ── Usuarios ─────────────────────────────────────────────
+    match /v2_users/{uid} {
+      allow read: if esAutenticado() && (request.auth.uid == uid || esAdmin());
+      allow create: if esAutenticado() && request.auth.uid == uid 
+                    && request.resource.data.keys().hasAll(['uid', 'nombre', 'correo', 'rol'])
+                    && request.resource.data.rol in ['VENDEDOR', 'ADMIN', 'DUEÑO'];
+      allow update: if esAutenticado() && (request.auth.uid == uid || esAdmin());
+      allow delete: if esAdmin();
+    }
+
+    // ── Ventas y Operaciones de Caja ──────────────────────────────────────
+    match /v2_ventas/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor() 
+        && request.resource.data.keys().hasAll(['id', 'total', 'fecha', 'sucursal', 'atendio'])
+        && request.resource.data.total is number 
+        && request.resource.data.fecha is number;
+      allow update: if esAdmin();
+      allow delete: if false;
+    }
+
+    // v2_transactions — Registro inmutable de ventas (nueva arquitectura)
+    match /v2_transactions/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'branchId', 'userId', 'type', 'grandTotal', 'createdAt'])
+        && request.resource.data.grandTotal is number
+        && request.resource.data.createdAt is number;
+      allow update, delete: if false;
+    }
+
+    // v2_transaction_items (subcolección de v2_transactions, append-only)
+    match /v2_transactions/{docId}/v2_transaction_items/{itemId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['referenceId', 'productId', 'quantity', 'unit', 'unitPrice', 'subtotal', 'type'])
+        && request.resource.data.quantity is number
+        && request.resource.data.unit is string
+        && request.resource.data.type in ['SALE', 'CANCELATION', 'ADJUSTMENT'];
+      allow update, delete: if false;
+    }
+
+    match /v2_turnos_caja/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor() 
+        && request.resource.data.keys().hasAll(['id', 'sucursal', 'abierta', 'fondoInicial'])
+        && request.resource.data.abierta == true;
+      allow update: if esVendedor() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['abierta', 'fondoFinal', 'cierreFecha']);
+      allow delete: if false;
+    }
+
+    match /v2_gastos/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor() 
+        && request.resource.data.keys().hasAll(['id', 'monto', 'concepto', 'fecha', 'sucursal'])
+        && request.resource.data.monto is number;
+      allow update: if esAdmin();
+      allow delete: if false;
+    }
+
+    // ── Catálogos y Configuración (Lectura Global, Escritura Admin) ─────────
+    match /v2_products/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_recetas/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_supplies/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_categorias/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_sucursales/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_configuracion/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_sucursal_config/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_units_catalog/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_discounts/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_recipes/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+
+    // ── Inventario y Stock ───────────────────────────────────────────────
+    match /v2_inventory_global/{docId} {
+      allow read: if esVendedor();
+      allow write: if esAdmin();
+    }
+
+    match /v2_inventory_branch_portions/{docId} {
+      allow read: if esVendedor();
+      allow write: if esAdmin()
+        && request.resource.data.keys().hasAll(['cantidadEnBase', 'cantidadDisponible', 'ultimaActualizacion'])
+        && request.resource.data.cantidadDisponible is number;
+    }
+
+    match /v2_inventory_movements/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'branchId', 'type', 'productId', 'quantity', 'timestamp'])
+        && request.resource.data.quantity is number;
+      allow update, delete: if false;
+    }
+
+    // v2_movements — Traza de auditoría (nueva arquitectura, append-only)
+    match /v2_movements/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'branchId', 'type', 'productId', 'quantity', 'timestamp', 'userId'])
+        && request.resource.data.quantity is number
+        && request.resource.data.timestamp is number;
+      allow update, delete: if false;
+    }
+
+    // ── Auditoría y Logs (Vendedor Crea, Admin Lee) ──────────────────────
+    match /v2_auditoria_cancelaciones/{docId} {
+      allow read: if esAdmin();
+      allow create: if esVendedor() 
+        && request.resource.data.keys().hasAll(['ventaId', 'motivo', 'sucursal', 'usuario']);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /v2_merma_logs/{docId} {
+      allow read: if esAdmin();
+      allow create: if esVendedor() 
+        && request.resource.data.keys().hasAll(['insumoId', 'cantidad', 'motivo', 'sucursal', 'fecha'])
+        && request.resource.data.cantidad is number;
+      allow update, delete: if false;
+    }
+
+    // ── Gestión de Clientes ─────────────────────────────────────────────
+    match /v2_customers/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor() && request.resource.data.keys().hasAll(['nombre', 'telefono']);
+      allow update: if esVendedor() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['nombre', 'telefono', 'visitasCicloActual']);
+      allow delete: if esAdmin();
+    }
+
+    // ── Operaciones Administrativas y Cierres ───────────────────────────
+    match /v2_aperturas/{docId} {
+      allow read: if esAdmin();
+      allow create: if esVendedor() && request.resource.data.keys().hasAll(['sucursal', 'fecha', 'usuario']);
+      allow update, delete: if false;
+    }
+
+    match /v2_inventory_closures/{docId} {
+      allow read: if esAdmin();
+      allow create: if esVendedor() && request.resource.data.keys().hasAll(['sucursal', 'fecha', 'usuario', 'inventarioFinal']);
+      allow update, delete: if false;
+    }
+
+    match /v2_inventory_openings/{docId} {
+      allow read: if esAdmin();
+      allow create: if esVendedor() && request.resource.data.keys().hasAll(['sucursal', 'fecha', 'usuario']);
+      allow update, delete: if false;
+    }
+
+    match /v2_operaciones_generales/{docId} {
+      allow read: if esAdmin();
+      allow create: if esVendedor() && request.resource.data.keys().hasAll(['tipo', 'descripcion', 'usuario', 'fecha']);
+      allow update, delete: if false;
+    }
+
+    // ── Resto de colecciones administrativas ─────────────────────────────
+    match /v2_purchase_history/{docId} { allow read, write: if esAdmin(); }
+    match /v2_suppliers/{docId} { allow read, write: if esAdmin(); }
+    match /v2_employees/{docId} { allow read, write: if esAdmin(); }
+    match /v2_auditoria_empleados/{docId} { allow read, write: if esAdmin(); }
+    match /v2_devoluciones/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor() && request.resource.data.estado == 'pendiente';
+      allow update: if esAdmin();
+      allow delete: if false;
+    }
+
+    // ── Denegar todo lo no especificado ─────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,28 @@
+build:
+  maxIssues: 200
+
+complexity:
+  LongMethod:
+    threshold: 60
+  LongParameterList:
+    functionThreshold: 6
+  TooManyFunctions:
+    thresholdInClasses: 15
+
+naming:
+  FunctionNaming:
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+  VariableNaming:
+    variablePattern: '[a-z][a-zA-Z0-9]*'
+
+style:
+  MagicNumber:
+    ignoreNumbers: ['-1', '0', '1', '2', '10', '100', '1000']
+  WildcardImport:
+    active: false
+
+comments:
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false

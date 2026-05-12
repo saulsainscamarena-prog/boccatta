@@ -1,0 +1,15 @@
+appId: com.bocatta.pos
+---
+- launchApp
+- tapOn: "PUNTO DE VENTA"
+- tapOn: "ATLIXCO"
+- tapOn: "LOGÍSTICA"
+- tapOn: "CONFIRMAR Y CARGAR"
+- tapOn: "FINANZAS"
+- inputText: "100"
+- tapOn: "INICIAR OPERACIÓN"
+- tapOn: "CREPA INDIVIDUAL"
+- tapOn: "CARRITO"
+- tapOn: "FINALIZAR VENTA"
+- tapOn: "CONFIRMAR"
+- assertVisible: "Venta Finalizada"

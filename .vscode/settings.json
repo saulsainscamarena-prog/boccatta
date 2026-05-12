@@ -1,0 +1,9 @@
+{
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "C:\\Users\\ia\\jdk-17\\jdk-17.0.18+8",
+            "default": true
+        }
+    ]
+}
