@@ -325,13 +325,13 @@ class SalesViewModelV2(
       viewModelScope.launch {
          try {
             cargando = true
+            mensajeError = null
             isOnline = OfflineManager.isNetworkAvailable(getApplication())
 
+            // 1. Validación de Stock
             val stockOk = validarStockCarrito(sucursal)
             if (!stockOk.first) {
-               mensajeError = stockOk.second
-               cargando = false
-               return@launch
+               throw IllegalStateException(stockOk.second)
             }
 
             val totalVenta = calcularTotalVenta()
@@ -340,9 +340,11 @@ class SalesViewModelV2(
 
             if (!isOnline) {
                procesarVentaOfflineConResultado(sucursal, usuarioNombre)
+               mensajeFeedback = "✅ Venta guardada localmente (Modo Offline)"
                return@launch
             }
 
+            // 2. Ejecutar Venta en la Nube
             val saleItems = currentCarrito.map { item ->
                SaleItemInput(
                   productId = item.producto.id,
@@ -366,6 +368,7 @@ class SalesViewModelV2(
             )
 
             if (result.success) {
+               // 3. Éxito: Generar Ticket y Aplicar
                val ticketNum = OfflineManager.obtenerUltimoTicketLocal(getApplication(), sucursal.lowercase()) + 1
                val codigoTicket = TicketUtils.generarCodigoTicket(sucursal.lowercase(), ticketNum)
                OfflineManager.guardarUltimoTicketLocal(getApplication(), sucursal.lowercase(), ticketNum)
@@ -375,17 +378,23 @@ class SalesViewModelV2(
                   codigoTicket = codigoTicket
                )
                aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
+               mensajeFeedback = "✅ Venta finalizada: TICKET #$ticketNum"
             } else {
-               mensajeError = result.error ?: "Error al procesar venta"
+               throw IllegalStateException(result.error ?: "No se pudo procesar la venta en el servidor")
             }
+
          } catch (e: Exception) {
-            mensajeError = "Error en venta: ${e.message}. Guardando offline..."
-            Timber.tag("SALE").e(e, "Error venta, guardando offline")
-            try {
-               procesarVentaOfflineConResultado(sucursal, usuarioNombre)
-            } catch (fallbackEx: Exception) {
-               mensajeError = "Error crítico al guardar offline: ${fallbackEx.message}"
-               Timber.tag("SALE").e(fallbackEx, "Fallo total del fallback offline")
+            mensajeError = e.message ?: "Error inesperado al procesar el cobro"
+            Timber.tag("SALE").e(e, "Error en flujo de venta")
+            
+            // Fallback Offline si es error de conexión/servidor (no de stock)
+            if (e !is IllegalStateException && isOnline) {
+               try {
+                  procesarVentaOfflineConResultado(sucursal, usuarioNombre)
+                  mensajeFeedback = "⚠️ Error de red. Venta guardada localmente."
+               } catch (fallbackEx: Exception) {
+                  mensajeError = "Fallo total: ${fallbackEx.message}"
+               }
             }
          } finally {
             cargando = false

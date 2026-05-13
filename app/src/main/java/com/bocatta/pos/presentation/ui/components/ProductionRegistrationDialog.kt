@@ -72,8 +72,8 @@ fun ProductionRegistrationDialog(
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("MÓDULO INDUSTRIAL", fontWeight = FontWeight.Black, fontSize = 10.sp, color = BocattaNeonCyan, letterSpacing = 1.sp)
-                        Text("REGISTRO DE PRODUCCIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
+                        Text("MÓDULO INDUSTRIAL V2", fontWeight = FontWeight.Black, fontSize = 10.sp, color = BocattaNeonCyan, letterSpacing = 1.sp)
+                        Text("CONTROL DE PRODUCCIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
                     }
                 }
 

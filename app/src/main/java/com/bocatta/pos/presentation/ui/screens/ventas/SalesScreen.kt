@@ -77,13 +77,20 @@ fun SalesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(vmV2.mensajeFeedback) {
         vmV2.mensajeFeedback?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
             vmV2.mensajeFeedback = null
         }
     }
     LaunchedEffect(vmV2.mensajeError) {
-        vmV2.mensajeError?.let {
-            snackbarHostState.showSnackbar(it)
+        vmV2.mensajeError?.let { msg ->
+            snackbarHostState.showSnackbar(
+                message = "⚠️ $msg",
+                actionLabel = "OK",
+                duration = SnackbarDuration.Long
+            )
             vmV2.limpiarError()
         }
     }

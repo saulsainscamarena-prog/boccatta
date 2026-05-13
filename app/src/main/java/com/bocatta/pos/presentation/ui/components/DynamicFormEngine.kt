@@ -80,8 +80,9 @@ object DynamicFormEngine {
         val schema = getSchema(product.giro)
         val values = mutableMapOf<String, Any?>()
         for (field in schema.fields) {
-            val value = product.attributes[field.key] ?: field.defaultValue
-            values[field.key] = value
+            // Asegurar que extraemos los valores de attributes o usamos el default
+            val rawValue = product.attributes[field.key]
+            values[field.key] = rawValue ?: field.defaultValue
         }
         return values
     }
@@ -92,7 +93,14 @@ object DynamicFormEngine {
             val value = values[field.key] ?: field.defaultValue
             if (value != null) {
                 result[field.key] = when (field) {
-                    is FormField.NumberField -> (value as? Number)?.toDouble() ?: 0.0
+                    is FormField.NumberField -> {
+                        // Sanitización de números para evitar errores de casteo en Firestore
+                        when (value) {
+                            is Number -> value.toDouble()
+                            is String -> value.toDoubleOrNull() ?: 0.0
+                            else -> 0.0
+                        }
+                    }
                     is FormField.BooleanField -> value as? Boolean ?: false
                     is FormField.TextField -> value.toString()
                     is FormField.SelectField -> value.toString()
