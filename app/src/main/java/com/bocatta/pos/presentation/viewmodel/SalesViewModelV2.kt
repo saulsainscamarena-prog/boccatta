@@ -25,6 +25,7 @@ import com.bocatta.pos.data.repository.PromocionesRepository
 import timber.log.Timber
 import com.google.firebase.firestore.ListenerRegistration
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
+import com.bocatta.pos.domain.engine.PricingEngine
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
 import com.bocatta.pos.domain.usecase.SaleItemInput
 import com.bocatta.pos.domain.usecase.GenerarTicketWhatsAppUseCase
@@ -167,17 +168,35 @@ class SalesViewModelV2(
       }
    }
 
-   private fun escucharMenu() {
-      menuListener?.remove()
-      menuListener = db.collection(FirestoreCollections.PRODUCTOS).addSnapshotListener { snap, _ ->
-         if (snap != null) {
-            _productos.clear()
-            snap.documents.forEach { doc ->
-               doc.toObject(SalesInventoryProductV2::class.java)?.let { _productos.add(it.copy(id = doc.id)) }
-            }
-         }
-      }
-   }
+    private fun escucharMenu() {
+       menuListener?.remove()
+       menuListener = db.collection(FirestoreCollections.PRODUCTOS).addSnapshotListener { snap, _ ->
+          if (snap != null) {
+             _productos.clear()
+             snap.documents.forEach { doc ->
+                doc.toObject(SalesInventoryProductV2::class.java)?.let { prod ->
+                   val schema = (doc.get("configSchema") as? List<Map<String, Any?>>)
+                      ?.map { mapToConfigGroup(it) } ?: emptyList()
+                   _productos.add(prod.copy(configSchema = schema, id = doc.id))
+                }
+             }
+          }
+       }
+    }
+
+    private fun mapToConfigGroup(map: Map<String, Any?>): ConfigOptionGroup {
+       val typeStr = (map["type"] as? String) ?: "SINGLE_CHIP"
+       val type = try { ConfigFieldType.valueOf(typeStr) } catch (_: Exception) { ConfigFieldType.SINGLE_CHIP }
+       return ConfigOptionGroup(
+          key = map["key"] as? String ?: "",
+          title = map["title"] as? String ?: "",
+          type = type,
+          options = (map["options"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+          required = map["required"] as? Boolean ?: false,
+          multiMax = (map["multiMax"] as? Number)?.toInt(),
+          defaultValue = map["defaultValue"] as? String
+       )
+    }
 
    private fun escucharStock() {
       stockListener?.remove()
@@ -237,54 +256,89 @@ class SalesViewModelV2(
       }
    }
 
-   fun agregarAlCarrito(
-      producto: SalesInventoryProductV2, 
-      sucursal: String, 
-      base: String? = null, 
-      aderezos: List<String> = emptyList(), 
-      toppings: List<String> = emptyList(), 
-      esSeparado: Boolean = false,
-      componentes: List<ItemCarritoV2> = emptyList()
+    fun agregarAlCarrito(
+       producto: SalesInventoryProductV2, 
+       sucursal: String, 
+       base: String? = null, 
+       aderezos: List<String> = emptyList(), 
+       toppings: List<String> = emptyList(), 
+       esSeparado: Boolean = false,
+       componentes: List<ItemCarritoV2> = emptyList()
+     ) {
+        guardarEstadoParaUndo()
+        val nota = buildString {
+           base?.let { append("Base: $it. ") }
+          if (aderezos.isNotEmpty()) append("Aderezos: ${aderezos.joinToString(", ")}. ")
+          if (toppings.isNotEmpty()) append("Extras: ${toppings.joinToString(", ")}")
+          if (esSeparado) append(" (Separadas)")
+       }
+
+       val precioBase = producto.precioVenta[sucursal.lowercase()] ?: 0.0
+       val esCrepaOCombo = producto.categoria.uppercase().contains("CREPA") || 
+                           producto.categoria.equals("Combos", true)
+
+       val precioCalculado = if (esCrepaOCombo) {
+          InventoryDeductions.calcularPrecioCrepa(precioBase, base ?: "", toppings, producto.costoToppingExtra)
+       } else {
+          val premiumToppings = listOf("oreo", "nuez", "bombon")
+          val tienePremium = toppings.any { t -> premiumToppings.any { p -> t.lowercase().contains(p) } }
+          val totalIngredientesNormales = toppings.count { t ->
+             !premiumToppings.any { p -> t.lowercase().contains(p) }
+          }
+          val extraToppings = if (tienePremium || totalIngredientesNormales >= 2) 10.0 else 0.0
+          precioBase + extraToppings
+       }
+
+       val item = ItemCarritoV2(
+          producto = producto,
+          precioFinal = BigDecimal.valueOf(precioCalculado),
+          nota = nota,
+          nombre = producto.nombre,
+          base = base ?: "",
+          aderezos = aderezos,
+          toppings = toppings,
+           esSeparado = esSeparado,
+           componentesCombo = componentes
+        )
+        _carrito.add(item)
+     }
+
+    fun agregarAlCarritoConConfig(
+       producto: SalesInventoryProductV2,
+       sucursal: String,
+       config: ConfigResult
     ) {
-       guardarEstadoParaUndo()
-       val nota = buildString {
-          base?.let { append("Base: $it. ") }
-         if (aderezos.isNotEmpty()) append("Aderezos: ${aderezos.joinToString(", ")}. ")
-         if (toppings.isNotEmpty()) append("Extras: ${toppings.joinToString(", ")}")
-         if (esSeparado) append(" (Separadas)")
-      }
+        guardarEstadoParaUndo()
+        val base = config["base"]?.firstOrNull()?.removeSuffix(" (Premium)")
+        val aderezos = config["aderezos"] ?: emptyList()
+        val toppings = (config["toppings"] ?: emptyList()).map { it.removeSuffix(" (Premium)").removeSuffix(" (Premium)") }
+        val extras = config.entries
+           .filter { it.key !in setOf("base", "aderezos", "toppings") }
+           .flatMap { (key, values) -> values.map { "$key: $it" } }
 
-      val precioBase = producto.precioVenta[sucursal.lowercase()] ?: 0.0
-      val esCrepaOCombo = producto.categoria.uppercase().contains("CREPA") || 
-                          producto.categoria.equals("Combos", true)
+        val nota = buildString {
+           base?.let { append("Base: $it. ") }
+           if (aderezos.isNotEmpty()) append("Aderezos: ${aderezos.joinToString(", ")}. ")
+           if (toppings.isNotEmpty()) append("Extras: ${toppings.joinToString(", ")}")
+           if (extras.isNotEmpty()) append(" [${extras.joinToString("; ")}]")
+        }
 
-      val precioCalculado = if (esCrepaOCombo) {
-         InventoryDeductions.calcularPrecioCrepa(precioBase, base ?: "", toppings, producto.costoToppingExtra)
-      } else {
-         val premiumToppings = listOf("oreo", "nuez", "bombon")
-         val tienePremium = toppings.any { t -> premiumToppings.any { p -> t.lowercase().contains(p) } }
-         val totalIngredientesNormales = toppings.count { t ->
-            !premiumToppings.any { p -> t.lowercase().contains(p) }
-         }
-         val extraToppings = if (tienePremium || totalIngredientesNormales >= 2) 10.0 else 0.0
-         precioBase + extraToppings
-      }
+        val precioBase = producto.precioVenta[sucursal.lowercase()] ?: 0.0
+        val precioCalculado = PricingEngine.calcularPrecioProducto(precioBase, producto.categoria, config)
 
-      val item = ItemCarritoV2(
-         producto = producto,
-         precioFinal = BigDecimal.valueOf(precioCalculado),
-         nota = nota,
-         nombre = producto.nombre,
-         base = base ?: "",
-         aderezos = aderezos,
-         toppings = toppings,
-         esSeparado = esSeparado,
-         componentesCombo = componentes
-      )
-      _carrito.add(item)
-      mensajeFeedback = "${producto.nombre} añadido"
-      Timber.tag("CART").i("Producto ${producto.nombre} añadido al carrito con $precioCalculado MXN")
-   }
+       val item = ItemCarritoV2(
+          producto = producto,
+          precioFinal = BigDecimal.valueOf(precioCalculado),
+          nota = nota,
+          nombre = producto.nombre,
+          base = base ?: "",
+          aderezos = aderezos,
+          toppings = toppings,
+           esSeparado = false,
+           componentesCombo = emptyList()
+       )
+       _carrito.add(item)
+     }
 
    fun modificarCantidad(item: ItemCarritoV2, delta: Int) {
       val index = _carrito.indexOf(item)

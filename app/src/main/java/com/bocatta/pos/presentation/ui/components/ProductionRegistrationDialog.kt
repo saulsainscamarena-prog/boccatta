@@ -1,22 +1,17 @@
 package com.bocatta.pos.presentation.ui.components
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -25,7 +20,7 @@ import androidx.compose.ui.window.Dialog
 import com.bocatta.pos.presentation.ui.theme.*
 import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProductionRegistrationDialog(
     vm: InventoryViewModel,
@@ -33,18 +28,33 @@ fun ProductionRegistrationDialog(
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var yieldText by remember { mutableStateOf("") }
-    
+    var insumoSeleccionado by remember { mutableStateOf("") }
+    var porcionesText by remember { mutableStateOf("") }
+    var tandasText by remember { mutableStateOf("1") }
+    var sobranteText by remember { mutableStateOf("") }
+    var compraPesoText by remember { mutableStateOf("") }
+    var porcionPesoText by remember { mutableStateOf("") }
+    var modo by remember { mutableStateOf("producir") } // "producir" | "comprar"
+    var expandedMenu by remember { mutableStateOf(false) }
+    val pesoTotal = compraPesoText.toDoubleOrNull() ?: 0.0
+    val pesoPorcion = porcionPesoText.toDoubleOrNull()
+        ?: (if (insumoSeleccionado.contains("boneless", true)) 250.0
+            else if (insumoSeleccionado.contains("nuggets", true)) 210.0
+            else if (insumoSeleccionado.contains("papas", true)) 200.0
+            else 0.0)
+
+    val insumosDisponibles = vm.maestroInsumos.values.toList().filter { it.id.isNotBlank() }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.1f)),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)),
             modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -59,68 +69,209 @@ fun ProductionRegistrationDialog(
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("MÓDULO INDUSTRIAL V2", fontWeight = FontWeight.Black, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
-                        Text("CONTROL DE PRODUCCIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("CONTROL DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
+                        Text("PRODUCCIÓN Y COMPRAS", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(0.05f))
+                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
 
-                Text("CANTIDAD PRODUCIDA", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
-                
-                OutlinedTextField(
-                    value = yieldText,
-                    onValueChange = { yieldText = it.filter { c -> c.isDigit() } },
-                    label = { Text("¿Cuántas porciones salieron?") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(0.1f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(0.4f),
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-
-                Surface(
-                    color = MaterialTheme.colorScheme.onSurface.copy(0.03f),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.05f))
-                ) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Analytics, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "Se registrarán las unidades producidas en ${sucursal.uppercase()}.",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
-                            fontWeight = FontWeight.Medium
+                // Toggle modo
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = modo == "producir",
+                        onClick = { modo = "producir" },
+                        label = { Text("PRODUCIR") },
+                        leadingIcon = { Icon(Icons.Default.Factory, null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
+                    )
+                    FilterChip(
+                        selected = modo == "comprar",
+                        onClick = { modo = "comprar" },
+                        label = { Text("COMPRAR POR PESO") },
+                        leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onTertiary
+                        )
+                    )
+                }
+
+                // Selección de insumo
+                Text("INSUMO", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                ExposedDropdownMenuBox(
+                    expanded = expandedMenu,
+                    onExpandedChange = { expandedMenu = it }
+                ) {
+                    OutlinedTextField(
+                        value = if (insumoSeleccionado.isNotBlank())
+                            insumosDisponibles.find { it.id == insumoSeleccionado }?.nombre ?: insumoSeleccionado
+                        else "",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMenu) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedMenu,
+                        onDismissRequest = { expandedMenu = false }
+                    ) {
+                        insumosDisponibles.forEach { insumo ->
+                            DropdownMenuItem(
+                                text = { Text(insumo.nombre) },
+                                onClick = { insumoSeleccionado = insumo.id; expandedMenu = false }
+                            )
+                        }
                     }
                 }
 
+                if (modo == "producir") {
+                    // Campos de producción por tanda
+                    OutlinedTextField(
+                        value = porcionesText,
+                        onValueChange = { porcionesText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Porciones obtenidas") },
+                        placeholder = { Text("Ej: 60 para masa de crepas") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                    OutlinedTextField(
+                        value = tandasText,
+                        onValueChange = { tandasText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Tandas preparadas") },
+                        placeholder = { Text("Ej: 1") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                    OutlinedTextField(
+                        value = sobranteText,
+                        onValueChange = { sobranteText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Sobrante anterior (opcional)") },
+                        placeholder = { Text("0") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                } else {
+                    // Modo compra por peso
+                    OutlinedTextField(
+                        value = compraPesoText,
+                        onValueChange = { compraPesoText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Peso total comprado (kg)") },
+                        placeholder = { Text("Ej: 2.6") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                    OutlinedTextField(
+                        value = porcionPesoText,
+                        onValueChange = { porcionPesoText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Peso por porción (g)") },
+                        placeholder = { Text(if (pesoPorcion > 0) "${pesoPorcion.toInt()}" else "Ej: 250") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+
+                    // Vista previa de cálculo
+                    if (pesoTotal > 0 && pesoPorcion > 0) {
+                        val porciones = (pesoTotal * 1000 / pesoPorcion).toInt()
+                        Surface(
+                            color = MaterialTheme.colorScheme.tertiary.copy(0.1f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Calculate, null, tint = MaterialTheme.colorScheme.tertiary)
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text("Rendimiento estimado:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("$porciones porciones de ${pesoPorcion.toInt()}g", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.tertiary)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Botón de acción
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NeonButton(
-                        texto = "REGISTRAR PRODUCCIÓN",
+                    Button(
                         onClick = {
-                            val yield = yieldText.toIntOrNull() ?: 0
-                            if (yield > 0) {
+                            if (insumoSeleccionado.isBlank()) return@Button
+                            val porciones = porcionesText.toIntOrNull() ?: 0
+                            val tandas = tandasText.toIntOrNull() ?: 1
+                            val sobrante = sobranteText.toDoubleOrNull() ?: 0.0
+
+                            if (modo == "producir" && porciones > 0) {
                                 vm.registrarProduccion(
-                                    insumoId = "masa_crepa", // Default to masa_crepa as requested for simplification
-                                    porcionesObtenidas = yield.toDouble(),
-                                    tandasPreparadas = 1.0, 
+                                    insumoId = insumoSeleccionado,
+                                    porcionesObtenidas = porciones.toDouble(),
+                                    tandasPreparadas = tandas.toDouble(),
+                                    sobranteAnterior = sobrante,
+                                    onResult = { if (it) onDismiss() }
+                                )
+                            } else if (modo == "comprar" && pesoTotal > 0 && pesoPorcion > 0) {
+                                val totalKilos = pesoTotal
+                                val porcionesCalc = (totalKilos * 1000 / pesoPorcion).toInt()
+                                vm.registrarProduccion(
+                                    insumoId = insumoSeleccionado,
+                                    porcionesObtenidas = porcionesCalc.toDouble(),
+                                    tandasPreparadas = 1.0,
                                     sobranteAnterior = 0.0,
                                     onResult = { if (it) onDismiss() }
                                 )
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (modo == "comprar") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                        ),
+                        enabled = insumoSeleccionado.isNotBlank() &&
+                            ((modo == "producir" && (porcionesText.toIntOrNull() ?: 0) > 0) ||
+                             (modo == "comprar" && (compraPesoText.toDoubleOrNull() ?: 0.0) > 0 && (porcionPesoText.toDoubleOrNull() ?: 0.0) > 0))
+                    ) {
+                        Icon(
+                            if (modo == "producir") Icons.Default.AddCircle else Icons.Default.ShoppingCartCheckout,
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (modo == "producir") "REGISTRAR PRODUCCIÓN" else "REGISTRAR COMPRA",
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
                     TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                         Text("CANCELAR", color = MaterialTheme.colorScheme.onSurface.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }

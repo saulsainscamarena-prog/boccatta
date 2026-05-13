@@ -13,5 +13,6 @@ data class SalesInventoryProductV2(
     val costoToppingExtra: Double = 10.0,
     val esProductoTopping: Boolean = false,
     val consumiblesAsociados: List<ConsumibleRequerido> = emptyList(),
-    val fotoUrl: String? = null
+    val fotoUrl: String? = null,
+    val configSchema: List<ConfigOptionGroup> = emptyList()
 )

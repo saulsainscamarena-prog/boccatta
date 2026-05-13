@@ -153,17 +153,13 @@ fun SalesScreen(
     }
 
     productoConfigurando?.let { prod ->
-        val cat = prod.categoria.uppercase()
-        val requiereBuilder = cat.contains("CREPA") || cat == "COMBOS"
-
-        if (requiereBuilder) {
-            CrepeBuilderDialog(
-                producto = prod,
-                vmV2 = vmV2,
-                sucursal = session.sucursalActual,
+        if (prod.configSchema.isNotEmpty()) {
+            DynamicConfigSheet(
+                configGroups = prod.configSchema,
+                accentColor = MaterialTheme.colorScheme.primary,
                 onDismiss = { productoConfigurando = null },
-                onAddToCart = { p, base, aderezos, toppings, esSeparado, componentes ->
-                    vmV2.agregarAlCarrito(p, session.sucursalActual, base, aderezos, toppings, esSeparado, componentes)
+                onConfirm = { config ->
+                    vmV2.agregarAlCarritoConConfig(prod, session.sucursalActual, config)
                     productoConfigurando = null
                 }
             )
