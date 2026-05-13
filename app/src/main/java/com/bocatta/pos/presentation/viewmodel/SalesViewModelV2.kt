@@ -191,13 +191,14 @@ class SalesViewModelV2(
       producto: SalesInventoryProductV2, 
       sucursal: String, 
       base: String? = null, 
-      aderezo: String? = null, 
+      aderezos: List<String> = emptyList(), 
       toppings: List<String> = emptyList(), 
-      esSeparado: Boolean = false
+      esSeparado: Boolean = false,
+      componentes: List<ItemCarritoV2> = emptyList()
    ) {
       val nota = buildString {
          base?.let { append("Base: $it. ") }
-         aderezo?.let { append("Aderezo: $it. ") }
+         if (aderezos.isNotEmpty()) append("Aderezos: ${aderezos.joinToString(", ")}. ")
          if (toppings.isNotEmpty()) append("Extras: ${toppings.joinToString(", ")}")
          if (esSeparado) append(" (Separadas)")
       }
@@ -224,9 +225,10 @@ class SalesViewModelV2(
          nota = nota,
          nombre = producto.nombre,
          base = base ?: "",
-         aderezo = aderezo ?: "",
+         aderezos = aderezos,
          toppings = toppings,
          esSeparado = esSeparado,
+         componentesCombo = componentes
       )
       _carrito.add(item)
       mensajeFeedback = "${producto.nombre} añadido"
@@ -275,17 +277,31 @@ class SalesViewModelV2(
       }
    }
 
-   suspend fun validarStockCarrito(): Pair<Boolean, String> {
+   suspend fun validarStockCarrito(sucursal: String): Pair<Boolean, String> {
+      val sucursalId = sucursal.lowercase()
       for (item in _carrito) {
+         // Si es una crepa o combo, el insumo base es la masa
+         val insumoId = if (item.producto.id.contains("crepa") || item.producto.categoria.uppercase().contains("COMBO")) {
+            "masa_crepa"
+         } else {
+            item.producto.id
+         }
+
          val suficiente = inventoryRepo.hasSufficientStock(
-            branchId = item.producto.id,
-            productId = item.producto.id,
+            branchId = sucursalId,
+            productId = insumoId,
             requiredQty = item.cantidad.toDouble(),
             unit = "pza"
          )
+         
          if (!suficiente) {
-            Timber.tag("INVENTORY").w("Stock insuficiente para ${item.nombre}")
-            return Pair(false, "Stock insuficiente para: ${item.nombre}")
+            val msg = if (insumoId == "masa_crepa") {
+               "Sin stock de MASA DE CREPA en $sucursalId. Registra una tanda en Inventario > Producción."
+            } else {
+               "Stock insuficiente de ${item.nombre} en $sucursalId."
+            }
+            Timber.tag("INVENTORY").w(msg)
+            return Pair(false, msg)
          }
       }
       return Pair(true, "")
@@ -311,7 +327,7 @@ class SalesViewModelV2(
             cargando = true
             isOnline = OfflineManager.isNetworkAvailable(getApplication())
 
-            val stockOk = validarStockCarrito()
+            val stockOk = validarStockCarrito(sucursal)
             if (!stockOk.first) {
                mensajeError = stockOk.second
                cargando = false

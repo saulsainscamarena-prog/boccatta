@@ -186,7 +186,7 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
     suspend fun registrarProduccion(
         insumoId: String,
         porcionesObtenidas: Double,
-        materiaPrimaUsadaG: Double, // Ahora representa 'tandas'
+        tandasPreparadas: Double, // Ahora representa 'tandas'
         sobranteAnterior: Double,
         sucursal: String
     ): Boolean {
@@ -208,7 +208,7 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
             )
 
             // 2. Descontar ingredientes de Bodega Central (Global)
-            val deducciones = InventoryDeductions.getProductionDeductions(insumoId, materiaPrimaUsadaG)
+            val deducciones = InventoryDeductions.getProductionDeductions(insumoId, tandasPreparadas)
             deducciones.forEach { (ingId, cant) ->
                 batch.set(
                     firestore.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(ingId),

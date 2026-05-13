@@ -1,6 +1,7 @@
 package com.bocatta.pos.presentation.ui.screens.inventario
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -47,90 +48,115 @@ fun InventoryScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.Transparent,
-        topBar = {
-            LargeTopAppBar(
-                title = { 
-                    Column {
-                        Text("INVENTARIO", fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                        Text(session.sucursalActual.uppercase(), style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan)
+    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = Color.Transparent,
+            topBar = {
+                LargeTopAppBar(
+                    title = { 
+                        Column {
+                            Text("GESTIÓN DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 2.sp, color = Color.White)
+                            Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) { 
+                            Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Default.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp))
+                            }
+                        }
+                    },
+                    actions = {
+                        if (session.esAdmin) {
+                            var mostrarPin by remember { mutableStateOf(false) }
+                            IconButton(onClick = { mostrarPin = true }) { 
+                                Icon(Icons.Default.FlashOn, null, tint = BocattaNeonMagenta) 
+                            }
+                            if (mostrarPin) {
+                                com.bocatta.pos.presentation.ui.components.AdminPinDialog(
+                                    onDismiss = { mostrarPin = false },
+                                    onConfirm = { pin ->
+                                        session.validarPinAdmin(pin) { valido ->
+                                            if (valido) {
+                                                vm.cargarStockEmergencia(session.sucursalActual)
+                                                mostrarPin = false
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        IconButton(onClick = onAperturaInventario) { Icon(Icons.Default.Login, null, tint = Color.White.copy(0.7f)) }
+                        IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, null, tint = Color.White.copy(0.7f)) }
+                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, null, tint = BocattaNeonCyan) }
+                    },
+                    colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                )
+            },
+            floatingActionButton = {
+                NeonButton(
+                    texto = "REGISTRAR PRODUCCIÓN",
+                    onClick = { mostrarRegistroProduccion = true },
+                    modifier = Modifier.padding(16.dp),
+                    color = BocattaNeonCyan
+                )
+            }
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+                if (vm.cargando) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BocattaNeonCyan)
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) }
-                },
-                actions = {
-                    IconButton(onClick = onAperturaInventario) { Icon(Icons.Default.Login, null) }
-                    IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, null) }
-                    IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, null) }
-                },
-                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent)
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { mostrarRegistroProduccion = true },
-                containerColor = BocattaNeonCyan,
-                contentColor = BocattaBgDark,
-                shape = RoundedCornerShape(16.dp),
-                icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("REGISTRAR PRODUCCIÓN", fontWeight = FontWeight.Black) }
-            )
-        }
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(BocattaBgDark, BocattaSurfaceDark))
-        )) {
-            if (vm.cargando) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = BocattaNeonCyan)
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(280.dp),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.padding(padding).fillMaxSize()
-                ) {
-                    items(vm.stockInsumos.keys.toList()) { id ->
-                        val cant = vm.stockInsumos[id] ?: 0.0
-                        InventoryCardPremium(
-                            nombre = id.replace("_", " ").uppercase(),
-                            cantidad = cant,
-                            unidad = if(id.contains("masa")) "porciones" else "unidades",
-                            bajoStock = cant < 10.0
-                        )
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(300.dp),
+                        contentPadding = PaddingValues(24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(vm.stockInsumos.keys.toList()) { id ->
+                            val cant = vm.stockInsumos[id] ?: 0.0
+                            InventoryCardPremium(
+                                nombre = id.replace("_", " ").uppercase(),
+                                cantidad = cant,
+                                unidad = if(id.contains("masa") || id.contains("helado")) "unidades/lt" else "unidades",
+                                bajoStock = cant < 10.0
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (mostrarRegistroProduccion) {
-        ProductionRegistrationDialog(
-            vm = vm,
-            sucursal = session.sucursalActual,
-            onDismiss = { mostrarRegistroProduccion = false }
-        )
+        if (mostrarRegistroProduccion) {
+            ProductionRegistrationDialog(
+                vm = vm,
+                sucursal = session.sucursalActual,
+                onDismiss = { mostrarRegistroProduccion = false }
+            )
+        }
     }
 }
 
+@Composable
+fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoStock: Boolean) {
     Surface(
-        color = Color.White.copy(0.05f),
-        shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp
-        border = androidx.compose.foundation.BorderStroke(1.dp, if(bajoStock) BocattaDanger.copy(0.5f) else Color.White.copy(0.1f)),
+        color = BocattaSurfaceDark,
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(1.dp, if(bajoStock) BocattaDanger.copy(0.4f) else Color.White.copy(0.08f)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) { // 8dp grid: 24dp padding
+        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 color = if(bajoStock) BocattaDanger.copy(0.1f) else BocattaNeonCyan.copy(0.1f),
                 shape = CircleShape,
-                modifier = Modifier.size(56.dp) // Industrial scale
+                modifier = Modifier.size(56.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        if(bajoStock) Icons.Default.Warning else Icons.Default.Inventory, 
+                        if(bajoStock) Icons.Default.Warning else Icons.Default.Inventory2, 
                         null, 
                         tint = if(bajoStock) BocattaDanger else BocattaNeonCyan,
                         modifier = Modifier.size(28.dp)
@@ -139,11 +165,11 @@ fun InventoryScreen(
             }
             Spacer(Modifier.width(20.dp))
             Column(Modifier.weight(1f)) {
-                Text(nombre.uppercase(), fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color.White, letterSpacing = 1.sp)
-                Text("$cantidad $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) BocattaDanger else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
+                Text(nombre, fontWeight = FontWeight.Black, fontSize = 14.sp, color = Color.White, letterSpacing = 1.sp)
+                Text("${"%.1f".format(cantidad)} $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) BocattaDanger else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
             }
             if (bajoStock) {
-                StatusBadgePremium("CRÍTICO", BocattaDanger)
+                StatusBadgePremium("ALERTA", BocattaDanger)
             }
         }
     }

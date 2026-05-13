@@ -102,17 +102,37 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
     fun registrarProduccion(
         insumoId: String,
         porcionesObtenidas: Double,
-        materiaPrimaUsadaG: Double,
+        tandasPreparadas: Double,
         sobranteAnterior: Double,
         onResult: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
             try {
-                val exito = repo.registrarProduccion(insumoId, porcionesObtenidas, materiaPrimaUsadaG, sobranteAnterior, sucursalActiva ?: "global")
+                val exito = repo.registrarProduccion(insumoId, porcionesObtenidas, tandasPreparadas, sobranteAnterior, sucursalActiva ?: "global")
                 onResult(exito)
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
                 onResult(false)
+            }
+        }
+    }
+
+    fun cargarStockEmergencia(sucursal: String) {
+        viewModelScope.launch {
+            cargando = true
+            try {
+                // Usamos el seeder para resetear inventario con valores base
+                val seeder = com.bocatta.pos.data.repository.DataSeederV2()
+                seeder.cargarStockEmergencia(sucursal.lowercase())
+                    .onSuccess { 
+                        mensajeExito = "✅ Stock de emergencia cargado para ${sucursal.uppercase()}"
+                        configurarSucursal(sucursal)
+                    }
+                    .onFailure { e -> mensajeError = "Error: ${e.message}" }
+            } catch (e: Exception) {
+                mensajeError = "Error: ${e.message}"
+            } finally {
+                cargando = false
             }
         }
     }

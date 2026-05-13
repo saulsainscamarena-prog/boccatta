@@ -55,20 +55,18 @@ fun AperturaDiaScreen(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("PROTOCOLOS", fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("SISTEMA INDUSTRIAL V2", fontSize = 9.sp, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("PROTOCOLOS", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("PROTOCOLO DE APERTURA · MERIDIAN V2", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(BocattaBgDark, BocattaSurfaceDark))
-        )) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
                 // STEPPER PREMIUM
                 Surface(

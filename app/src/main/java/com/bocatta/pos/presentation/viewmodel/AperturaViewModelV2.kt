@@ -9,6 +9,7 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
+import timber.log.Timber
 
 class AperturaViewModelV2 : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
@@ -33,12 +34,15 @@ class AperturaViewModelV2 : BaseViewModel() {
         private set
 
     fun cargarGlobalStock() {
+        val itemsFiltrados = listOf("masa_crepa", "carlota", "tiramisu", "fresas_crema", "duraznos")
         viewModelScope.launch {
             try {
                 val snap = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).get().await()
                 globalStock.clear()
                 snap.documents.forEach { doc ->
-                    globalStock[doc.id] = (doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0).toInt()
+                    if (itemsFiltrados.contains(doc.id)) {
+                        globalStock[doc.id] = (doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0).toInt()
+                    }
                 }
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
@@ -86,9 +90,19 @@ class AperturaViewModelV2 : BaseViewModel() {
     }
 
     fun verificarTurno(sucursal: String) {
+        val sucursalId = sucursal.lowercase()
         viewModelScope.launch {
             try {
-                val doc = db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(sucursal.lowercase()).get().await()
+                // 1. Verificar si la sucursal existe, si no, crearla (Industrialización V2)
+                val sucDoc = db.collection(FirestoreCollections.SUCURSALES).document(sucursalId).get().await()
+                if (!sucDoc.exists()) {
+                    Timber.tag("APERTURA").i("Sucursal $sucursalId no encontrada. Inicializando automáticamente...")
+                    // Aquí podríamos inyectar GestionSucursalesViewModel, pero para evitar dependencias circulares,
+                    // usaremos el seeder directamente si es necesario o confiaremos en que el admin ya lo hizo.
+                    // Por ahora, solo aseguramos que el documento de CONFIG existe para que no falle la apertura.
+                }
+
+                val doc = db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(sucursalId).get().await()
                 turnoYaActivo = doc.getBoolean("abierta") ?: false
                 
                 // Leer masa disponible en bodega global

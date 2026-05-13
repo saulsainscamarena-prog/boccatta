@@ -1,23 +1,29 @@
 package com.bocatta.pos.presentation.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.ShoppingCartCheckout
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
-import com.bocatta.pos.presentation.ui.theme.BocattaSuccess
+import com.bocatta.pos.presentation.ui.theme.*
 import java.math.BigDecimal
 
 @Composable
@@ -31,95 +37,137 @@ fun CarritoPanelV2(
     onEliminarItem: (ItemCarritoV2) -> Unit,
     onCobrar: () -> Unit
 ) {
-    Column(modifier = modifier.padding(16.dp)) {
-        Text(
-            "Orden en curso",
-            fontWeight = FontWeight.Black,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        if (clienteSeleccionado != null) {
-            Spacer(Modifier.height(8.dp))
-            Surface(
-                color = BocattaSuccess.copy(0.1f),
-                shape = MaterialTheme.shapes.small
-            ) {
-                Row(
-                    modifier = Modifier.padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = Color.Black.copy(0.2f),
+        modifier = modifier.fillMaxHeight(),
+        border = BorderStroke(1.dp, Color.White.copy(0.05f))
+    ) {
+        Column(modifier = Modifier.padding(24.dp).fillMaxHeight()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = BocattaNeonCyan.copy(0.1f),
+                    shape = CircleShape,
+                    modifier = Modifier.size(32.dp)
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = "Cliente", tint = BocattaSuccess, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        clienteSeleccionado.nombre,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = BocattaSuccess
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.ShoppingCart, null, tint = BocattaNeonCyan, modifier = Modifier.size(16.dp))
+                    }
                 }
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-
-        if (carrito.isEmpty()) {
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                BocattaEmptyState(
-                    icono = Icons.Default.ShoppingCartCheckout,
-                    titulo = "Sin productos",
-                    descripcion = "Toca un producto para agregarlo"
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    "ORDEN ACTUAL",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    letterSpacing = 1.sp
                 )
             }
-        } else {
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(carrito, key = { it.cartId }) { item ->
-                    BocattaCartItemRow(
-                        item = item,
-                        onEliminar = { onEliminarItem(item) }
-                    )
+            
+            if (clienteSeleccionado != null) {
+                Spacer(Modifier.height(16.dp))
+                Surface(
+                    color = BocattaNeonGreen.copy(0.1f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, BocattaNeonGreen.copy(0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Person, null, tint = BocattaNeonGreen, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            clienteSeleccionado.nombre.uppercase(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = BocattaNeonGreen,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             }
-        }
+            
+            Spacer(Modifier.height(24.dp))
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            if (carrito.isEmpty()) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    BocattaEmptyState(
+                        icono = Icons.Default.ShoppingCartCheckout,
+                        titulo = "CARRITO VACÍO",
+                        descripcion = "Agrega productos del menú para comenzar",
+                        modifier = Modifier.alpha(0.5f)
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(carrito, key = { it.cartId }) { item ->
+                        BocattaCartItemRow(
+                            item = item,
+                            onEliminar = { onEliminarItem(item) }
+                        )
+                    }
+                }
+            }
 
-        if (descuentoPromociones > 0) {
-            BocattaFilaResumen(
-                "Descuento promo",
-                "-$${"%.2f".format(descuentoPromociones)}",
-                colorValor = BocattaSuccess
+            Spacer(Modifier.height(24.dp))
+
+            // Resumen con Glassmorphism
+            Surface(
+                color = Color.White.copy(0.03f),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Color.White.copy(0.08f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (descuentoPromociones > 0) {
+                        BocattaFilaResumen(
+                            "DESCUENTO PROMO",
+                            "-$${"%.2f".format(descuentoPromociones)}",
+                            colorValor = BocattaNeonMagenta
+                        )
+                    }
+                    if (descuentoLealtad > 0) {
+                        BocattaFilaResumen(
+                            "DESCUENTO LEALTAD",
+                            "-$${"%.2f".format(descuentoLealtad)}",
+                            colorValor = BocattaNeonGreen
+                        )
+                    }
+
+                    val totalFinal = (totalCarrito.toDouble() - descuentoLealtad
+                        - descuentoPromociones).coerceAtLeast(0.0)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Column {
+                            Text("SUBTOTAL", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White.copy(0.3f), letterSpacing = 1.sp)
+                            Text("$${"%.2f".format(totalCarrito)}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White.copy(0.6f))
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("TOTAL FINAL", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = BocattaNeonCyan.copy(0.7f), letterSpacing = 1.sp)
+                            Text(
+                                "$${"%.2f".format(totalFinal)}",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 34.sp,
+                                color = BocattaNeonCyan
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            
+            NeonButton(
+                texto = "FINALIZAR PEDIDO",
+                onClick = onCobrar,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = carrito.isNotEmpty(),
+                color = BocattaNeonCyan
             )
         }
-        if (descuentoLealtad > 0) {
-            BocattaFilaResumen(
-                "Descuento lealtad",
-                "-$${"%.2f".format(descuentoLealtad)}",
-                colorValor = BocattaSuccess
-            )
-        }
-
-        val totalFinal = (totalCarrito.toDouble() - descuentoLealtad
-            - descuentoPromociones).coerceAtLeast(0.0)
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Total", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Text(
-                "$${"%.2f".format(totalFinal)}",
-                fontWeight = FontWeight.Black,
-                fontSize = 24.sp,
-                color = BocattaPrimary
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-        BocattaButton(
-            texto = "Finalizar pedido",
-            onClick = onCobrar,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = carrito.isNotEmpty()
-        )
     }
 }

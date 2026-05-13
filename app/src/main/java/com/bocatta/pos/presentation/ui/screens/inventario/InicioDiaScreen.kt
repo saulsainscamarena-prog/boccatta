@@ -9,6 +9,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.sp
 import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
 import java.util.Calendar
 
@@ -28,30 +33,36 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
     }
 
     Box(modifier = Modifier.fillMaxSize().background(
-        Brush.verticalGradient(listOf(BocattaBgDark, BocattaSurfaceDark))
+        Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A)))
     ), contentAlignment = Alignment.Center) {
         Surface(
             modifier = Modifier.padding(24.dp).widthIn(max = 500.dp),
-            shape = RoundedCornerShape(24.dp), // Meridian Spec: 24dp for dialogs/surfaces
-            color = Color.White.copy(0.05f),
+            shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp
+            color = BocattaSurfaceDark,
             border = BorderStroke(1.dp, Color.White.copy(0.1f))
         ) {
             Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(saludo, fontWeight = FontWeight.Black, fontSize = 32.sp, color = Color.White, letterSpacing = 2.sp)
-                Text(sessionVm.usuario?.nombre?.uppercase() ?: "OPERADOR", style = MaterialTheme.typography.titleMedium, color = BocattaPrimaryDark, fontWeight = FontWeight.Black)
+                Text(saludo, fontWeight = FontWeight.Black, fontSize = 36.sp, color = Color.White, letterSpacing = 2.sp)
+                Text(sessionVm.usuario?.nombre?.uppercase() ?: "OPERADOR", style = MaterialTheme.typography.titleMedium, color = BocattaNeonCyan, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(40.dp))
                 
-                Text("PROTOCOLOS DE APERTURA", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.6f), letterSpacing = 1.sp)
-                Spacer(Modifier.height(16.dp))
+                Text("PROTOCOLOS DE APERTURA INDUSTRIAL", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.4f), letterSpacing = 2.sp)
+                Spacer(Modifier.height(24.dp))
 
                 OutlinedTextField(
                     value = masaAyer,
                     onValueChange = { masaAyer = it },
                     label = { Text("MASA RESTANTE (KG/MEDIDAS)", fontWeight = FontWeight.Bold) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BocattaPrimary, unfocusedTextColor = Color.White, focusedTextColor = Color.White)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BocattaNeonCyan,
+                        unfocusedTextColor = Color.White,
+                        focusedTextColor = Color.White,
+                        focusedLabelColor = BocattaNeonCyan,
+                        unfocusedLabelColor = Color.White.copy(0.4f)
+                    )
                 )
                 
                 Spacer(Modifier.height(16.dp))
@@ -59,16 +70,22 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                 OutlinedTextField(
                     value = postresAyer,
                     onValueChange = { postresAyer = it },
-                    label = { Text("POSTRES EN VITRINA", fontWeight = FontWeight.Bold) },
+                    label = { Text("POSTRES EN VITRINA (UNIDADES)", fontWeight = FontWeight.Bold) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BocattaPrimary, unfocusedTextColor = Color.White, focusedTextColor = Color.White)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BocattaNeonCyan,
+                        unfocusedTextColor = Color.White,
+                        focusedTextColor = Color.White,
+                        focusedLabelColor = BocattaNeonCyan,
+                        unfocusedLabelColor = Color.White.copy(0.4f)
+                    )
                 )
                 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(40.dp))
                 
                 NeonButton(
-                    texto = "INICIAR JORNADA",
+                    texto = "INICIAR JORNADA OPERATIVA",
                     onClick = { 
                         val conteos = mapOf(
                             "masa_crepa" to (masaAyer.toDoubleOrNull() ?: 0.0),
@@ -78,7 +95,8 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                             if (exito) onFinalizar()
                         })
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    color = BocattaNeonCyan
                 )
 
                 if (sessionVm.esAdmin && onGestion != null) {
@@ -87,7 +105,7 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                         onClick = onGestion,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("IGNORAR PROTOCOLO (ADMIN)", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("IGNORAR PROTOCOLO (ACCESO ADMIN)", color = BocattaDanger, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp)
                     }
                 }
             }

@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.presentation.viewmodel
+package com.bocatta.pos.presentation.viewmodel
 
 import android.app.Application
 import android.net.ConnectivityManager
@@ -117,6 +117,25 @@ class SessionViewModel(application: Application) : BaseAndroidViewModel(applicat
             .addSnapshotListener { snap, _ ->
                 devolucionesPendientes = snap?.size() ?: 0
             }
+    }
+
+    fun validarPinAdmin(pin: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Buscamos empleados con rol ADMIN o DUEÑO que tengan ese PIN
+                val snap = db.collection(FirestoreCollections.USUARIOS)
+                    .whereIn("rol", listOf("ADMIN", "DUEÑO"))
+                    .get().await()
+                
+                val valido = snap.documents.any { doc ->
+                    val pinDoc = doc.getString("pinAcceso") ?: "NO_PIN"
+                    pinDoc == pin
+                }
+                onResult(valido)
+            } catch (e: Exception) {
+                onResult(false)
+            }
+        }
     }
 
     fun cerrarSesion() {

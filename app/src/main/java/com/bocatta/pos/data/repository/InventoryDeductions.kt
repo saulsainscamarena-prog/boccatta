@@ -4,6 +4,9 @@ import com.bocatta.pos.domain.model.IngredienteReceta
 import com.bocatta.pos.domain.model.ItemCarritoV2
 
 object InventoryDeductions {
+    val TOPPINGS_SALADOS = listOf("Jamón", "Queso Manchego", "Pepperoni", "Piña", "Champiñones", "Bbq", "Buffalo", "Blue Cheese")
+    val TOPPINGS_DULCES = listOf("Fresa", "Durazno", "Plátano", "Oreo", "Nuez", "Bombón", "Philadelphia", "Nutella", "Coco", "Chispas")
+
     fun calcularParaItem(
         item: ItemCarritoV2,
         recetaIngredientes: List<IngredienteReceta>
@@ -25,7 +28,7 @@ object InventoryDeductions {
             mapearToppingOAderezoAInsumo(topping)?.let { (id, cantidad) -> deducciones.add(id, cantidad * qty) }
         }
 
-        item.aderezo?.let { aderezo ->
+        item.aderezos.forEach { aderezo ->
             mapearToppingOAderezoAInsumo(aderezo)?.let { (id, cantidad) -> deducciones.add(id, cantidad * qty) }
         }
 
@@ -75,7 +78,7 @@ object InventoryDeductions {
             t.contains("colores") -> "granillo_colores" to 20.0
             t.contains("granillo") || t.contains("chocolate") -> "granillo_chocolate" to 20.0
             t.contains("jamon") -> "jamon_kg" to 50.0
-            t.contains("pina") || t.contains("hawaiana") -> "pina_kg" to 40.0
+            t.contains("pina", true) || t.contains("piña", true) || t.contains("hawaiana", true) -> "pina_kg" to 40.0
             t.contains("pepperoni") || t.contains("peperoni") -> "peperoni_kg" to 40.0
             t.contains("bbq") || t.contains("bqq") -> "bbq" to 20.0
             t.contains("buffalo") -> "buffalo" to 20.0
@@ -128,4 +131,3 @@ object InventoryDeductions {
             .lowercase()
     }
 }
-

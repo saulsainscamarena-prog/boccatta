@@ -18,8 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.ItemCarritoV2
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
-import com.bocatta.pos.presentation.ui.theme.BocattaSuccess
+import com.bocatta.pos.presentation.ui.theme.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -341,40 +340,51 @@ fun BocattaCartItemRow(
     onEliminar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = Color.White.copy(0.03f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                item.nombre,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            if (item.nota.isNotBlank()) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    item.nota,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
+                    item.nombre.uppercase(),
+                    fontWeight = FontWeight.Black,
+                    fontSize = 12.sp,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp
                 )
+                if (item.nota.isNotBlank()) {
+                    Text(
+                        item.nota.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(0.4f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 12.sp
+                    )
+                }
+            }
+            Text(
+                "$${"%.2f".format(item.precioFinal.toDouble() * item.cantidad)}",
+                fontWeight = FontWeight.Black,
+                color = BocattaNeonCyan,
+                fontSize = 14.sp
+            )
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = onEliminar,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Eliminar",
+                    tint = BocattaDanger.copy(0.6f),
+                    modifier = Modifier.size(16.dp))
             }
         }
-        Text(
-            "$${"%.2f".format(item.precioFinal.toDouble() * item.cantidad)}",
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        IconButton(
-            onClick = onEliminar,
-            modifier = Modifier.size(36.dp)
-        ) {
-            Icon(Icons.Default.Close, contentDescription = "Eliminar ${item.nombre}",
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(18.dp))
-        }
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.5f))
 }
 
 @Composable
@@ -402,14 +412,14 @@ fun BocattaSearchBar(
             }
         },
         placeholder = {
-            Text(placeholder, fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
+            Text(placeholder.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                color = Color.White.copy(0.3f), letterSpacing = 1.sp)
         },
-        modifier = modifier.fillMaxWidth().height(52.dp),
-        shape = RoundedCornerShape(26.dp),
+        modifier = modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(28.dp),
         leadingIcon = {
             Icon(Icons.Default.Search, null,
-                tint = BocattaPrimary, modifier = Modifier.size(20.dp))
+                tint = BocattaNeonCyan, modifier = Modifier.size(20.dp))
         },
         trailingIcon = {
             if (localQuery.isNotEmpty()) {
@@ -418,16 +428,18 @@ fun BocattaSearchBar(
                     onQueryChange("")
                     onSearch?.invoke("")
                 }) {
-                    Icon(Icons.Default.Close, "Limpiar búsqueda", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Close, null, tint = Color.White.copy(0.5f), modifier = Modifier.size(18.dp))
                 }
             }
         },
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = BocattaPrimary,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.4f),
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.4f)
+            unfocusedBorderColor = Color.White.copy(0.1f),
+            focusedBorderColor = BocattaNeonCyan,
+            unfocusedContainerColor = Color.White.copy(0.05f),
+            focusedContainerColor = Color.White.copy(0.05f),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White
         )
     )
 }

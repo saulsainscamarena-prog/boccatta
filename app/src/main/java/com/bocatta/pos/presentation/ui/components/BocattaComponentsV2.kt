@@ -59,18 +59,18 @@ fun ProductCardPremium(
     Surface(
         onClick = onClick,
         enabled = !agotado,
-        shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp (píldora) for product cards
-        color = if (agotado) MaterialTheme.colorScheme.surfaceVariant.copy(0.3f) else MaterialTheme.colorScheme.surface,
-        tonalElevation = if (agotado) 0.dp else 2.dp,
+        shape = RoundedCornerShape(28.dp),
+        color = if (agotado) Color.White.copy(0.05f) else BocattaSurfaceDark,
+        tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f) // Meridian Spec: 1:1
+            .aspectRatio(1f)
             .padding(4.dp)
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     colors = if (agotado) listOf(Color.Transparent, Color.Transparent) 
-                             else listOf(colorCat.copy(0.3f), Color.Transparent)
+                             else listOf(colorCat.copy(0.4f), Color.Transparent)
                 ),
                 shape = RoundedCornerShape(28.dp)
             )
@@ -96,38 +96,38 @@ fun ProductCardPremium(
                 Text(
                     text = nombre.uppercase(),
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold, // Meridian Spec: SemiBold
+                    fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
-                    lineHeight = 16.sp,
-                    fontSize = 16.sp, // Meridian Spec: 16sp
-                    color = if (agotado) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    letterSpacing = 0.5.sp,
+                    lineHeight = 18.sp,
+                    fontSize = 14.sp,
+                    color = if (agotado) Color.White.copy(0.3f) else Color.White,
+                    letterSpacing = 1.sp,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
-                // Badge de Precio - Estilo Meridian (Pastilla Negra/Primary)
+                // Badge de Precio - Estilo Meridian Neon
                 Surface(
-                    color = if (agotado) Color.Gray else BocattaPrimary, // Using BocattaPrimary for active prices
-                    shape = RoundedCornerShape(12.dp)
+                    color = if (agotado) Color.White.copy(0.1f) else colorCat.copy(0.2f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, if(agotado) Color.Transparent else colorCat.copy(0.5f))
                 ) {
                     Text(
                         text = "$${"%.0f".format(precio)}",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = Color.White,
-                        fontSize = 20.sp, // Meridian Spec: 20sp for prices
-                        fontWeight = FontWeight.SemiBold // Meridian Spec: SemiBold
+                        color = if(agotado) Color.White.copy(0.3f) else colorCat,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black
                     )
                 }
             }
             
-            // Indicadores de Estado (Meridian Spec: 10% alpha bg)
             if (agotado) {
-                StatusBadgePremium("AGOTADO", BocattaDanger, Modifier.align(Alignment.TopStart))
+                StatusBadgePremium("AGOTADO", BocattaDanger, Modifier.align(Alignment.TopEnd))
             } else if (pocoStock) {
-                StatusBadgePremium("BAJO", BocattaWarning, Modifier.align(Alignment.TopStart))
+                StatusBadgePremium("BAJO", BocattaWarning, Modifier.align(Alignment.TopEnd))
             }
         }
     }
@@ -192,5 +192,83 @@ fun NeonButton(
         )
     ) {
         Text(texto, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, fontSize = 16.sp)
+    }
+}
+
+@Composable
+fun BocattaMetricCardPremium(
+    titulo: String,
+    valor: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    subtitulo: String? = null
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(28.dp),
+        color = BocattaSurfaceDark,
+        border = BorderStroke(1.dp, color.copy(alpha = 0.2f)),
+        tonalElevation = 0.dp
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                titulo.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(0.4f),
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                valor,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = color
+            )
+            subtitulo?.let {
+                Text(
+                    it.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color.copy(0.6f),
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GastoCard(
+    categoria: String,
+    monto: Double,
+    fecha: String,
+    descripcion: String,
+    usuario: String,
+    color: Color = BocattaNeonMagenta
+) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = BocattaSurfaceDark,
+        border = BorderStroke(1.dp, Color.White.copy(0.05f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text(categoria.uppercase(), fontWeight = FontWeight.Black, color = color, fontSize = 14.sp, letterSpacing = 1.sp)
+                    Text(fecha, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+                }
+                Text("$${"%.2f".format(monto)}", fontWeight = FontWeight.Black, color = Color.White, fontSize = 20.sp)
+            }
+            
+            Text(descripcion.uppercase(), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(0.7f), lineHeight = 16.sp)
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(6.dp).background(color, CircleShape))
+                Spacer(Modifier.width(8.dp))
+                Text("REGISTRADO POR: $usuario", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }

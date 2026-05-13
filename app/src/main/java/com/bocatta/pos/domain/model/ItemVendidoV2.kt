@@ -14,12 +14,13 @@ data class ItemVendidoV2(
     val cantidad: Int = 1,
     val precioUnitario: Double = 0.0,
     val base: String? = null,
-    val aderezo: String? = null,
+    val aderezos: List<String> = emptyList(),
     val toppings: List<String> = emptyList(),
     val separadas: Boolean = false,
     val recetaId: String? = null,
     /** Mapa de insumoId -> cantidad deducida en unidad base (g, pz, etc.) */
-    val deducciones: Map<String, Double> = emptyMap()
+    val deducciones: Map<String, Double> = emptyMap(),
+    val componentesCombo: List<ItemVendidoV2> = emptyList()
 ) {
     /** Subtotal calculado de esta línea: precio unitario * cantidad */
     val subtotal: Double get() = precioUnitario * cantidad

@@ -1,14 +1,22 @@
 package com.bocatta.pos.presentation.ui.screens.inventario
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -16,8 +24,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.FieldValue
-import com.bocatta.pos.presentation.ui.theme.BocattaSuccess
-import com.bocatta.pos.presentation.ui.theme.BocattaWarning
+import com.bocatta.pos.presentation.ui.components.*
+import com.bocatta.pos.presentation.ui.theme.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
@@ -81,46 +89,56 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Sync Inventario Global", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            "Volver"
-                        )
+            LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("LOGÍSTICA GLOBAL", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("CONTROL DE STOCK Y TRANSFERENCIAS", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
-                }
+                },
+                navigationIcon = { 
+                    IconButton(onClick = onBack) { 
+                        Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
             )
-        },
-        snackbarHost = { SnackbarHost(snackbar) }
+        }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item { Text("Stock Global - Toca para transferir", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
-            items(vm.insumosGlobal) { insumo ->
-                val stock = vm.stockGlobal[insumo] ?: 0.0
-                ElevatedCard(
-                    onClick = { selectedInsumo = insumo; showDialog = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        Modifier.padding(16.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 32.dp, top = 16.dp)
+            ) {
+                item { 
+                    Text("INVENTARIO CENTRALIZADO - SELECCIONA PARA TRANSFERIR", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp) 
+                }
+                items(vm.insumosGlobal) { insumo ->
+                    val stock = vm.stockGlobal[insumo] ?: 0.0
+                    Surface(
+                        onClick = { selectedInsumo = insumo; showDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(28.dp),
+                        color = BocattaSurfaceDark,
+                        border = BorderStroke(1.dp, Color.White.copy(0.1f))
                     ) {
-                        Text(insumo, fontWeight = FontWeight.Medium)
-                        Text(
-                            "${stock.toInt()} u.",
-                            fontWeight = FontWeight.Bold,
-                            color = if (stock > 10) BocattaSuccess else BocattaWarning
-                        )
+                        Row(
+                            Modifier.padding(20.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(insumo.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
+                            StatusBadgePremium(
+                                text = "${stock.toInt()} UNIDADES",
+                                color = if (stock > 10) BocattaNeonCyan else BocattaNeonMagenta
+                            )
+                        }
                     }
                 }
             }

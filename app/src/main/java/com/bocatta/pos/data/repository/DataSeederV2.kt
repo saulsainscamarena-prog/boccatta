@@ -204,6 +204,31 @@ class DataSeederV2(
         }
     }
 
+    /**
+     * Carga un stock base de emergencia para que la sucursal pueda operar.
+     */
+    suspend fun cargarStockEmergencia(sucursal: String): Result<Unit> {
+        return try {
+            val sucursalId = sucursal.lowercase()
+            val criticalItems = listOf("masa_crepa", "carlota_unidad", "tiramisu_unidad", "fresas_crema_unidad", "duraznos_crema_unidad")
+            val batch = db.batch()
+            
+            criticalItems.forEach { id ->
+                val ref = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
+                    .document("${sucursalId}_$id")
+                batch.set(ref, mapOf(
+                    "cantidadEnBase" to 10.0,
+                    "ultimaActualizacion" to System.currentTimeMillis()
+                ), SetOptions.merge())
+            }
+            batch.commit().await()
+            Timber.tag("SEEDER").i("Carga de emergencia (10 unidades) completada para $sucursalId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // ── BUILDERS DE DATOS ─────────────────────────────────────────────────────
 
     private fun buildInsumos(): List<InsumoV2> = listOf(

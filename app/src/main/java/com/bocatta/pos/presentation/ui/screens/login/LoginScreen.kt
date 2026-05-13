@@ -1,5 +1,6 @@
 package com.bocatta.pos.presentation.ui.screens.login
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,12 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,10 +52,8 @@ fun LoginScreen(
     var masterCode by remember { mutableStateOf("") }
     var nombreCompleto by remember { mutableStateOf("") }
 
-    val backgroundBrush = Brush.verticalGradient(listOf(BocattaSecondary, BocattaBgDark))
-    
     Box(
-        modifier = Modifier.fillMaxSize().background(backgroundBrush).safeDrawingPadding(),
+        modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A)))).safeDrawingPadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -65,8 +63,8 @@ fun LoginScreen(
             Surface(
                 modifier = Modifier.size(120.dp), 
                 shape = CircleShape, 
-                color = MaterialTheme.colorScheme.onPrimary,
-                shadowElevation = 16.dp
+                color = Color.White.copy(0.05f),
+                border = BorderStroke(1.dp, Color.White.copy(0.1f))
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logo_bocatta), 
@@ -77,36 +75,41 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            ElevatedCard(
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                color = BocattaSurfaceDark,
+                border = BorderStroke(1.dp, Color.White.copy(0.1f))
             ) {
                 Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         if (isRegisterMode) "NUEVO ACCESO" else "SISTEMA INDUSTRIAL", 
                         style = MaterialTheme.typography.headlineSmall, 
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        letterSpacing = 2.sp
                     )
                     Text(
-                        "Bocatta POS V2 \u00B7 Operaci\u00F3n Cr\u00EDtica", 
-                        color = MaterialTheme.colorScheme.outline, 
-                        style = MaterialTheme.typography.labelMedium
+                        "BOCATTA POS \u00B7 MERIDIAN DESIGN", 
+                        color = BocattaNeonCyan, 
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
                     )
                     
                     Spacer(Modifier.height(32.dp))
 
                     if (errorMensaje != null) {
                         Surface(
-                            color = MaterialTheme.colorScheme.errorContainer, 
+                            color = BocattaDanger.copy(0.1f), 
                             shape = RoundedCornerShape(16.dp), 
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                            border = BorderStroke(1.dp, BocattaDanger.copy(0.3f))
                         ) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Error, null, tint = BocattaDanger, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(errorMensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                Text(errorMensaje, color = BocattaDanger, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -115,20 +118,34 @@ fun LoginScreen(
                         OutlinedTextField(
                             value = masterCode, 
                             onValueChange = { masterCode = it; onType() }, 
-                            label = { Text("C\u00F3digo Maestro") }, 
+                            label = { Text("CÓDIGO MAESTRO", fontWeight = FontWeight.Bold) }, 
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp), 
                             visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.VpnKey, null, tint = BocattaPrimary) }
+                            leadingIcon = { Icon(Icons.Default.VpnKey, null, tint = BocattaNeonCyan) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = BocattaNeonCyan,
+                                unfocusedTextColor = Color.White,
+                                focusedTextColor = Color.White,
+                                focusedLabelColor = BocattaNeonCyan,
+                                unfocusedLabelColor = Color.White.copy(0.4f)
+                            )
                         )
                         Spacer(Modifier.height(16.dp))
                         OutlinedTextField(
                             value = nombreCompleto, 
                             onValueChange = { nombreCompleto = it; onType() }, 
-                            label = { Text("Nombre de Operador") }, 
+                            label = { Text("NOMBRE DE OPERADOR", fontWeight = FontWeight.Bold) }, 
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp),
-                            leadingIcon = { Icon(Icons.Default.Person, null, tint = BocattaPrimary) }
+                            leadingIcon = { Icon(Icons.Default.Person, null, tint = BocattaNeonCyan) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = BocattaNeonCyan,
+                                unfocusedTextColor = Color.White,
+                                focusedTextColor = Color.White,
+                                focusedLabelColor = BocattaNeonCyan,
+                                unfocusedLabelColor = Color.White.copy(0.4f)
+                            )
                         )
                         Spacer(Modifier.height(16.dp))
                     }
@@ -136,35 +153,49 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = user, 
                         onValueChange = { user = it; onType() }, 
-                        label = { Text("ID de Usuario / Email") }, 
+                        label = { Text("ID DE USUARIO / EMAIL", fontWeight = FontWeight.Bold) }, 
                         modifier = Modifier.fillMaxWidth(), 
                         shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Email, null, tint = BocattaPrimary) }
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = BocattaNeonCyan) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BocattaNeonCyan,
+                            unfocusedTextColor = Color.White,
+                            focusedTextColor = Color.White,
+                            focusedLabelColor = BocattaNeonCyan,
+                            unfocusedLabelColor = Color.White.copy(0.4f)
+                        )
                     )
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
                         value = pass, 
                         onValueChange = { pass = it; onType() }, 
-                        label = { Text("Clave de Acceso / PIN") }, 
+                        label = { Text("CLAVE DE ACCESO / PIN", fontWeight = FontWeight.Bold) }, 
                         modifier = Modifier.fillMaxWidth(), 
                         shape = RoundedCornerShape(16.dp), 
                         visualTransformation = PasswordVisualTransformation(),
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = BocattaPrimary) }
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = BocattaNeonCyan) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BocattaNeonCyan,
+                            unfocusedTextColor = Color.White,
+                            focusedTextColor = Color.White,
+                            focusedLabelColor = BocattaNeonCyan,
+                            unfocusedLabelColor = Color.White.copy(0.4f)
+                        )
                     )
 
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(40.dp))
 
                     Button(
                         onClick = { if (isRegisterMode) onRegisterClick(user, pass, nombreCompleto, masterCode, "") else onLoginClick(user, pass) },
-                        modifier = Modifier.fillMaxWidth().height(64.dp),
+                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = BocattaNeonCyan),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !isLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = BocattaPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan, contentColor = BocattaBgDark)
                     ) {
-                        if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                        if (isLoading) CircularProgressIndicator(color = BocattaBgDark, modifier = Modifier.size(24.dp))
                         else Text(
                             if (isRegisterMode) "ACTIVAR ACCESO" else "ENTRAR AL SISTEMA", 
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp
                         )
                     }
@@ -182,7 +213,6 @@ fun LoginScreen(
                 )
             }
 
-            // Bot�n para modo demo/testing
             if (BuildConfig.DEMO_MODE_ENABLED) {
                 TextButton(
                     onClick = { onLoginClick(BuildConfig.DEMO_EMAIL, BuildConfig.DEMO_PASSWORD) }, 
@@ -198,4 +228,3 @@ fun LoginScreen(
         }
     }
 }
-

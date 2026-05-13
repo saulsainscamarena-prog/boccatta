@@ -1,6 +1,7 @@
 package com.bocatta.pos.presentation.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,7 +38,6 @@ fun ProductionRegistrationDialog(
     
     val insumos = listOf("masa_crepa", "helado_vainilla", "helado_chocolate", "fresas_lavadas")
 
-    // Actualización automática de porciones según el insumo y tandas
     LaunchedEffect(insumoId, numeroDeTandas) {
         val tandas = numeroDeTandas.toDoubleOrNull() ?: 0.0
         porcionesObtenidas = when(insumoId) {
@@ -50,91 +50,126 @@ fun ProductionRegistrationDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(24.dp), // Meridian Spec: 24dp
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
+            shape = RoundedCornerShape(28.dp),
+            color = BocattaBgDark,
+            border = BorderStroke(1.dp, Color.White.copy(0.1f)),
             modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Text("REGISTRO DE PRODUCCIÓN", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                Text("MÓDULO DE TRANSFORMACIÓN DE MATERIA PRIMA", fontSize = 10.sp, color = BocattaPrimary, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                // Header
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = BocattaNeonCyan.copy(0.1f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.PrecisionManufacturing, null, tint = BocattaNeonCyan)
+                        }
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text("MÓDULO INDUSTRIAL", fontWeight = FontWeight.Black, fontSize = 10.sp, color = BocattaNeonCyan, letterSpacing = 1.sp)
+                        Text("REGISTRO DE PRODUCCIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
+                    }
+                }
 
-                Text("INSUMO A PRODUCIR", fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 1.sp)
+                Divider(color = Color.White.copy(0.05f))
+
+                Text("SELECCIONAR PRODUCTO BASE", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.6f))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(insumos) { id ->
                         FilterChip(
                             selected = insumoId == id,
                             onClick = { insumoId = id },
-                            label = { Text(id.replace("_", " ").uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                            shape = RoundedCornerShape(8.dp)
+                            label = { Text(id.replace("_", " ").uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = BocattaNeonCyan,
+                                selectedLabelColor = BocattaBgDark,
+                                labelColor = Color.White.copy(0.5f)
+                            )
                         )
                     }
                 }
 
-                OutlinedTextField(
-                    value = numeroDeTandas,
-                    onValueChange = { numeroDeTandas = it },
-                    label = { Text("NÚMERO DE TANDAS (LOTES)", fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BocattaPrimary, cursorColor = BocattaPrimary)
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    OutlinedTextField(
+                        value = numeroDeTandas,
+                        onValueChange = { numeroDeTandas = it },
+                        label = { Text("TANDAS", fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BocattaNeonCyan,
+                            unfocusedBorderColor = Color.White.copy(0.1f),
+                            focusedLabelColor = BocattaNeonCyan,
+                            unfocusedLabelColor = Color.White.copy(0.4f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
+                    )
 
-                OutlinedTextField(
-                    value = porcionesObtenidas,
-                    onValueChange = { porcionesObtenidas = it },
-                    label = { Text("PORCIONES RESULTANTES", fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                    supportingText = { Text("Rendimiento operativo estimado", fontSize = 10.sp) },
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BocattaPrimary)
-                )
+                    OutlinedTextField(
+                        value = porcionesObtenidas,
+                        onValueChange = { porcionesObtenidas = it },
+                        label = { Text("RESULTADO", fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BocattaNeonCyan,
+                            unfocusedBorderColor = Color.White.copy(0.1f),
+                            focusedLabelColor = BocattaNeonCyan,
+                            unfocusedLabelColor = Color.White.copy(0.4f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
+                    )
+                }
 
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(0.2f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, BocattaPrimary.copy(0.2f))
+                    color = Color.White.copy(0.03f),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(0.05f))
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, null, tint = BocattaPrimary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Analytics, null, tint = BocattaNeonCyan, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Esta acción descontará automáticamente los ingredientes de la Bodega Central (Global) y cargará $porcionesObtenidas unidades a tu inventario en ${sucursal.uppercase()}.",
+                            "Se descontarán ingredientes de Bodega Central y se cargarán $porcionesObtenidas unidades a ${sucursal.uppercase()}.",
                             fontSize = 11.sp,
-                            lineHeight = 14.sp,
+                            color = Color.White.copy(0.7f),
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                Button(
-                    onClick = {
-                        val mp = numeroDeTandas.toDoubleOrNull() ?: 0.0
-                        val po = porcionesObtenidas.toDoubleOrNull() ?: 0.0
-                        vm.registrarProduccion(
-                            insumoId = insumoId,
-                            porcionesObtenidas = po,
-                            materiaPrimaUsadaG = mp, 
-                            sobranteAnterior = 0.0,
-                            onResult = { if (it) onDismiss() }
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black) // Industrial aesthetic
-                ) {
-                    Icon(Icons.Default.PrecisionManufacturing, null, tint = Color.White)
-                    Spacer(Modifier.width(12.dp))
-                    Text("EJECUTAR PRODUCCIÓN", fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 1.sp)
-                }
-                
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text("CANCELAR OPERACIÓN", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NeonButton(
+                        texto = "EJECUTAR PRODUCCIÓN",
+                        onClick = {
+                            val mp = numeroDeTandas.toDoubleOrNull() ?: 0.0
+                            val po = porcionesObtenidas.toDoubleOrNull() ?: 0.0
+                            vm.registrarProduccion(
+                                insumoId = insumoId,
+                                porcionesObtenidas = po,
+                                tandasPreparadas = mp, 
+                                sobranteAnterior = 0.0,
+                                onResult = { if (it) onDismiss() }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = BocattaNeonCyan
+                    )
+                    
+                    TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                        Text("CANCELAR", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    }
                 }
             }
         }

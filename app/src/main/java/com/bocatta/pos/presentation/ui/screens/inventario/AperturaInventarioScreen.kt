@@ -1,9 +1,11 @@
 package com.bocatta.pos.presentation.ui.screens.inventario
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -14,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
 import com.bocatta.pos.presentation.viewmodel.SessionViewModel
 import com.bocatta.pos.presentation.ui.theme.*
+import com.bocatta.pos.presentation.ui.components.*
 import com.bocatta.pos.domain.model.ItemConteo
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
@@ -95,16 +99,27 @@ fun AperturaInventarioScreen(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("CARGA DE INVENTARIO", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            LargeTopAppBar(
+                title = { 
+                    Column {
+                        Text("CARGA DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("AUDITORÍA DE STOCK INICIAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    }
+                },
+                navigationIcon = { 
+                    IconButton(onClick = onBack) { 
+                        Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
             )
         },
         bottomBar = {
             Surface(
-                color = BocattaSurfaceDark.copy(0.9f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.1f)),
+                color = Color(0xFF0F111A).copy(0.95f),
+                border = BorderStroke(1.dp, Color.White.copy(0.1f)),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
@@ -117,15 +132,14 @@ fun AperturaInventarioScreen(
                                 if (exito) guardado = true
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(64.dp),
+                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = BocattaNeonCyan),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !cargando && !guardado && contados == total && total > 0,
-                        colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan),
-                        elevation = ButtonDefaults.buttonElevation(8.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan, contentColor = BocattaBgDark, disabledContainerColor = Color.White.copy(0.1f)),
                     ) {
-                        Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory, null, tint = BocattaBgDark)
+                        Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory, null)
                         Spacer(Modifier.width(12.dp))
-                        Text(if (guardado) "APERTURA REGISTRADA" else "CONFIRMAR ($contados/$total)", fontWeight = FontWeight.ExtraBold, color = BocattaBgDark)
+                        Text(if (guardado) "CARGA FINALIZADA" else "CONFIRMAR CARGA ($contados/$total)", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
                 }
             }
@@ -161,14 +175,23 @@ fun AperturaInventarioScreen(
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(24.dp),
-                            color = Color.White.copy(0.05f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(0.3f))
+                            shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp
+                            color = BocattaSurfaceDark,
+                            border = BorderStroke(1.dp, statusColor.copy(0.4f))
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(item.nombre, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                                    Text("Sistema: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f))
+                            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Column {
+                                        Text(item.nombre.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
+                                        Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+                                    }
+                                    
+                                    if (diferencia != null && Math.abs(diferencia) > 0.01) {
+                                        StatusBadgePremium(
+                                            text = if(diferencia > 0) "+${"%.1f".format(diferencia)}" else "${"%.1f".format(diferencia)}",
+                                            color = statusColor
+                                        )
+                                    }
                                 }
 
                                 OutlinedTextField(
@@ -177,15 +200,17 @@ fun AperturaInventarioScreen(
                                         val idx = itemsConteo.indexOf(item)
                                         if (idx >= 0) itemsConteo[idx] = item.copy(conteoFisico = nuevo)
                                     },
-                                    label = { Text("Conteo F\u00EDsico") },
+                                    label = { Text("CONTEO FÍSICO ACTUAL", fontWeight = FontWeight.Bold) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedBorderColor = statusColor,
                                         unfocusedBorderColor = Color.White.copy(0.1f),
-                                        focusedTextColor = MaterialTheme.colorScheme.onPrimary,
-                                        unfocusedTextColor = MaterialTheme.colorScheme.onPrimary
+                                        focusedTextColor = Color.White,
+                                        unfocusedTextColor = Color.White,
+                                        focusedLabelColor = statusColor,
+                                        unfocusedLabelColor = Color.White.copy(0.3f)
                                     )
                                 )
                             }
