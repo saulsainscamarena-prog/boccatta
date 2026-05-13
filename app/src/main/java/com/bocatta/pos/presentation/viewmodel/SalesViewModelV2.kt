@@ -69,11 +69,27 @@ class SalesViewModelV2(
    var mensajeFeedback: String?
       get() = _mensajeFeedback
       set(value) { _mensajeFeedback = value }
-   private var _metodoPagoSeleccionado by mutableStateOf(MetodoPago.EFECTIVO)
-   var metodoPagoSeleccionado: MetodoPago
-      get() = _metodoPagoSeleccionado
-      set(value) { _metodoPagoSeleccionado = value }
-   private var _esConsumoEmpleado by mutableStateOf(false)
+    private var _metodoPagoSeleccionado by mutableStateOf(MetodoPago.EFECTIVO)
+    var metodoPagoSeleccionado: MetodoPago
+       get() = _metodoPagoSeleccionado
+       set(value) { _metodoPagoSeleccionado = value }
+    private var _pagoMixtoActivo by mutableStateOf(false)
+    var pagoMixtoActivo: Boolean
+       get() = _pagoMixtoActivo
+       set(value) { _pagoMixtoActivo = value }
+    private val _montosMixtos = mutableStateMapOf<MetodoPago, Double>()
+    val montosMixtos: Map<MetodoPago, Double> get() = _montosMixtos
+
+    fun toggleMetodoMixto(metodo: MetodoPago, monto: Double) {
+        if (_montosMixtos.containsKey(metodo)) _montosMixtos.remove(metodo)
+        else _montosMixtos[metodo] = monto
+    }
+
+    fun actualizarMontoMixto(metodo: MetodoPago, monto: Double) {
+        _montosMixtos[metodo] = monto
+    }
+
+    private var _esConsumoEmpleado by mutableStateOf(false)
    var esConsumoEmpleado: Boolean
       get() = _esConsumoEmpleado
       set(value) { _esConsumoEmpleado = value }
@@ -96,11 +112,38 @@ class SalesViewModelV2(
    private val _promocionesActivas = mutableStateListOf<PromocionUniversal>()
    val promocionesActivas: List<PromocionUniversal> get() = _promocionesActivas
 
-   val descuentoPromociones by derivedStateOf {
-      promocionesEngine.calcular(_carrito, _promocionesActivas)
-   }
+    val descuentoPromociones by derivedStateOf {
+       promocionesEngine.calcular(_carrito, _promocionesActivas)
+    }
 
-   private var menuListener: ListenerRegistration? = null
+    private var _descuentoManual by mutableStateOf(0.0)
+    val descuentoManual: Double get() = _descuentoManual
+
+    fun aplicarDescuentoManual(porcentaje: Int) {
+       val base = (totalCarrito.toDouble() - _descuentoLealtad - descuentoPromociones).coerceAtLeast(0.0)
+       _descuentoManual = base * porcentaje / 100.0
+    }
+
+    fun limpiarDescuentoManual() {
+       _descuentoManual = 0.0
+    }
+
+    // Undo stack
+    private val _undoStack = mutableListOf<List<ItemCarritoV2>>()
+    val hayUndo: Boolean get() = _undoStack.isNotEmpty()
+
+    fun guardarEstadoParaUndo() {
+       _undoStack.add(_carrito.toList())
+       if (_undoStack.size > 20) _undoStack.removeFirst() // límite 20
+    }
+
+    fun undoLastAction() {
+       if (_undoStack.isEmpty()) return
+       _carrito.clear()
+       _carrito.addAll(_undoStack.removeLast())
+    }
+
+    private var menuListener: ListenerRegistration? = null
    private var stockListener: ListenerRegistration? = null
 
    val totalCarrito by derivedStateOf {
@@ -202,9 +245,10 @@ class SalesViewModelV2(
       toppings: List<String> = emptyList(), 
       esSeparado: Boolean = false,
       componentes: List<ItemCarritoV2> = emptyList()
-   ) {
-      val nota = buildString {
-         base?.let { append("Base: $it. ") }
+    ) {
+       guardarEstadoParaUndo()
+       val nota = buildString {
+          base?.let { append("Base: $it. ") }
          if (aderezos.isNotEmpty()) append("Aderezos: ${aderezos.joinToString(", ")}. ")
          if (toppings.isNotEmpty()) append("Extras: ${toppings.joinToString(", ")}")
          if (esSeparado) append(" (Separadas)")
@@ -251,7 +295,8 @@ class SalesViewModelV2(
    }
 
    fun eliminarDelCarrito(item: ItemCarritoV2, motivo: String, usuarioNombre: String, sucursal: String) {
-      _carrito.remove(item)
+       guardarEstadoParaUndo()
+       _carrito.remove(item)
       viewModelScope.launch {
          try {
             val logId = db.collection(FirestoreCollections.CANCELACIONES).document().id
@@ -426,13 +471,14 @@ class SalesViewModelV2(
       aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
    }
 
-   private fun calcularTotalVenta(): Double {
-      val total = totalCarrito
-         .subtract(BigDecimal.valueOf(_descuentoLealtad))
-         .subtract(BigDecimal.valueOf(descuentoPromociones))
-         .toDouble()
-      return if (total < 0) 0.0 else total
-   }
+    private fun calcularTotalVenta(): Double {
+       val total = totalCarrito
+          .subtract(BigDecimal.valueOf(_descuentoLealtad))
+          .subtract(BigDecimal.valueOf(descuentoPromociones))
+          .subtract(BigDecimal.valueOf(_descuentoManual))
+          .toDouble()
+       return if (total < 0) 0.0 else total
+    }
 
    private fun procesarVentaOffline(
       currentCarrito: List<ItemCarritoV2>,
@@ -500,6 +546,16 @@ class SalesViewModelV2(
          }
       }
    }
+
+    fun limpiarCarrito() {
+        guardarEstadoParaUndo()
+        _carrito.clear()
+        _clienteSeleccionado = null
+        _descuentoManual = 0.0
+        _metodoPagoSeleccionado = MetodoPago.EFECTIVO
+        _esConsumoEmpleado = false
+        _uiState.update { SalesUiState() }
+    }
 
     fun limpiarError() { mensajeError = null }
 

@@ -32,10 +32,10 @@ fun GestionarPromocionesScreen(
     if (usuarioActual.rol == Rol.VENDEDOR) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Icon(Icons.Default.Warning, contentDescription = "Bloqueado", modifier = Modifier.size(64.dp), tint = BocattaDanger)
-                Text("ACCESO DENEGADO", fontWeight = FontWeight.Black, fontSize = 24.sp, color = BocattaDanger)
+                Icon(Icons.Default.Warning, contentDescription = "Bloqueado", modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.error)
+                Text("ACCESO DENEGADO", fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.error)
                 Text("Solo Administradores y Dueños pueden gestionar promociones.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = BocattaPrimary)) {
+                Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
                     Text("Volver")
                 }
             }
@@ -63,7 +63,7 @@ fun GestionarPromocionesScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { mostrarDialogoNueva = true },
-                containerColor = BocattaPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(Icons.Default.Add, "Nueva") },
                 text = { Text("NUEVA PROMO", fontWeight = FontWeight.Bold) }
@@ -114,7 +114,7 @@ fun PromocionCardUI(promocion: PromocionUniversal) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(promocion.nombre, fontWeight = FontWeight.Black, fontSize = 18.sp, color = BocattaPrimary)
+                Text(promocion.nombre, fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                 Switch(checked = promocion.activa, onCheckedChange = { /* TODO: Toggle Status en backend */ })
             }
             if (promocion.descripcion.isNotBlank()) {
@@ -133,7 +133,7 @@ fun PromocionCardUI(promocion: PromocionUniversal) {
                         TipoDescuentoPromo.MONTO_FIJO_ITEM -> "-$${promocion.valorDescuento} c/u"
                         TipoDescuentoPromo.PRECIO_FIJO_ITEM -> "A $${promocion.valorDescuento}"
                     }
-                    Text(descStr, fontWeight = FontWeight.Black, color = BocattaSuccess)
+                    Text(descStr, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("ALCANCE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -150,8 +150,8 @@ fun PromocionCardUI(promocion: PromocionUniversal) {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     promocion.etiquetas.forEach { tag ->
-                        Surface(shape = RoundedCornerShape(8.dp), color = BocattaPrimary.copy(alpha = 0.1f)) {
-                            Text(tag.uppercase(), Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = BocattaPrimary)
+                        Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) {
+                            Text(tag.uppercase(), Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }

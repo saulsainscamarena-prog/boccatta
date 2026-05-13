@@ -61,7 +61,7 @@ fun GastosScreen(
                 title = {
                     Column {
                         Text("GASTOS Y OPERACIÓN", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("REGISTRO DE SALIDAS · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("REGISTRO DE SALIDAS · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -75,7 +75,7 @@ fun GastosScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
             LazyColumn(
                 modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -104,8 +104,8 @@ fun GastosScreen(
                                     label = { Text(insumo.nombre.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black) },
                                     shape = RoundedCornerShape(20.dp),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = BocattaNeonCyan,
-                                        selectedLabelColor = BocattaBgDark,
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.background,
                                         containerColor = Color.White.copy(0.05f),
                                         labelColor = Color.White.copy(0.6f)
                                     ),
@@ -113,7 +113,7 @@ fun GastosScreen(
                                         enabled = true,
                                         selected = selected,
                                         borderColor = Color.White.copy(0.1f),
-                                        selectedBorderColor = BocattaNeonCyan
+                                        selectedBorderColor = MaterialTheme.colorScheme.primary
                                     )
                                 )
                             }
@@ -126,7 +126,7 @@ fun GastosScreen(
                     Spacer(Modifier.height(12.dp))
                     Surface(
                         shape = RoundedCornerShape(28.dp),
-                        color = BocattaSurfaceDark,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                         border = BorderStroke(1.dp, Color.White.copy(0.1f))
                     ) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -138,7 +138,7 @@ fun GastosScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     shape = RoundedCornerShape(14.dp),
-                                    leadingIcon = { Icon(Icons.Default.Inventory2, null, tint = BocattaPrimary, modifier = Modifier.size(20.dp)) }
+                                    leadingIcon = { Icon(Icons.Default.Inventory2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
                                 )
                             }
 
@@ -220,7 +220,7 @@ fun GastosScreen(
                         BocattaMetricCardPremium(
                             titulo = "SALIDAS HOY",
                             valor = "$${"%.2f".format(vm.gastos.sumOf { it.monto })}",
-                            color = BocattaNeonMagenta,
+                            color = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.weight(1f)
                         )
                         BocattaMetricCardPremium(
@@ -256,7 +256,7 @@ fun GastosScreen(
 @Composable
 fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
     val (icono, color) = when (gasto.categoria) {
-        "Insumo" -> Icons.Default.Inventory2 to BocattaNeonCyan
+        "Insumo" -> Icons.Default.Inventory2 to MaterialTheme.colorScheme.primary
         "Servicios" -> Icons.Default.ElectricalServices to Color(0xFF4FC3F7)
         "Sueldos" -> Icons.Default.Person to Color(0xFF81C784)
         "Renta" -> Icons.Default.Home to Color(0xFFBA68C8)
@@ -267,7 +267,7 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = BocattaSurfaceDark,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         border = BorderStroke(1.dp, color.copy(0.3f))
     ) {
         Row(
@@ -285,7 +285,7 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
                 Text(gasto.descripcion.uppercase(), fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1, color = Color.White)
                 StatusBadgePremium(gasto.categoria.uppercase(), color)
             }
-            Text("-$${"%.2f".format(gasto.monto)}", fontWeight = FontWeight.Black, color = BocattaNeonMagenta, fontSize = 16.sp)
+            Text("-$${"%.2f".format(gasto.monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp)
             IconButton(onClick = onEliminar) {
                 Icon(Icons.Default.Delete, null, tint = Color.White.copy(0.2f))
             }

@@ -96,7 +96,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
                 title = {
                     Column {
                         Text("LOGÍSTICA GLOBAL", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("CONTROL DE STOCK Y TRANSFERENCIAS", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("CONTROL DE STOCK Y TRANSFERENCIAS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -110,7 +110,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -125,7 +125,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
                         onClick = { selectedInsumo = insumo; showDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),
-                        color = BocattaSurfaceDark,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                         border = BorderStroke(1.dp, Color.White.copy(0.1f))
                     ) {
                         Row(
@@ -136,7 +136,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
                             Text(insumo.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
                             StatusBadgePremium(
                                 text = "${stock.toInt()} UNIDADES",
-                                color = if (stock > 10) BocattaNeonCyan else BocattaNeonMagenta
+                                color = if (stock > 10) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
                             )
                         }
                     }

@@ -48,7 +48,7 @@ fun InventoryScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = Color.Transparent,
@@ -57,7 +57,7 @@ fun InventoryScreen(
                     title = { 
                         Column {
                             Text("GESTIÓN DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 2.sp, color = Color.White)
-                            Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         }
                     },
                     navigationIcon = {
@@ -71,7 +71,7 @@ fun InventoryScreen(
                         if (session.esAdmin) {
                             var mostrarPin by remember { mutableStateOf(false) }
                             IconButton(onClick = { mostrarPin = true }) { 
-                                Icon(Icons.Default.FlashOn, null, tint = BocattaNeonMagenta) 
+                                Icon(Icons.Default.FlashOn, null, tint = MaterialTheme.colorScheme.tertiary) 
                             }
                             if (mostrarPin) {
                                 com.bocatta.pos.presentation.ui.components.AdminPinDialog(
@@ -89,7 +89,7 @@ fun InventoryScreen(
                         }
                         IconButton(onClick = onAperturaInventario) { Icon(Icons.Default.Login, null, tint = Color.White.copy(0.7f)) }
                         IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, null, tint = Color.White.copy(0.7f)) }
-                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, null, tint = BocattaNeonCyan) }
+                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, null, tint = MaterialTheme.colorScheme.primary) }
                     },
                     colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
                 )
@@ -99,14 +99,14 @@ fun InventoryScreen(
                     texto = "REGISTRAR PRODUCCIÓN",
                     onClick = { mostrarRegistroProduccion = true },
                     modifier = Modifier.padding(16.dp),
-                    color = BocattaNeonCyan
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         ) { padding ->
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
                 if (vm.cargando) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BocattaNeonCyan)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else {
                     LazyVerticalGrid(
@@ -143,14 +143,14 @@ fun InventoryScreen(
 @Composable
 fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoStock: Boolean) {
     Surface(
-        color = BocattaSurfaceDark,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, if(bajoStock) BocattaDanger.copy(0.4f) else Color.White.copy(0.08f)),
+        border = BorderStroke(1.dp, if(bajoStock) MaterialTheme.colorScheme.error.copy(0.4f) else Color.White.copy(0.08f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
-                color = if(bajoStock) BocattaDanger.copy(0.1f) else BocattaNeonCyan.copy(0.1f),
+                color = if(bajoStock) MaterialTheme.colorScheme.error.copy(0.1f) else MaterialTheme.colorScheme.primary.copy(0.1f),
                 shape = CircleShape,
                 modifier = Modifier.size(56.dp)
             ) {
@@ -158,7 +158,7 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoS
                     Icon(
                         if(bajoStock) Icons.Default.Warning else Icons.Default.Inventory2, 
                         null, 
-                        tint = if(bajoStock) BocattaDanger else BocattaNeonCyan,
+                        tint = if(bajoStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -166,10 +166,10 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoS
             Spacer(Modifier.width(20.dp))
             Column(Modifier.weight(1f)) {
                 Text(nombre, fontWeight = FontWeight.Black, fontSize = 14.sp, color = Color.White, letterSpacing = 1.sp)
-                Text("${"%.1f".format(cantidad)} $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) BocattaDanger else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
+                Text("${"%.1f".format(cantidad)} $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) MaterialTheme.colorScheme.error else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
             }
             if (bajoStock) {
-                StatusBadgePremium("ALERTA", BocattaDanger)
+                StatusBadgePremium("ALERTA", MaterialTheme.colorScheme.error)
             }
         }
     }

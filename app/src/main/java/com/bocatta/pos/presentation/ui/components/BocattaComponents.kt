@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -134,7 +135,7 @@ fun BocattaButton(
     enabled: Boolean = true,
     cargando: Boolean = false,
     icono: ImageVector? = null,
-    color: Color = BocattaPrimary
+    color: Color = MaterialTheme.colorScheme.primary
 ) {
     Button(
         onClick = onClick,
@@ -268,7 +269,7 @@ fun BocattaLoadingDialog(mensaje: String = "Procesando...") {
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(28.dp),
-                    color = BocattaPrimary,
+                    color = MaterialTheme.colorScheme.primary,
                     strokeWidth = 3.dp
                 )
                 Text(mensaje, style = MaterialTheme.typography.bodyMedium)
@@ -338,10 +339,11 @@ fun normalizarCategoria(categoria: String): String {
 fun BocattaCartItemRow(
     item: ItemCarritoV2,
     onEliminar: () -> Unit,
+    onEditar: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Color.White.copy(0.03f),
+        color = MaterialTheme.colorScheme.onSurface.copy(0.03f),
         shape = RoundedCornerShape(12.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -354,14 +356,14 @@ fun BocattaCartItemRow(
                     item.nombre.uppercase(),
                     fontWeight = FontWeight.Black,
                     fontSize = 12.sp,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 0.5.sp
                 )
                 if (item.nota.isNotBlank()) {
                     Text(
                         item.nota.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(0.4f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         lineHeight = 12.sp
@@ -371,16 +373,23 @@ fun BocattaCartItemRow(
             Text(
                 "$${"%.2f".format(item.precioFinal.toDouble() * item.cantidad)}",
                 fontWeight = FontWeight.Black,
-                color = BocattaNeonCyan,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp
             )
             Spacer(Modifier.width(8.dp))
+            if (onEditar != null) {
+                IconButton(onClick = onEditar, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Create, contentDescription = "Editar",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+                        modifier = Modifier.size(16.dp))
+                }
+            }
             IconButton(
                 onClick = onEliminar,
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(Icons.Default.Close, contentDescription = "Eliminar",
-                    tint = BocattaDanger.copy(0.6f),
+                    tint = MaterialTheme.colorScheme.error.copy(0.6f),
                     modifier = Modifier.size(16.dp))
             }
         }
@@ -419,7 +428,7 @@ fun BocattaSearchBar(
         shape = RoundedCornerShape(28.dp),
         leadingIcon = {
             Icon(Icons.Default.Search, null,
-                tint = BocattaNeonCyan, modifier = Modifier.size(20.dp))
+                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         },
         trailingIcon = {
             if (localQuery.isNotEmpty()) {
@@ -435,7 +444,7 @@ fun BocattaSearchBar(
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedBorderColor = Color.White.copy(0.1f),
-            focusedBorderColor = BocattaNeonCyan,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedContainerColor = Color.White.copy(0.05f),
             focusedContainerColor = Color.White.copy(0.05f),
             focusedTextColor = Color.White,

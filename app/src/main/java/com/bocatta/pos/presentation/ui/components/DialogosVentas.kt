@@ -35,12 +35,12 @@ fun ConfirmacionVentaDialog(
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        icon = { Icon(Icons.Default.CheckCircle, null, tint = BocattaSuccess, modifier = Modifier.size(48.dp)) },
+        icon = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) },
         title = { Text("¡VENTA EXITOSA!", fontWeight = FontWeight.Black, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = { 
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 Text("Código de ticket:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("🎫 ${vmV2.ultimoCodigoTicket}", fontWeight = FontWeight.Black, fontSize = 28.sp, color = BocattaPrimary)
+                Text("🎫 ${vmV2.ultimoCodigoTicket}", fontWeight = FontWeight.Black, fontSize = 28.sp, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
                 Text("en ${sucursalActual.uppercase()}", textAlign = TextAlign.Center)
             }
@@ -61,7 +61,7 @@ fun ConfirmacionVentaDialog(
                     onDismiss()
                 }, 
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BocattaSuccess)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) { 
                 Icon(Icons.Default.Share, null)
                 Spacer(Modifier.width(8.dp))
@@ -89,7 +89,7 @@ fun BuscarClienteDialog(
         onDismissRequest = onDismiss,
         title = { 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.People, contentDescription = "Cliente frecuente", tint = BocattaPrimary)
+                Icon(Icons.Default.People, contentDescription = "Cliente frecuente", tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
                 Text("CLIENTE FRECUENTE", fontWeight = FontWeight.Black) 
             }
@@ -113,9 +113,9 @@ fun BuscarClienteDialog(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Surface(color = BocattaPrimary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                Surface(color = MaterialTheme.colorScheme.primary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text(c.nombre.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Black, color = BocattaPrimary)
+                                        Text(c.nombre.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                                 Spacer(Modifier.width(12.dp))
@@ -214,7 +214,15 @@ fun PagoDialog(
     onDismiss: () -> Unit
 ) {
     var pagaCon by remember { mutableStateOf("") }
-    val total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones).coerceAtLeast(0.0)
+    var propinaCustom by remember { mutableStateOf("") }
+    var propinaPorcentaje by remember { mutableStateOf(0) }
+    val propina = if (propinaPorcentaje > 0) {
+        (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones).coerceAtLeast(0.0) * propinaPorcentaje / 100.0
+    } else {
+        propinaCustom.toDoubleOrNull() ?: 0.0
+    }
+    var notaOrden by remember { mutableStateOf("") }
+    val total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones).coerceAtLeast(0.0) + propina
     val cambio = (pagaCon.toDoubleOrNull() ?: 0.0) - total
     val esAdmin = vmV2.rolUsuario == com.bocatta.pos.domain.model.Rol.ADMIN
     
@@ -222,7 +230,7 @@ fun PagoDialog(
         onDismissRequest = onDismiss,
         title = { 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Payment, contentDescription = "Pago", tint = BocattaPrimary)
+                Icon(Icons.Default.Payment, contentDescription = "Pago", tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
                 Text("PAGO FINAL", fontWeight = FontWeight.Black) 
             }
@@ -237,56 +245,145 @@ fun PagoDialog(
                 ) {
                     Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("TOTAL A PAGAR", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("$${"%.2f".format(total)}", fontSize = 36.sp, fontWeight = FontWeight.Black, color = BocattaPrimary)
+                        Text("$${"%.2f".format(total)}", fontSize = 36.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                        if (propina > 0) {
+                            Text("(incluye $${"%.2f".format(propina)} de propina)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
+
+                // Nota de orden
+                OutlinedTextField(
+                    value = notaOrden,
+                    onValueChange = { notaOrden = it },
+                    label = { Text("Nota para la orden") },
+                    placeholder = { Text("Ej: Sin cebolla, mesa 5, para llevar...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+
+                // Propina
+                Text("PROPINA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(10, 15, 20).forEach { pct ->
+                        FilterChip(
+                            selected = propinaPorcentaje == pct,
+                            onClick = { propinaPorcentaje = if (propinaPorcentaje == pct) 0 else pct; propinaCustom = "" },
+                            label = { Text("$pct%") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    }
+                    OutlinedTextField(
+                        value = propinaCustom,
+                        onValueChange = { propinaCustom = it.filter { c -> c.isDigit() || c == '.' }; propinaPorcentaje = 0 },
+                        modifier = Modifier.width(100.dp).height(48.dp),
+                        placeholder = { Text("$$") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
                 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = { vmV2.metodoPagoSeleccionado = MetodoPago.EFECTIVO }, 
-                        modifier = Modifier.weight(1f).height(48.dp), 
-                        shape = RoundedCornerShape(14.dp), 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.EFECTIVO) BocattaPrimary else MaterialTheme.colorScheme.surfaceVariant, 
-                            contentColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.EFECTIVO) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { 
-                        Text("Efectivo", fontSize = 12.sp) 
+                // Toggle pago mixto
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("PAGO MIXTO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(8.dp))
+                    Switch(
+                        checked = vmV2.pagoMixtoActivo,
+                        onCheckedChange = { vmV2.pagoMixtoActivo = it },
+                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+
+                if (vmV2.pagoMixtoActivo) {
+                    listOf(MetodoPago.EFECTIVO, MetodoPago.TARJETA, MetodoPago.TRANSFERENCIA).forEach { metodo ->
+                        val montoActual = vmV2.montosMixtos[metodo] ?: 0.0
+                        val seleccionado = vmV2.montosMixtos.containsKey(metodo)
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = seleccionado,
+                                onCheckedChange = { vmV2.toggleMetodoMixto(metodo, 0.0) }
+                            )
+                            Text(metodo.valor, modifier = Modifier.weight(1f), fontSize = 13.sp)
+                            if (seleccionado) {
+                                OutlinedTextField(
+                                    value = if (montoActual > 0) "%.2f".format(montoActual) else "",
+                                    onValueChange = { vmV2.actualizarMontoMixto(metodo, it.toDoubleOrNull() ?: 0.0) },
+                                    modifier = Modifier.width(100.dp).height(48.dp),
+                                    placeholder = { Text("$$") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                    )
+                                )
+                            }
+                        }
                     }
-                    Button(
-                        onClick = { vmV2.metodoPagoSeleccionado = MetodoPago.TARJETA }, 
-                        modifier = Modifier.weight(1f).height(48.dp), 
-                        shape = RoundedCornerShape(14.dp), 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TARJETA) BocattaPrimary else MaterialTheme.colorScheme.surfaceVariant, 
-                            contentColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TARJETA) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { 
-                        Text("Tarjeta", fontSize = 12.sp) 
-                    }
-                    Button(
-                        onClick = { vmV2.metodoPagoSeleccionado = MetodoPago.TRANSFERENCIA }, 
-                        modifier = Modifier.weight(1f).height(48.dp), 
-                        shape = RoundedCornerShape(14.dp), 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TRANSFERENCIA) BocattaPrimary else MaterialTheme.colorScheme.surfaceVariant, 
-                            contentColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TRANSFERENCIA) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { 
-                        Text("Transf.", fontSize = 12.sp) 
+                } else {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { vmV2.metodoPagoSeleccionado = MetodoPago.EFECTIVO }, 
+                            modifier = Modifier.weight(1f).height(48.dp), 
+                            shape = RoundedCornerShape(14.dp), 
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.EFECTIVO) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, 
+                                contentColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.EFECTIVO) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) { 
+                            Text("Efectivo", fontSize = 12.sp) 
+                        }
+                        Button(
+                            onClick = { vmV2.metodoPagoSeleccionado = MetodoPago.TARJETA }, 
+                            modifier = Modifier.weight(1f).height(48.dp), 
+                            shape = RoundedCornerShape(14.dp), 
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TARJETA) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, 
+                                contentColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TARJETA) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) { 
+                            Text("Tarjeta", fontSize = 12.sp) 
+                        }
+                        Button(
+                            onClick = { vmV2.metodoPagoSeleccionado = MetodoPago.TRANSFERENCIA }, 
+                            modifier = Modifier.weight(1f).height(48.dp), 
+                            shape = RoundedCornerShape(14.dp), 
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TRANSFERENCIA) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, 
+                                contentColor = if (vmV2.metodoPagoSeleccionado == MetodoPago.TRANSFERENCIA) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) { 
+                            Text("Transf.", fontSize = 12.sp) 
+                        }
                     }
                 }
 
                 if (esAdmin) {
                     Surface(
                         onClick = { vmV2.esConsumoEmpleado = !vmV2.esConsumoEmpleado },
-                        color = if (vmV2.esConsumoEmpleado) BocattaNeonGreen.copy(0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(0.3f),
+                        color = if (vmV2.esConsumoEmpleado) MaterialTheme.colorScheme.tertiary.copy(0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(0.3f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, if (vmV2.esConsumoEmpleado) BocattaNeonGreen else Color.Transparent)
+                        border = BorderStroke(1.dp, if (vmV2.esConsumoEmpleado) MaterialTheme.colorScheme.tertiary else Color.Transparent)
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = vmV2.esConsumoEmpleado, onCheckedChange = { vmV2.esConsumoEmpleado = it })
@@ -309,15 +406,29 @@ fun PagoDialog(
                         prefix = { Text("$ ") },
                         shape = RoundedCornerShape(12.dp)
                     )
+                    Spacer(Modifier.height(8.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(20, 50, 100, 200, 500, 1000).forEach { denom ->
+                            FilterChip(
+                                selected = pagaCon == denom.toString(),
+                                onClick = { pagaCon = denom.toString() },
+                                label = { Text("$$denom") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                    }
                     if (pagaCon.isNotEmpty() && cambio >= 0) {
                         Surface(
-                            color = BocattaPrimary.copy(0.1f), 
+                            color = MaterialTheme.colorScheme.primary.copy(0.1f), 
                             shape = RoundedCornerShape(12.dp), 
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("CAMBIO:", fontWeight = FontWeight.Black, color = BocattaPrimary)
-                                Text("$${"%.2f".format(cambio)}", fontSize = 24.sp, fontWeight = FontWeight.Black, color = BocattaPrimary)
+                                Text("CAMBIO:", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text("$${"%.2f".format(cambio)}", fontSize = 24.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -326,15 +437,15 @@ fun PagoDialog(
                 val itemsSinStock = vmV2.carrito.filter { item -> (vmV2.alertasStock[item.producto.id] ?: 99.0) <= 0 }
                 if (itemsSinStock.isNotEmpty()) {
                     Surface(
-                        color = BocattaDanger.copy(0.1f),
+                        color = MaterialTheme.colorScheme.error.copy(0.1f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, BocattaDanger)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
                     ) {
                         Text(
                             "STOCK INSUFICIENTE: ${itemsSinStock.joinToString { it.nombre }}",
                             modifier = Modifier.padding(12.dp),
-                            color = BocattaDanger,
+                            color = MaterialTheme.colorScheme.error,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -350,7 +461,7 @@ fun PagoDialog(
                 onClick = { vmV2.finalizarVenta(sucursalActual, nombreUsuario) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BocattaPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) { 
                 if (vmV2.cargando) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
@@ -391,7 +502,7 @@ fun EliminarItemDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(motivo) }, enabled = motivo.isNotBlank(), colors = ButtonDefaults.buttonColors(containerColor = BocattaDanger)) {
+            Button(onClick = { onConfirm(motivo) }, enabled = motivo.isNotBlank(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
                 Text("Eliminar")
             }
         },

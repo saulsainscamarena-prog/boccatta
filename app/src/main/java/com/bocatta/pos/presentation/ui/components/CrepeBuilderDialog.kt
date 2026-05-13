@@ -20,6 +20,16 @@ import com.bocatta.pos.presentation.viewmodel.SalesViewModelV2
 import com.bocatta.pos.presentation.ui.theme.*
 import java.math.BigDecimal
 
+@Composable
+fun SectionTitle(title: String, color: Color) {
+    Column {
+        Text(title, fontWeight = FontWeight.Black, fontSize = 14.sp, color = color, letterSpacing = 1.sp)
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(color.copy(0.2f)))
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
 data class ConfigCrepa(
     val base: String? = null,
     val aderezos: List<String> = emptyList(),
@@ -61,8 +71,8 @@ fun CrepeBuilderDialog(
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = BocattaBgDark,
-            border = BorderStroke(1.dp, Color.White.copy(0.1f))
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
         ) {
             Column(
                 modifier = Modifier.padding(24.dp).verticalScroll(scrollState)
@@ -71,7 +81,7 @@ fun CrepeBuilderDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val configActual = configs[currentConfigIndex]
                     Surface(
-                        color = if(configActual.esSalada) BocattaNeonCyan.copy(0.1f) else BocattaNeonMagenta.copy(0.1f),
+                        color = if(configActual.esSalada) MaterialTheme.colorScheme.primary.copy(0.1f) else MaterialTheme.colorScheme.tertiary.copy(0.1f),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.size(56.dp)
                     ) {
@@ -79,7 +89,7 @@ fun CrepeBuilderDialog(
                             Icon(
                                 if(configActual.esSalada) Icons.Default.LunchDining else Icons.Default.Icecream, 
                                 null, 
-                                tint = if(configActual.esSalada) BocattaNeonCyan else BocattaNeonMagenta,
+                                tint = if(configActual.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -91,10 +101,10 @@ fun CrepeBuilderDialog(
                             else "ORDEN PERSONALIZADA", 
                             fontWeight = FontWeight.Black, 
                             fontSize = 11.sp, 
-                            color = if(configActual.esSalada) BocattaNeonCyan else BocattaNeonMagenta, 
+                            color = if(configActual.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary, 
                             letterSpacing = 1.sp
                         )
-                        Text(producto.nombre.uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
+                        Text(producto.nombre.uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
@@ -105,7 +115,7 @@ fun CrepeBuilderDialog(
                             val active = currentConfigIndex == i
                             Surface(
                                 onClick = { currentConfigIndex = i },
-                                color = if (active) (if(configs[i].esSalada) BocattaNeonCyan else BocattaNeonMagenta) else Color.White.copy(0.1f),
+                                color = if (active) (if(configs[i].esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary) else MaterialTheme.colorScheme.onSurface.copy(0.1f),
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier.weight(1f).height(4.dp)
                             ) {}
@@ -119,27 +129,27 @@ fun CrepeBuilderDialog(
 
                 // SECCIÓN: TIPO (Dulce/Salada) - Solo si el producto lo permite o es combo dinámico
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("TIPO DE CREPA:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.5f))
+                    Text("TIPO DE CREPA:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                     Spacer(Modifier.width(12.dp))
                     FilterChip(
                         selected = !currentConfig.esSalada,
                         onClick = { configs[currentConfigIndex] = currentConfig.copy(esSalada = false) },
                         label = { Text("DULCE") },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BocattaNeonMagenta, selectedLabelColor = Color.White)
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.tertiary, selectedLabelColor = MaterialTheme.colorScheme.onTertiary)
                     )
                     Spacer(Modifier.width(8.dp))
                     FilterChip(
                         selected = currentConfig.esSalada,
                         onClick = { configs[currentConfigIndex] = currentConfig.copy(esSalada = true) },
                         label = { Text("SALADA") },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BocattaNeonCyan, selectedLabelColor = Color.White)
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = MaterialTheme.colorScheme.onPrimary)
                     )
                 }
 
                 Spacer(Modifier.height(16.dp))
 
                 // SECCIÓN: BASE
-                SectionTitle("BASE / UNTABLE", if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
+                SectionTitle("BASE / UNTABLE", if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                 val bases = if(currentConfig.esSalada) listOf("Sin Base", "Salsa Tomate", "Queso Crema") else listOf("Sin Base", "Nutella", "Philadelphia", "Lechera", "Mermelada Fresa")
                 
                 FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -151,9 +161,9 @@ fun CrepeBuilderDialog(
                             label = { Text(b) },
                             shape = RoundedCornerShape(12.dp),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta,
-                                selectedLabelColor = BocattaBgDark,
-                                labelColor = Color.White.copy(0.6f)
+                                selectedContainerColor = if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                                selectedLabelColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface.copy(0.6f)
                             )
                         )
                     }
@@ -162,7 +172,7 @@ fun CrepeBuilderDialog(
                 Spacer(Modifier.height(24.dp))
 
                 // SECCIÓN: ADEREZOS (MULTI-SELECCIÓN)
-                SectionTitle("ADEREZOS (VARIOS)", if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
+                SectionTitle("ADEREZOS (VARIOS)", if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                 val aderezos = if(currentConfig.esSalada) 
                     listOf("Mayonesa", "Catsup", "Mostaza", "Chipotle", "Ranch", "Valentina")
                 else 
@@ -180,8 +190,8 @@ fun CrepeBuilderDialog(
                             label = { Text(a) },
                             shape = RoundedCornerShape(12.dp),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta,
-                                selectedLabelColor = BocattaBgDark
+                                selectedContainerColor = if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                                selectedLabelColor = MaterialTheme.colorScheme.surface
                             )
                         )
                     }
@@ -190,7 +200,7 @@ fun CrepeBuilderDialog(
                 Spacer(Modifier.height(24.dp))
 
                 // SECCIÓN: TOPPINGS
-                SectionTitle("TOPPINGS", if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
+                SectionTitle("TOPPINGS", if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
     // Hardcoded placeholder toppings list
     val toppingsOpts = listOf("Fresa", "Nutella", "Oreo", "Choco Chips")
     
@@ -203,22 +213,21 @@ fun CrepeBuilderDialog(
                     configs[currentConfigIndex] = currentConfig.copy(toppings = newList)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                color = if (isSelected) (if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta).copy(0.1f) else Color.White.copy(0.03f),
+                color = if (isSelected) (if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary).copy(0.1f) else MaterialTheme.colorScheme.onSurface.copy(0.03f),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, if (isSelected) (if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta) else Color.White.copy(0.08f))
+                border = BorderStroke(1.dp, if (isSelected) (if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary) else MaterialTheme.colorScheme.outlineVariant.copy(0.4f))
             ) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = isSelected,
                         onCheckedChange = null,
-                        colors = CheckboxDefaults.colors(checkedColor = if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
+                        colors = CheckboxDefaults.colors(checkedColor = if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text(topping, color = Color.White, fontSize = 16.sp)
+Text(topping, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
                 }
             }
         }
-    }
 
 
                 Spacer(Modifier.height(32.dp))
@@ -230,11 +239,11 @@ fun CrepeBuilderDialog(
                             onClick = { currentConfigIndex++ },
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Text("SIGUIENTE ITEM", fontWeight = FontWeight.Black, color = BocattaBgDark)
+                            Text("SIGUIENTE ITEM", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.surface)
                             Spacer(Modifier.width(8.dp))
-                            Icon(Icons.Default.ArrowForward, null, tint = BocattaBgDark)
+                            Icon(Icons.Default.ArrowForward, null, tint = MaterialTheme.colorScheme.surface)
                         }
                     } else {
                         OutlinedButton(
@@ -242,7 +251,7 @@ fun CrepeBuilderDialog(
                             modifier = Modifier.weight(1f).height(60.dp),
                             shape = RoundedCornerShape(20.dp)
                         ) {
-                            Text("CANCELAR", color = Color.White)
+                            Text("CANCELAR", color = MaterialTheme.colorScheme.onSurface)
                         }
                         Button(
                             onClick = { 
@@ -266,11 +275,11 @@ fun CrepeBuilderDialog(
                             },
                             modifier = Modifier.weight(1.5f).height(60.dp),
                             shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
+                            colors = ButtonDefaults.buttonColors(containerColor = if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                         ) {
-                            Icon(Icons.Default.AddShoppingCart, null, tint = BocattaBgDark)
+                            Icon(Icons.Default.AddShoppingCart, null, tint = MaterialTheme.colorScheme.surface)
                             Spacer(Modifier.width(8.dp))
-                            Text("CONFIRMAR TODO", fontWeight = FontWeight.Black, color = BocattaBgDark)
+                            Text("CONFIRMAR TODO", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.surface)
                         }
                     }
                 }
@@ -278,13 +287,4 @@ fun CrepeBuilderDialog(
         }
     }
 }
-
-@Composable
-fun SectionTitle(title: String, color: Color) {
-    Column {
-        Text(title, fontWeight = FontWeight.Black, fontSize = 14.sp, color = color, letterSpacing = 1.sp)
-        Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(color.copy(0.2f)))
-        Spacer(Modifier.height(12.dp))
-    }
 }

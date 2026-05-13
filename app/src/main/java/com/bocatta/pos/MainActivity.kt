@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
             val useDark = sessionVm.modoOscuroManual ?: systemDark
 
-            BocattaTheme(darkTheme = false) {
+            BocattaTheme(darkTheme = useDark, dynamicColor = true) {
                 val navController = rememberNavController()
 
                 LaunchedEffect(authVm.estaLogueado) {

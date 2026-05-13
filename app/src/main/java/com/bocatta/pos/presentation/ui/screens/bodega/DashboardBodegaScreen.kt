@@ -16,10 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
 import com.bocatta.pos.presentation.viewmodel.DashboardBodegaViewModel
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
-import com.bocatta.pos.presentation.ui.theme.BocattaDanger
-import com.bocatta.pos.presentation.ui.theme.BocattaWarning
-import com.bocatta.pos.presentation.ui.theme.BocattaSuccess
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +39,7 @@ fun DashboardBodegaScreen(
     ) { padding ->
         if (vm.cargando) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = BocattaPrimary)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             LazyColumn(
@@ -61,19 +57,19 @@ fun DashboardBodegaScreen(
                     ) {
                         Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${vm.totalInsumos}", fontWeight = FontWeight.Black, fontSize = 24.sp, color = BocattaPrimary)
+                                Text("${vm.totalInsumos}", fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
                                 Text("Insumos", fontSize = 11.sp)
                             }
                         }
                         Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${vm.promedioStock.toInt()}%", fontWeight = FontWeight.Black, fontSize = 24.sp, color = if (vm.promedioStock >= 50) BocattaSuccess else BocattaWarning)
+                                Text("${vm.promedioStock.toInt()}%", fontWeight = FontWeight.Black, fontSize = 24.sp, color = if (vm.promedioStock >= 50) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
                                 Text("Stock Prom", fontSize = 11.sp)
                             }
                         }
                         Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${vm.cantidadCriticos}", fontWeight = FontWeight.Black, fontSize = 24.sp, color = if (vm.cantidadCriticos > 0) BocattaDanger else BocattaSuccess)
+                                Text("${vm.cantidadCriticos}", fontWeight = FontWeight.Black, fontSize = 24.sp, color = if (vm.cantidadCriticos > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                                 Text("Cr�ticos", fontSize = 11.sp)
                             }
                         }
@@ -81,7 +77,7 @@ fun DashboardBodegaScreen(
                 }
                 
                 if (vm.cantidadCriticos > 0) {
-                    item { Text("?? CR�TICO", fontWeight = FontWeight.Bold, color = BocattaDanger) }
+                    item { Text("?? CR�TICO", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) }
                     
                     items(vm.insumos.filter { it.esCritico }) { insumo ->
                         ElevatedCard(
@@ -94,7 +90,7 @@ fun DashboardBodegaScreen(
                                         Text(insumo.id.replace("_", " ").replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Bold)
                                         Text("${insumo.diasRestantes} d�as restantes", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    Text("${insumo.cantidadGlobal.toInt()}u", fontWeight = FontWeight.Black, color = BocattaDanger)
+                                    Text("${insumo.cantidadGlobal.toInt()}u", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.error)
                                 }
                                 if (insumoExpandido == insumo.id) {
                                     Spacer(Modifier.height(8.dp))
@@ -102,7 +98,7 @@ fun DashboardBodegaScreen(
                                         val stock = insumo.stockPorSucursal[suc] ?: 0.0
                                         Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp)) {
                                             Text("  ?? $suc: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            Text("${stock.toInt()}u", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (stock > 0) BocattaSuccess else BocattaDanger)
+                                            Text("${stock.toInt()}u", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (stock > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
                                         }
                                     }
                                 }
@@ -111,7 +107,7 @@ fun DashboardBodegaScreen(
                     }
                 }
                 
-                item { Text("?? NORMAL", fontWeight = FontWeight.Bold, color = BocattaSuccess) }
+                item { Text("?? NORMAL", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
                 
                 items(vm.insumos.filter { !it.esCritico }) { insumo ->
                     ElevatedCard(
@@ -121,7 +117,7 @@ fun DashboardBodegaScreen(
                         Column(Modifier.padding(12.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Text(insumo.id.replace("_", " ").replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Medium)
-                                Text("${insumo.cantidadGlobal.toInt()}u", fontWeight = FontWeight.Bold, color = BocattaSuccess)
+                                Text("${insumo.cantidadGlobal.toInt()}u", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                             if (insumoExpandido == insumo.id) {
                                 Spacer(Modifier.height(8.dp))
@@ -129,7 +125,7 @@ fun DashboardBodegaScreen(
                                     val stock = insumo.stockPorSucursal[suc] ?: 0.0
                                     Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp)) {
                                         Text("  ?? $suc: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("${stock.toInt()}u", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (stock > 0) BocattaSuccess else BocattaWarning)
+                                        Text("${stock.toInt()}u", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (stock > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
                                     }
                                 }
                             }

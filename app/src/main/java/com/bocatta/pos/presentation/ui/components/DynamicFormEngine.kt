@@ -13,7 +13,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.InventoryProductV2
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
 
 sealed class FormField(
     val key: String,
@@ -136,7 +135,7 @@ fun DynamicProductForm(
             text = "Atributos: ${sanitizeLabel(schema.label)}",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = BocattaPrimary
+            color = MaterialTheme.colorScheme.primary
         )
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -340,7 +339,7 @@ fun GiroSelector(
                 shape = RoundedCornerShape(8.dp),
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BocattaPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )

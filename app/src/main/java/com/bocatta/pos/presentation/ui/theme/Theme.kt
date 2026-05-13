@@ -1,5 +1,6 @@
 ﻿package com.bocatta.pos.presentation.ui.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -10,39 +11,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 
-private val LightColorScheme = lightColorScheme(
-    primary = BocattaPrimary,
-    onPrimary = Color.White,
-    secondary = BocattaSecondary,
-    onSecondary = Color.White,
-    background = BocattaBg,
-    onBackground = BocattaOnSurface,
-    surface = BocattaSurface,
-    onSurface = BocattaOnSurface,
-    error = BocattaDanger
-)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = BocattaNeonMagenta,
-    onPrimary = Color.White,
-    secondary = BocattaNeonCyan,
-    onSecondary = Color.White,
-    background = BocattaBgDark,
-    onBackground = BocattaOnSurfaceDark,
-    surface = BocattaSurfaceDark,
-    onSurface = BocattaOnSurfaceDark,
-    error = BocattaDanger,
-    outline = Color.White.copy(alpha = 0.12f)
-)
-
 @Composable
-fun BocattaTheme(
+fun M3Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    // Forzamos Dark Theme para la estetica Premium si el usuario lo desea, 
-    // pero respetamos la preferencia del sistema por ahora.
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = getColorScheme(
+        darkTheme = darkTheme,
+        dynamicColor = dynamicColor
+    )
 
     val view = androidx.compose.ui.platform.LocalView.current
     if (!view.isInEditMode) {
@@ -57,7 +35,21 @@ fun BocattaTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = M3Typography,
+        shapes = M3Shapes,
+        content = content
+    )
+}
+
+@Composable
+fun BocattaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit
+) {
+    M3Theme(
+        darkTheme = darkTheme,
+        dynamicColor = dynamicColor,
         content = content
     )
 }

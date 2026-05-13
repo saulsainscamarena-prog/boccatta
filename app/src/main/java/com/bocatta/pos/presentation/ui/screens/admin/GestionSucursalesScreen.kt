@@ -19,10 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.presentation.viewmodel.GestionSucursalesViewModel
 import com.bocatta.pos.presentation.viewmodel.SucursalInfo
-import com.bocatta.pos.presentation.ui.theme.BocattaDanger
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
-import com.bocatta.pos.presentation.ui.theme.BocattaSuccess
-import com.bocatta.pos.presentation.ui.theme.BocattaOnSurface
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -75,7 +71,7 @@ fun GestionSucursalesScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (suc.activa) BocattaDanger else BocattaSuccess
+                            containerColor = if (suc.activa) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -116,7 +112,7 @@ fun GestionSucursalesScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    CircularProgressIndicator(color = BocattaPrimary)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Text(
                         vm.progresoMensaje,
                         style = MaterialTheme.typography.bodyMedium,
@@ -154,7 +150,7 @@ fun GestionSucursalesScreen(
                         Icon(Icons.Default.AddBusiness, contentDescription = "Nueva sucursal", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BocattaOnSurface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.onSurface)
             )
         }
     ) { padding ->
@@ -177,7 +173,7 @@ fun GestionSucursalesScreen(
                     Button(
                         onClick = { mostrarDialogoNueva = true },
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = BocattaPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Crear sucursal")
                         Spacer(Modifier.width(8.dp))
@@ -204,7 +200,7 @@ fun GestionSucursalesScreen(
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Bolt, contentDescription = "Apertura rápida", tint = BocattaPrimary, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.Bolt, contentDescription = "Apertura rápida", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text("Apertura en segundos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
@@ -231,7 +227,7 @@ fun GestionSucursalesScreen(
                     onClick = { mostrarDialogoNueva = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BocattaPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Icon(Icons.Default.AddBusiness, contentDescription = "Abrir sucursal")
                     Spacer(Modifier.width(8.dp))
@@ -257,7 +253,7 @@ private fun SucursalCard(sucursal: SucursalInfo, onClick: () -> Unit) {
         ) {
             // Indicador de estado
             Surface(
-                color = if (sucursal.activa) BocattaSuccess.copy(0.15f) else BocattaDanger.copy(0.1f),
+                color = if (sucursal.activa) MaterialTheme.colorScheme.primary.copy(0.15f) else MaterialTheme.colorScheme.error.copy(0.1f),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.size(48.dp)
             ) {
@@ -265,7 +261,7 @@ private fun SucursalCard(sucursal: SucursalInfo, onClick: () -> Unit) {
                     Icon(
                         if (sucursal.activa) Icons.Default.Store else Icons.Default.StoreMallDirectory,
                         contentDescription = if (sucursal.activa) "Sucursal activa" else "Sucursal inactiva",
-                        tint = if (sucursal.activa) BocattaSuccess else BocattaDanger,
+                        tint = if (sucursal.activa) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -278,14 +274,14 @@ private fun SucursalCard(sucursal: SucursalInfo, onClick: () -> Unit) {
                     Text(sucursal.nombre, fontWeight = FontWeight.Black, fontSize = 16.sp)
                     Spacer(Modifier.width(8.dp))
                     Surface(
-                        color = if (sucursal.activa) BocattaSuccess.copy(0.12f) else BocattaDanger.copy(0.1f),
+                        color = if (sucursal.activa) MaterialTheme.colorScheme.primary.copy(0.12f) else MaterialTheme.colorScheme.error.copy(0.1f),
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             if (sucursal.activa) "ACTIVA" else "INACTIVA",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (sucursal.activa) BocattaSuccess else BocattaDanger,
+                            color = if (sucursal.activa) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -319,7 +315,7 @@ private fun DialogNuevaSucursal(
         onDismissRequest = onCancelar,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AddBusiness, contentDescription = "Nueva sucursal", tint = BocattaPrimary)
+                Icon(Icons.Default.AddBusiness, contentDescription = "Nueva sucursal", tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(10.dp))
                 Text("Nueva sucursal", fontWeight = FontWeight.Bold)
             }
@@ -377,7 +373,7 @@ private fun DialogNuevaSucursal(
                 onClick = { onConfirmar(nombre.trim(), ciudad.trim()) },
                 enabled = nombre.length >= 2,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BocattaPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Default.Bolt, contentDescription = "Crear sucursal", modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))

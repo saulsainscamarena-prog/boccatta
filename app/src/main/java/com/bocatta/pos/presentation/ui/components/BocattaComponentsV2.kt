@@ -60,7 +60,7 @@ fun ProductCardPremium(
         onClick = onClick,
         enabled = !agotado,
         shape = RoundedCornerShape(28.dp),
-        color = if (agotado) Color.White.copy(0.05f) else BocattaSurfaceDark,
+        color = if (agotado) Color.White.copy(0.05f) else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
@@ -125,9 +125,9 @@ fun ProductCardPremium(
             }
             
             if (agotado) {
-                StatusBadgePremium("AGOTADO", BocattaDanger, Modifier.align(Alignment.TopEnd))
+                StatusBadgePremium("AGOTADO", MaterialTheme.colorScheme.error, Modifier.align(Alignment.TopEnd))
             } else if (pocoStock) {
-                StatusBadgePremium("BAJO", BocattaWarning, Modifier.align(Alignment.TopEnd))
+                StatusBadgePremium("BAJO", MaterialTheme.colorScheme.error, Modifier.align(Alignment.TopEnd))
             }
         }
     }
@@ -178,7 +178,7 @@ fun NeonButton(
     texto: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = BocattaPrimary,
+    color: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true
 ) {
     Button(
@@ -206,7 +206,7 @@ fun BocattaMetricCardPremium(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(28.dp),
-        color = BocattaSurfaceDark,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.2f)),
         tonalElevation = 0.dp
     ) {
@@ -245,11 +245,11 @@ fun GastoCard(
     fecha: String,
     descripcion: String,
     usuario: String,
-    color: Color = BocattaNeonMagenta
+    color: Color = MaterialTheme.colorScheme.tertiary
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = BocattaSurfaceDark,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         border = BorderStroke(1.dp, Color.White.copy(0.05f)),
         modifier = Modifier.fillMaxWidth()
     ) {

@@ -53,7 +53,7 @@ fun LoginScreen(
     var nombreCompleto by remember { mutableStateOf("") }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A)))).safeDrawingPadding(),
+        modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A)))).safeDrawingPadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -78,7 +78,7 @@ fun LoginScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
-                color = BocattaSurfaceDark,
+                color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                 border = BorderStroke(1.dp, Color.White.copy(0.1f))
             ) {
                 Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -91,7 +91,7 @@ fun LoginScreen(
                     )
                     Text(
                         "BOCATTA POS \u00B7 MERIDIAN DESIGN", 
-                        color = BocattaNeonCyan, 
+                        color = MaterialTheme.colorScheme.primary, 
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -101,15 +101,15 @@ fun LoginScreen(
 
                     if (errorMensaje != null) {
                         Surface(
-                            color = BocattaDanger.copy(0.1f), 
+                            color = MaterialTheme.colorScheme.error.copy(0.1f), 
                             shape = RoundedCornerShape(16.dp), 
                             modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                            border = BorderStroke(1.dp, BocattaDanger.copy(0.3f))
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.3f))
                         ) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Error, null, tint = BocattaDanger, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(errorMensaje, color = BocattaDanger, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                Text(errorMensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -122,12 +122,12 @@ fun LoginScreen(
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp), 
                             visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.VpnKey, null, tint = BocattaNeonCyan) },
+                            leadingIcon = { Icon(Icons.Default.VpnKey, null, tint = MaterialTheme.colorScheme.primary) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BocattaNeonCyan,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedTextColor = Color.White,
                                 focusedTextColor = Color.White,
-                                focusedLabelColor = BocattaNeonCyan,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
                                 unfocusedLabelColor = Color.White.copy(0.4f)
                             )
                         )
@@ -138,12 +138,12 @@ fun LoginScreen(
                             label = { Text("NOMBRE DE OPERADOR", fontWeight = FontWeight.Bold) }, 
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp),
-                            leadingIcon = { Icon(Icons.Default.Person, null, tint = BocattaNeonCyan) },
+                            leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BocattaNeonCyan,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedTextColor = Color.White,
                                 focusedTextColor = Color.White,
-                                focusedLabelColor = BocattaNeonCyan,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
                                 unfocusedLabelColor = Color.White.copy(0.4f)
                             )
                         )
@@ -156,12 +156,12 @@ fun LoginScreen(
                         label = { Text("ID DE USUARIO / EMAIL", fontWeight = FontWeight.Bold) }, 
                         modifier = Modifier.fillMaxWidth(), 
                         shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Email, null, tint = BocattaNeonCyan) },
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BocattaNeonCyan,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedTextColor = Color.White,
                             focusedTextColor = Color.White,
-                            focusedLabelColor = BocattaNeonCyan,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
                             unfocusedLabelColor = Color.White.copy(0.4f)
                         )
                     )
@@ -173,12 +173,12 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(), 
                         shape = RoundedCornerShape(16.dp), 
                         visualTransformation = PasswordVisualTransformation(),
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = BocattaNeonCyan) },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BocattaNeonCyan,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedTextColor = Color.White,
                             focusedTextColor = Color.White,
-                            focusedLabelColor = BocattaNeonCyan,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
                             unfocusedLabelColor = Color.White.copy(0.4f)
                         )
                     )
@@ -187,12 +187,12 @@ fun LoginScreen(
 
                     Button(
                         onClick = { if (isRegisterMode) onRegisterClick(user, pass, nombreCompleto, masterCode, "") else onLoginClick(user, pass) },
-                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = BocattaNeonCyan),
+                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !isLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan, contentColor = BocattaBgDark)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.background)
                     ) {
-                        if (isLoading) CircularProgressIndicator(color = BocattaBgDark, modifier = Modifier.size(24.dp))
+                        if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.background, modifier = Modifier.size(24.dp))
                         else Text(
                             if (isRegisterMode) "ACTIVAR ACCESO" else "ENTRAR AL SISTEMA", 
                             fontWeight = FontWeight.Black,

@@ -50,7 +50,7 @@ fun PurchasesScreen(
                 actions = {
                     IconButton(onClick = { showAddSupplier = true }) { Icon(Icons.Default.PersonAdd, "Nuevo Proveedor", tint = MaterialTheme.colorScheme.onPrimary) }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BocattaSecondary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary)
             )
         }
     ) { padding ->
@@ -93,8 +93,8 @@ fun InsumoPurchaseCard(insumo: InsumoV2, onClick: () -> Unit) {
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Box(Modifier.size(40.dp).background(BocattaPrimary.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(insumo.nombre.take(1).uppercase(), color = BocattaPrimary, fontWeight = FontWeight.Black)
+            Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                Text(insumo.nombre.take(1).uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
             }
             Spacer(Modifier.height(12.dp))
             Text(insumo.nombre, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -103,7 +103,7 @@ fun InsumoPurchaseCard(insumo: InsumoV2, onClick: () -> Unit) {
             LinearProgressIndicator(
                 progress = { 0.6f },
                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
-                color = BocattaPrimary,
+                color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.outlineVariant
             )
         }
@@ -185,11 +185,11 @@ fun RegistroCompraDialog(
                     val totalUnidades = cantidad.toDouble() * (presentacionSeleccionada?.factorConversionABase ?: 1.0)
                     val unitario = precio.toDouble() / totalUnidades
                     val diff = unitario - insumo.costoUnitarioBase
-                    Surface(color = if (diff > 0) BocattaDanger.copy(0.1f) else BocattaSuccess.copy(0.1f), shape = RoundedCornerShape(8.dp)) {
+                    Surface(color = if (diff > 0) MaterialTheme.colorScheme.error.copy(0.1f) else MaterialTheme.colorScheme.primary.copy(0.1f), shape = RoundedCornerShape(8.dp)) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(
                                 "Unitario: $${"%.2f".format(unitario)}/${insumo.unidadBase} (Ref: $${insumo.costoUnitarioBase})",
-                                color = if (diff > 0) BocattaDanger else BocattaSuccess,
+                                color = if (diff > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp, fontWeight = FontWeight.Bold
                             )
                             Text(

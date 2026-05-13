@@ -71,7 +71,7 @@ fun ReportScreen(vmV2: ReportViewModelV2, sucursal: String, onBack: () -> Unit) 
             SecondaryTabRow(
                 selectedTabIndex = tabSeleccionado,
                 containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = BocattaPrimary
+                contentColor = MaterialTheme.colorScheme.primary
             ) {
                 Tab(selected = tabSeleccionado == 0, onClick = { tabSeleccionado = 0 },
                     text = { Text("Hoy", fontWeight = if (tabSeleccionado == 0) FontWeight.Bold else FontWeight.Normal) })
@@ -106,7 +106,7 @@ private fun TabResumenHoy(vmV2: ReportViewModelV2) {
                     BocattaMetricCard(
                         titulo = "Ventas",
                         valor = "$${"%.0f".format(vmV2.ventasBrutas)}",
-                        color = BocattaSuccess,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f),
                         subtitulo = "${vmV2.ventasDelDia.size} transacciones"
                     )
@@ -121,7 +121,7 @@ private fun TabResumenHoy(vmV2: ReportViewModelV2) {
                     BocattaMetricCard(
                         titulo = "Utilidad",
                         valor = "$${"%.0f".format(vmV2.utilidadNeta)}",
-                        color = BocattaPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
                     BocattaMetricCard(
@@ -147,8 +147,8 @@ private fun TabResumenHoy(vmV2: ReportViewModelV2) {
                     val tarjeta = vmV2.ventasDelDia.filter { it.metodoPago != "Efectivo" }.sumOf { it.total }
                     val total = (efectivo + tarjeta).coerceAtLeast(0.01)
 
-                    FilaMetodoPago("💵 Efectivo", efectivo, total, BocattaSuccess)
-                    FilaMetodoPago("💳 Tarjeta/Transfer", tarjeta, total, BocattaPrimary)
+                    FilaMetodoPago("💵 Efectivo", efectivo, total, MaterialTheme.colorScheme.primary)
+                    FilaMetodoPago("💳 Tarjeta/Transfer", tarjeta, total, MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -178,7 +178,7 @@ private fun TabResumenHoy(vmV2: ReportViewModelV2) {
                         Text(
                             "$${"%.2f".format(venta.total)}",
                             fontWeight = FontWeight.Black,
-                            color = BocattaPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 16.sp
                         )
                     }
@@ -231,7 +231,7 @@ private fun TabSemanal(vmV2: ReportViewModelV2) {
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        GraficaBarras(datos = vmV2.ventasPorDia, color = BocattaPrimary)
+                        GraficaBarras(datos = vmV2.ventasPorDia, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(12.dp))
                         // Tabla de valores
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -294,13 +294,13 @@ private fun TabProductos(vmV2: ReportViewModelV2) {
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
-                                    .background(BocattaPrimary.copy(0.12f), CircleShape),
+                                    .background(MaterialTheme.colorScheme.primary.copy(0.12f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     prod.nombre.first().uppercase(),
                                     fontWeight = FontWeight.Black,
-                                    color = BocattaPrimary,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp
                                 )
                             }
@@ -317,15 +317,15 @@ private fun TabProductos(vmV2: ReportViewModelV2) {
                         Text(
                             "$${"%.2f".format(prod.ingresos)}",
                             fontWeight = FontWeight.Black,
-                            color = BocattaPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 15.sp
                         )
                     }
                     LinearProgressIndicator(
                         progress = { prod.cantidad.toFloat() / maxCantidad.toFloat() },
                         modifier = Modifier.fillMaxWidth().height(5.dp),
-                        color = BocattaPrimary,
-                        trackColor = BocattaPrimary.copy(0.1f)
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(0.1f)
                     )
                 }
             }

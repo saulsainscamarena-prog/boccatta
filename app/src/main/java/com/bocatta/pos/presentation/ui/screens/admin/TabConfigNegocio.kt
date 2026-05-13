@@ -59,7 +59,7 @@ fun TabConfigNegocio() {
                         shape = RoundedCornerShape(14.dp),
                         leadingIcon = {
                             Icon(Icons.Default.Store, null,
-                                tint = BocattaPrimary, modifier = Modifier.size(20.dp))
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     )
                     OutlinedTextField(
@@ -71,7 +71,7 @@ fun TabConfigNegocio() {
                         shape = RoundedCornerShape(14.dp),
                         leadingIcon = {
                             Icon(Icons.Default.Category, null,
-                                tint = BocattaPrimary, modifier = Modifier.size(20.dp))
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     )
                 }
@@ -124,7 +124,7 @@ fun TabConfigNegocio() {
                         supportingText = { Text("Cada cuántas visitas se otorga el descuento (actual: ${FirestoreCollections.MEMBRESIA_CICLO_VISITAS})") },
                         leadingIcon = {
                             Icon(Icons.Default.Loyalty, null,
-                                tint = BocattaPrimary, modifier = Modifier.size(20.dp))
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     )
                     OutlinedTextField(
@@ -159,7 +159,7 @@ fun TabConfigNegocio() {
                 modifier = Modifier.fillMaxWidth(),
                 cargando = vm.cargando,
                 icono = Icons.Default.Save,
-                color = BocattaPrimary
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(Modifier.height(16.dp))
@@ -188,7 +188,7 @@ private fun MetodoPagoToggle(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icono, contentDescription = null,
-                tint = if (habilitado) BocattaPrimary else MaterialTheme.colorScheme.outline.copy(0.5f),
+                tint = if (habilitado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(0.5f),
                 modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(10.dp))
             Text(
@@ -204,7 +204,7 @@ private fun MetodoPagoToggle(
             onCheckedChange = onToggle,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = BocattaPrimary
+                checkedTrackColor = MaterialTheme.colorScheme.primary
             )
         )
     }

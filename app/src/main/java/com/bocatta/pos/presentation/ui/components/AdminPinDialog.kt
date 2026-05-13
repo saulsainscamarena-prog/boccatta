@@ -27,7 +27,7 @@ fun AdminPinDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(pin) },
-                colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonMagenta)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
             ) {
                 Text("VALIDAR PIN", fontWeight = FontWeight.Bold)
             }
@@ -53,14 +53,14 @@ fun AdminPinDialog(
                     modifier = Modifier.width(200.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BocattaNeonMagenta,
+                        focusedBorderColor = MaterialTheme.colorScheme.tertiary,
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     )
                 )
             }
         },
-        containerColor = BocattaSurfaceDark,
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         shape = RoundedCornerShape(28.dp)
     )
 }

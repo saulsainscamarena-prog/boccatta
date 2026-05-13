@@ -57,6 +57,7 @@ fun SalesScreen(
     var mostrarRetiroAlimento by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var mostrarCarritoMobile by remember { mutableStateOf(false) }
+    var mostrarCancelarVentaPin by remember { mutableStateOf(false) }
     val uiState by vmV2.uiState.collectAsState()
     val isOnline = vmV2.isOnline
 
@@ -79,10 +80,14 @@ fun SalesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(vmV2.mensajeFeedback) {
         vmV2.mensajeFeedback?.let {
-            snackbarHostState.showSnackbar(
+            val result = snackbarHostState.showSnackbar(
                 message = it,
+                actionLabel = if (vmV2.hayUndo) "DESHACER" else null,
                 duration = SnackbarDuration.Short
             )
+            if (result == SnackbarResult.ActionPerformed) {
+                vmV2.undoLastAction()
+            }
             vmV2.mensajeFeedback = null
         }
     }
@@ -188,7 +193,17 @@ fun SalesScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+    if (mostrarCancelarVentaPin) {
+        AdminPinDialog(
+            onDismiss = { mostrarCancelarVentaPin = false },
+            onConfirm = { _ ->
+                vmV2.limpiarCarrito()
+                mostrarCancelarVentaPin = false
+            }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isTablet = maxWidth >= 720.dp // Meridian Spec: 720dp for tablet layout
             
@@ -199,14 +214,14 @@ fun SalesScreen(
                     LargeTopAppBar(
                         title = {
                             Column {
-                                Text("BOCATTA POS", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                                Text("BOCATTA POS", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onBackground)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(8.dp).background(if (isOnline) BocattaSuccess else BocattaDanger, CircleShape))
+                                    Box(Modifier.size(8.dp).background(if (isOnline) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error, CircleShape))
                                     Spacer(Modifier.width(6.dp))
                                     Text(
                                         "${if (isOnline) "SISTEMA ONLINE" else "SISTEMA OFFLINE"} · ${session.sucursalActual.uppercase()}", 
                                         style = MaterialTheme.typography.labelSmall, 
-                                        color = (if (isOnline) BocattaSuccess else BocattaDanger).copy(0.8f),
+                                        color = (if (isOnline) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error).copy(0.8f),
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.sp
                                     )
@@ -215,49 +230,55 @@ fun SalesScreen(
                         },
                         navigationIcon = {
                             IconButton(onClick = onVerCaja) { 
-                                Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Menu, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                                Surface(color = MaterialTheme.colorScheme.onBackground.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.Menu, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                         },
                         actions = {
                             IconButton(onClick = { mostrarBuscarCliente = true }) {
-                                Surface(color = (if (vmV2.clienteSeleccionado != null) BocattaNeonCyan else Color.White).copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.PersonAdd, null, tint = if (vmV2.clienteSeleccionado != null) BocattaNeonCyan else Color.White, modifier = Modifier.padding(10.dp)) 
+                                Surface(color = (if (vmV2.clienteSeleccionado != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground).copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.PersonAdd, null, tint = if (vmV2.clienteSeleccionado != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { mostrarRetiroAlimento = true }) {
-                                Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Restaurant, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                                Surface(color = MaterialTheme.colorScheme.onBackground.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.Restaurant, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
+                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(onClick = { mostrarCancelarVentaPin = true }) {
+                                Surface(color = MaterialTheme.colorScheme.error.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.Cancel, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp))
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = onLogout) { 
-                                Surface(color = BocattaDanger.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = BocattaDanger, modifier = Modifier.padding(10.dp)) 
+                                Surface(color = MaterialTheme.colorScheme.error.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                             Spacer(Modifier.width(16.dp))
                         },
-                        colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                        colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
                     )
                 },
                 bottomBar = {
                     if (!isTablet) {
                         Surface(
-                            color = BocattaSurfaceDark.copy(0.95f),
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                             modifier = Modifier.fillMaxWidth().height(84.dp).clickable { mostrarCarritoMobile = true },
                             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                            border = BorderStroke(1.dp, Color.White.copy(0.05f))
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
                         ) {
                             Row(Modifier.padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
-                                    Text("${vmV2.carrito.sumOf { it.cantidad }} items".uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
+                                    Text("${vmV2.carrito.sumOf { it.cantidad }} items".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                                     val total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones).coerceAtLeast(0.0)
-                                    Text("$${"%.2f".format(total)}", fontWeight = FontWeight.Black, fontSize = 26.sp, color = BocattaNeonCyan)
+                                    Text("$${"%.2f".format(total)}", fontWeight = FontWeight.Black, fontSize = 26.sp, color = MaterialTheme.colorScheme.primary)
                                 }
-                                NeonButton(texto = "COBRAR", onClick = { mostrarPago = true }, modifier = Modifier.width(160.dp), color = BocattaNeonCyan)
+                                NeonButton(texto = "COBRAR", onClick = { mostrarPago = true }, modifier = Modifier.width(160.dp), color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -280,16 +301,16 @@ fun SalesScreen(
                                  val index = if (categoriaSeleccionada == "TODOS") 0 else (categorias.indexOf(categoriaSeleccionada) + 1).coerceAtLeast(0)
                                  TabRowDefaults.SecondaryIndicator(
                                      modifier = Modifier.tabIndicatorOffset(tabPositions[index]),
-                                     color = BocattaNeonCyan
+                                     color = MaterialTheme.colorScheme.primary
                                  )
                             }
                         ) {
                             Tab(selected = categoriaSeleccionada == "TODOS", onClick = { categoriaSeleccionada = "TODOS" }) {
-                                Text("TODOS", modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == "TODOS") FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == "TODOS") Color.White else Color.White.copy(0.5f))
+                                Text("TODOS", modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == "TODOS") FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == "TODOS") MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(0.5f))
                             }
                             categorias.forEach { cat ->
                                 Tab(selected = categoriaSeleccionada == cat, onClick = { categoriaSeleccionada = cat }) {
-                                    Text(cat, modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == cat) FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == cat) Color.White else Color.White.copy(0.5f))
+                                    Text(cat, modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == cat) FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == cat) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(0.5f))
                                 }
                             }
                         }
@@ -320,19 +341,22 @@ fun SalesScreen(
                      if (isTablet) {
                          VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
                          CarritoPanelV2(
-                             carrito = vmV2.carrito,
-                             totalCarrito = vmV2.totalCarrito,
-                             descuentoLealtad = vmV2.descuentoLealtad,
-                             descuentoPromociones = vmV2.descuentoPromociones,
-                             clienteSeleccionado = vmV2.clienteSeleccionado,
-                             modifier = Modifier.weight(0.38f).fillMaxHeight(),
-                             onEliminarItem = { itemPorEliminar = it },
-                             onCobrar = { mostrarPago = true }
-                         )
-                     }
-                 }
-             }
-             if (uiState.isLoading) {
+                              carrito = vmV2.carrito,
+                              totalCarrito = vmV2.totalCarrito,
+                              descuentoLealtad = vmV2.descuentoLealtad,
+                              descuentoPromociones = vmV2.descuentoPromociones,
+                              descuentoManual = vmV2.descuentoManual,
+                              clienteSeleccionado = vmV2.clienteSeleccionado,
+                              modifier = Modifier.weight(0.38f).fillMaxHeight(),
+                              onEliminarItem = { itemPorEliminar = it },
+                              onEditarItem = { item -> productoConfigurando = item.producto },
+                              onCobrar = { mostrarPago = true },
+                              onApplyDiscount = { vmV2.aplicarDescuentoManual(it) }
+                          )
+                      }
+                  }
+              }
+              if (uiState.isLoading) {
                  Box(
                      modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
                      contentAlignment = Alignment.Center
@@ -343,7 +367,19 @@ fun SalesScreen(
              if (mostrarCarritoMobile && !isTablet) {
 
                 ModalBottomSheet(onDismissRequest = { mostrarCarritoMobile = false }, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)) {
-                    CarritoPanelV2(vmV2.carrito, vmV2.totalCarrito, vmV2.descuentoLealtad, vmV2.descuentoPromociones, vmV2.clienteSeleccionado, Modifier.fillMaxWidth(), { itemPorEliminar = it; mostrarCarritoMobile = false }, { mostrarCarritoMobile = false; mostrarPago = true })
+                    CarritoPanelV2(
+                        carrito = vmV2.carrito,
+                        totalCarrito = vmV2.totalCarrito,
+                        descuentoLealtad = vmV2.descuentoLealtad,
+                        descuentoPromociones = vmV2.descuentoPromociones,
+                        descuentoManual = vmV2.descuentoManual,
+                        clienteSeleccionado = vmV2.clienteSeleccionado,
+                        modifier = Modifier.fillMaxWidth(),
+                        onEliminarItem = { itemPorEliminar = it; mostrarCarritoMobile = false },
+                        onEditarItem = { item -> productoConfigurando = item.producto; mostrarCarritoMobile = false },
+                        onCobrar = { mostrarCarritoMobile = false; mostrarPago = true },
+                        onApplyDiscount = { vmV2.aplicarDescuentoManual(it) }
+                    )
                     Spacer(Modifier.height(32.dp))
                 }
             }

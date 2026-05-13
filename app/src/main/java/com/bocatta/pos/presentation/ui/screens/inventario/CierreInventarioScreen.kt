@@ -80,7 +80,7 @@ fun CierreInventarioScreen(
                 title = {
                     Column {
                         Text("CIERRE DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("RECUENTO FÍSICO FINAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonMagenta, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("RECUENTO FÍSICO FINAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -130,10 +130,10 @@ fun CierreInventarioScreen(
                                 cargando = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = BocattaNeonMagenta),
+                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = MaterialTheme.colorScheme.tertiary),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !cargando && !guardado && itemsConteo.any { it.conteoFisico.isNotBlank() },
-                        colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonMagenta, contentColor = Color.White, disabledContainerColor = Color.White.copy(0.1f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary, contentColor = Color.White, disabledContainerColor = Color.White.copy(0.1f)),
                     ) {
                         if (cargando) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                         else {
@@ -147,7 +147,7 @@ fun CierreInventarioScreen(
         }
 
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, BocattaSurfaceDark)))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))))) {
             LazyColumn(
                 modifier = Modifier.padding(padding).padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -161,13 +161,13 @@ fun CierreInventarioScreen(
                     val dif = if (fisico != null) item.stockSistema - fisico else null
                     val statusColor = when {
                         dif == null -> Color.White.copy(0.1f)
-                        dif > 0.01 -> BocattaNeonMagenta
-                        dif < -0.01 -> BocattaNeonCyan
-                        else -> BocattaNeonGreen
+                        dif > 0.01 -> MaterialTheme.colorScheme.tertiary
+                        dif < -0.01 -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.tertiary
                     }
                     Surface(
                         shape = RoundedCornerShape(28.dp), 
-                        color = BocattaSurfaceDark,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                         border = BorderStroke(1.dp, statusColor.copy(0.4f))
                     ) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

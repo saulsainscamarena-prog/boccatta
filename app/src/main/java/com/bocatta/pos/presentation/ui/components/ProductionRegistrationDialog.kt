@@ -38,8 +38,8 @@ fun ProductionRegistrationDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = BocattaBgDark,
-            border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+            color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.1f)),
             modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
             Column(
@@ -49,24 +49,24 @@ fun ProductionRegistrationDialog(
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        color = BocattaNeonCyan.copy(0.1f),
+                        color = MaterialTheme.colorScheme.primary.copy(0.1f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.PrecisionManufacturing, null, tint = BocattaNeonCyan)
+                            Icon(Icons.Default.PrecisionManufacturing, null, tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("MÓDULO INDUSTRIAL V2", fontWeight = FontWeight.Black, fontSize = 10.sp, color = BocattaNeonCyan, letterSpacing = 1.sp)
-                        Text("CONTROL DE PRODUCCIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
+                        Text("MÓDULO INDUSTRIAL V2", fontWeight = FontWeight.Black, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
+                        Text("CONTROL DE PRODUCCIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
-                Divider(color = Color.White.copy(0.05f))
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(0.05f))
 
-                Text("CANTIDAD PRODUCIDA", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.6f))
+                Text("CANTIDAD PRODUCIDA", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                 
                 OutlinedTextField(
                     value = yieldText,
@@ -76,27 +76,27 @@ fun ProductionRegistrationDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BocattaNeonCyan,
-                        unfocusedBorderColor = Color.White.copy(0.1f),
-                        focusedLabelColor = BocattaNeonCyan,
-                        unfocusedLabelColor = Color.White.copy(0.4f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(0.1f),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(0.4f),
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     )
                 )
 
                 Surface(
-                    color = Color.White.copy(0.03f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(0.03f),
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(0.05f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.05f))
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Analytics, null, tint = BocattaNeonCyan, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Analytics, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(
                             "Se registrarán las unidades producidas en ${sucursal.uppercase()}.",
                             fontSize = 11.sp,
-                            color = Color.White.copy(0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -118,11 +118,11 @@ fun ProductionRegistrationDialog(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        color = BocattaNeonCyan
+                        color = MaterialTheme.colorScheme.primary
                     )
                     
                     TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                        Text("CANCELAR", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("CANCELAR", color = MaterialTheme.colorScheme.onSurface.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 }
             }

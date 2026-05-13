@@ -103,7 +103,7 @@ fun AperturaInventarioScreen(
                 title = { 
                     Column {
                         Text("CARGA DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("AUDITORÍA DE STOCK INICIAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("AUDITORÍA DE STOCK INICIAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -132,10 +132,10 @@ fun AperturaInventarioScreen(
                                 if (exito) guardado = true
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = BocattaNeonCyan),
+                        modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !cargando && !guardado && contados == total && total > 0,
-                        colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan, contentColor = BocattaBgDark, disabledContainerColor = Color.White.copy(0.1f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.background, disabledContainerColor = Color.White.copy(0.1f)),
                     ) {
                         Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory, null)
                         Spacer(Modifier.width(12.dp))
@@ -145,10 +145,10 @@ fun AperturaInventarioScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, BocattaSurfaceDark)))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))))) {
             if (cargando && itemsConteo.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = BocattaNeonCyan)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else {
                 LazyColumn(
@@ -169,14 +169,14 @@ fun AperturaInventarioScreen(
                         val diferencia = if (fisico != null) fisico - item.stockSistema else null
                         val statusColor = when {
                             diferencia == null -> Color.White.copy(0.1f)
-                            Math.abs(diferencia) < 0.01 -> BocattaNeonGreen
-                            diferencia < 0 -> BocattaNeonMagenta
-                            else -> BocattaNeonCyan
+                            Math.abs(diferencia) < 0.01 -> MaterialTheme.colorScheme.tertiary
+                            diferencia < 0 -> MaterialTheme.colorScheme.tertiary
+                            else -> MaterialTheme.colorScheme.primary
                         }
 
                         Surface(
                             shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp
-                            color = BocattaSurfaceDark,
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                             border = BorderStroke(1.dp, statusColor.copy(0.4f))
                         ) {
                             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

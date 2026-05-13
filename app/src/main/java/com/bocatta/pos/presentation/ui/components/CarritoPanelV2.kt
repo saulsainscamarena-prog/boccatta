@@ -32,25 +32,28 @@ fun CarritoPanelV2(
     totalCarrito: BigDecimal,
     descuentoLealtad: Double,
     descuentoPromociones: Double,
+    descuentoManual: Double = 0.0,
     clienteSeleccionado: ClienteV2?,
     modifier: Modifier = Modifier,
     onEliminarItem: (ItemCarritoV2) -> Unit,
-    onCobrar: () -> Unit
+    onEditarItem: ((ItemCarritoV2) -> Unit)? = null,
+    onCobrar: () -> Unit,
+    onApplyDiscount: ((Int) -> Unit)? = null
 ) {
     Surface(
-        color = Color.Black.copy(0.2f),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
         modifier = modifier.fillMaxHeight(),
-        border = BorderStroke(1.dp, Color.White.copy(0.05f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
     ) {
         Column(modifier = Modifier.padding(24.dp).fillMaxHeight()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    color = BocattaNeonCyan.copy(0.1f),
+                    color = MaterialTheme.colorScheme.primary.copy(0.1f),
                     shape = CircleShape,
                     modifier = Modifier.size(32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.ShoppingCart, null, tint = BocattaNeonCyan, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -58,7 +61,7 @@ fun CarritoPanelV2(
                     "ORDEN ACTUAL",
                     fontWeight = FontWeight.Black,
                     fontSize = 16.sp,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 1.sp
                 )
             }
@@ -66,21 +69,21 @@ fun CarritoPanelV2(
             if (clienteSeleccionado != null) {
                 Spacer(Modifier.height(16.dp))
                 Surface(
-                    color = BocattaNeonGreen.copy(0.1f),
+                    color = MaterialTheme.colorScheme.tertiary.copy(0.1f),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, BocattaNeonGreen.copy(0.3f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(0.3f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Person, null, tint = BocattaNeonGreen, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
                             clienteSeleccionado.nombre.uppercase(),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
-                            color = BocattaNeonGreen,
+                            color = MaterialTheme.colorScheme.tertiary,
                             letterSpacing = 0.5.sp
                         )
                     }
@@ -103,7 +106,8 @@ fun CarritoPanelV2(
                     items(carrito, key = { it.cartId }) { item ->
                         BocattaCartItemRow(
                             item = item,
-                            onEliminar = { onEliminarItem(item) }
+                            onEliminar = { onEliminarItem(item) },
+                            onEditar = onEditarItem?.let { { it(item) } }
                         )
                     }
                 }
@@ -113,9 +117,9 @@ fun CarritoPanelV2(
 
             // Resumen con Glassmorphism
             Surface(
-                color = Color.White.copy(0.03f),
+                color = MaterialTheme.colorScheme.onSurface.copy(0.03f),
                 shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color.White.copy(0.08f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -123,19 +127,26 @@ fun CarritoPanelV2(
                         BocattaFilaResumen(
                             "DESCUENTO PROMO",
                             "-$${"%.2f".format(descuentoPromociones)}",
-                            colorValor = BocattaNeonMagenta
+                            colorValor = MaterialTheme.colorScheme.tertiary
                         )
                     }
                     if (descuentoLealtad > 0) {
                         BocattaFilaResumen(
                             "DESCUENTO LEALTAD",
                             "-$${"%.2f".format(descuentoLealtad)}",
-                            colorValor = BocattaNeonGreen
+                            colorValor = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                    if (descuentoManual > 0) {
+                        BocattaFilaResumen(
+                            "DESCUENTO MANUAL",
+                            "-$${"%.2f".format(descuentoManual)}",
+                            colorValor = MaterialTheme.colorScheme.error
                         )
                     }
 
                     val totalFinal = (totalCarrito.toDouble() - descuentoLealtad
-                        - descuentoPromociones).coerceAtLeast(0.0)
+                        - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
 
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -143,20 +154,47 @@ fun CarritoPanelV2(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Column {
-                            Text("SUBTOTAL", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White.copy(0.3f), letterSpacing = 1.sp)
-                            Text("$${"%.2f".format(totalCarrito)}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White.copy(0.6f))
+                            Text("SUBTOTAL", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.3f), letterSpacing = 1.sp)
+                            Text("$${"%.2f".format(totalCarrito)}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("TOTAL FINAL", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = BocattaNeonCyan.copy(0.7f), letterSpacing = 1.sp)
+                            Text("TOTAL FINAL", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary.copy(0.7f), letterSpacing = 1.sp)
                             Text(
                                 "$${"%.2f".format(totalFinal)}",
                                 fontWeight = FontWeight.Black,
                                 fontSize = 34.sp,
-                                color = BocattaNeonCyan
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
                 }
+            }
+
+            // Descuento manual
+            if (onApplyDiscount != null) {
+                Text("DESCUENTO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.5f), fontWeight = FontWeight.Bold)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(10, 20, 30).forEach { pct ->
+                        FilterChip(
+                            selected = descuentoManual == (totalCarrito.toDouble() - descuentoLealtad - descuentoPromociones).coerceAtLeast(0.0) * pct / 100.0,
+                            onClick = { onApplyDiscount(pct) },
+                            label = { Text("$pct%") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.error,
+                                selectedLabelColor = MaterialTheme.colorScheme.onError
+                            )
+                        )
+                    }
+                    FilterChip(
+                        selected = false,
+                        onClick = { onApplyDiscount(0) },
+                        label = { Text("Quitar") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -166,7 +204,7 @@ fun CarritoPanelV2(
                 onClick = onCobrar,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = carrito.isNotEmpty(),
-                color = BocattaNeonCyan
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

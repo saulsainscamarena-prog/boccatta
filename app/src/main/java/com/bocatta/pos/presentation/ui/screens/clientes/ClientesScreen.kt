@@ -70,7 +70,7 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
                         Icon(Icons.Default.PersonAdd, "Registrar cliente", tint = MaterialTheme.colorScheme.onSecondary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BocattaSecondary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary)
             )
         }
     ) { padding ->
@@ -82,7 +82,7 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(26.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BocattaPrimary)
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
             )
             Spacer(Modifier.height(20.dp))
 
@@ -90,8 +90,8 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
             val totalClientes = vm.clientes.size
             
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricLealtadCard("DESCUENTOS", numDescuentos.toString(), BocattaSuccess, Modifier.weight(1f))
-                MetricLealtadCard("EN REGISTRO", totalClientes.toString(), BocattaPrimary, Modifier.weight(1f))
+                MetricLealtadCard("DESCUENTOS", numDescuentos.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                MetricLealtadCard("EN REGISTRO", totalClientes.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
             }
 
             val clientesMostrados = if (busquedaLocal.isBlank()) vm.clientes else vm.clientes.filter { 
@@ -132,8 +132,8 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
     val esVIP = cliente.visitasCicloActual >= 5
     ElevatedCard(shape = RoundedCornerShape(20.dp), colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).background(if (esVIP) BocattaSuccess.copy(0.1f) else BocattaPrimary.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(cliente.nombre.take(1).uppercase(), color = if (esVIP) BocattaSuccess else BocattaPrimary, fontWeight = FontWeight.Black, fontSize = 20.sp)
+            Box(Modifier.size(48.dp).background(if (esVIP) MaterialTheme.colorScheme.primary.copy(0.1f) else MaterialTheme.colorScheme.primary.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                Text(cliente.nombre.take(1).uppercase(), color = if (esVIP) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 20.sp)
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -145,16 +145,16 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                     repeat(5) { i ->
                         val active = i < cliente.visitasCicloActual
                         val colorStep = if (active) {
-                            if (cliente.visitasCicloActual >= 5) BocattaSuccess else BocattaPrimary
+                            if (cliente.visitasCicloActual >= 5) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary
                         } else MaterialTheme.colorScheme.outlineVariant
                         Box(Modifier.height(4.dp).weight(1f).background(colorStep, CircleShape))
                     }
                 }
-                if (esVIP) Text("�REGALO LISTO! ??", color = BocattaSuccess, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
+                if (esVIP) Text("�REGALO LISTO! ??", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
             }
             Row {
-                IconButton(onClick = onEditar) { Icon(Icons.Default.Edit, null, tint = BocattaPrimary) }
-                IconButton(onClick = onEliminar) { Icon(Icons.Default.Delete, null, tint = BocattaDanger) }
+                IconButton(onClick = onEditar) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary) }
+                IconButton(onClick = onEliminar) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
             }
         }
     }

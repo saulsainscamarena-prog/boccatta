@@ -33,17 +33,17 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
     }
 
     Box(modifier = Modifier.fillMaxSize().background(
-        Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A)))
+        Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A)))
     ), contentAlignment = Alignment.Center) {
         Surface(
             modifier = Modifier.padding(24.dp).widthIn(max = 500.dp),
             shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp
-            color = BocattaSurfaceDark,
+            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
             border = BorderStroke(1.dp, Color.White.copy(0.1f))
         ) {
             Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(saludo, fontWeight = FontWeight.Black, fontSize = 36.sp, color = Color.White, letterSpacing = 2.sp)
-                Text(sessionVm.usuario?.nombre?.uppercase() ?: "OPERADOR", style = MaterialTheme.typography.titleMedium, color = BocattaNeonCyan, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                Text(sessionVm.usuario?.nombre?.uppercase() ?: "OPERADOR", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                 
                 Spacer(Modifier.height(40.dp))
                 
@@ -57,10 +57,10 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BocattaNeonCyan,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedTextColor = Color.White,
                         focusedTextColor = Color.White,
-                        focusedLabelColor = BocattaNeonCyan,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
                         unfocusedLabelColor = Color.White.copy(0.4f)
                     )
                 )
@@ -74,10 +74,10 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BocattaNeonCyan,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedTextColor = Color.White,
                         focusedTextColor = Color.White,
-                        focusedLabelColor = BocattaNeonCyan,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
                         unfocusedLabelColor = Color.White.copy(0.4f)
                     )
                 )
@@ -96,7 +96,7 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                         })
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    color = BocattaNeonCyan
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 if (sessionVm.esAdmin && onGestion != null) {
@@ -105,7 +105,7 @@ fun InicioDiaScreen(sessionVm: com.bocatta.pos.presentation.viewmodel.SessionVie
                         onClick = onGestion,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("IGNORAR PROTOCOLO (ACCESO ADMIN)", color = BocattaDanger, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp)
+                        Text("IGNORAR PROTOCOLO (ACCESO ADMIN)", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp)
                     }
                 }
             }

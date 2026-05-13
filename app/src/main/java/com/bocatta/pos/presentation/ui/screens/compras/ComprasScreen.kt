@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.google.firebase.firestore.Query
@@ -98,7 +97,7 @@ private fun ComprasCard(compra: CompraRegistro) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(compra.insumoId, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("$${String.format("%.2f", compra.precioTotal)}", fontWeight = FontWeight.Black, color = BocattaPrimary, fontSize = 18.sp)
+                Text("$${String.format("%.2f", compra.precioTotal)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
             }
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

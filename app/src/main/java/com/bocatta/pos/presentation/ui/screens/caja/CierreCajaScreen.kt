@@ -56,7 +56,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 title = {
                     Column {
                         Text("CIERRE DE TURNO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("CONSOLIDACIÓN FINANCIERA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("CONSOLIDACIÓN FINANCIERA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -70,7 +70,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
             Column(
                 modifier = Modifier
                     .padding(padding)
@@ -86,19 +86,19 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     BocattaMetricCardPremium(
                         titulo = "VENTAS TOTALES",
                         valor = "$${"%.2f".format(vm.totalEfectivoSistema + vm.totalTarjetaSistema)}",
-                        color = BocattaNeonCyan,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
                     BocattaMetricCardPremium(
                         titulo = "GASTOS REG.",
                         valor = "$${"%.2f".format(vm.totalGastosSistema)}",
-                        color = BocattaNeonMagenta,
+                        color = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.weight(1f)
                     )
                 }
 
                 if (vm.turnoActivo == null) {
-                    Surface(shape = RoundedCornerShape(28.dp), color = BocattaSurfaceDark, border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth()) {
                         BocattaEmptyState(
                             icono = Icons.Default.LockOpen,
                             titulo = "TURNO INACTIVO",
@@ -113,7 +113,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     // ── CONTEO INDUSTRIAL ────────────────────────────────────────────────
                     Text("AUDITORÍA DE CAJA", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp)
 
-                    Surface(shape = RoundedCornerShape(28.dp), color = BocattaSurfaceDark, border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                             BocattaFilaResumen("FONDO INICIAL", "$${"%.2f".format(turno.fondoInicial)}")
                             BocattaFilaResumen("ESPERADO EN CAJA", "$${"%.2f".format(esperado)}", negrita = true)
@@ -124,16 +124,16 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 value = vm.efectivoContado,
                                 onValueChange = { vm.efectivoContado = it },
                                 label = { Text("EFECTIVO CONTADO", fontWeight = FontWeight.Bold) },
-                                prefix = { Text("$ ", color = BocattaNeonCyan, fontWeight = FontWeight.Black) },
+                                prefix = { Text("$ ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BocattaNeonCyan,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedTextColor = Color.White,
                                     focusedTextColor = Color.White,
-                                    focusedLabelColor = BocattaNeonCyan,
+                                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                                     unfocusedLabelColor = Color.White.copy(0.4f)
                                 )
                             )
@@ -142,16 +142,16 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 value = vm.tarjetaContada,
                                 onValueChange = { vm.tarjetaContada = it },
                                 label = { Text("TARJETA / TRANSFERENCIA", fontWeight = FontWeight.Bold) },
-                                prefix = { Text("$ ", color = BocattaNeonCyan, fontWeight = FontWeight.Black) },
+                                prefix = { Text("$ ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BocattaNeonCyan,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedTextColor = Color.White,
                                     focusedTextColor = Color.White,
-                                    focusedLabelColor = BocattaNeonCyan,
+                                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                                     unfocusedLabelColor = Color.White.copy(0.4f)
                                 )
                             )
@@ -163,9 +163,9 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                         val diff = vm.diferenciaCaja
                         val cuadra = kotlin.math.abs(diff) <= vm.toleranciaEfectivo
                         val statusColor = when {
-                            cuadra -> BocattaNeonGreen
-                            kotlin.math.abs(diff) <= vm.toleranciaEfectivo * 2 -> BocattaWarning
-                            else -> BocattaDanger
+                            cuadra -> MaterialTheme.colorScheme.tertiary
+                            kotlin.math.abs(diff) <= vm.toleranciaEfectivo * 2 -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.error
                         }
 
                         Surface(
@@ -206,26 +206,26 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     if (vm.tieneCancelacionesPendientes) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = BocattaWarning.copy(0.1f),
-                            border = BorderStroke(1.dp, BocattaWarning.copy(0.3f))
+                            color = MaterialTheme.colorScheme.error.copy(0.1f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.3f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Warning, null, tint = BocattaWarning)
+                                Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error)
                                 Spacer(Modifier.width(16.dp))
                                 Column {
                                     Text(
                                         "${vm.numCancelacionesPendientes} CANCELACIONES PENDIENTES",
                                         fontWeight = FontWeight.Black,
-                                        color = BocattaWarning,
+                                        color = MaterialTheme.colorScheme.error,
                                         fontSize = 12.sp
                                     )
                                     Text(
                                         "REQUIEREN AUTORIZACIÓN ANTES DEL CIERRE",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = BocattaWarning.copy(0.8f),
+                                        color = MaterialTheme.colorScheme.error.copy(0.8f),
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -248,14 +248,14 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                         onClick = { mostrarCierre = true },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = puedesCerrar && vm.efectivoContado.isNotBlank(),
-                        color = if (vm.cadraCaja) BocattaNeonGreen else BocattaNeonCyan
+                        color = if (vm.cadraCaja) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                     )
 
                     if (!puedesCerrar) {
                         Text(
                             "LA CAJA DEBE CUADRAR DENTRO DE LA TOLERANCIA PARA CONSOLIDAR",
                             style = MaterialTheme.typography.labelSmall,
-                            color = BocattaDanger,
+                            color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(horizontal = 8.dp),
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -287,7 +287,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                         BocattaFilaResumen(
                             "Diferencia",
                             "$${String.format(java.util.Locale.getDefault(), "%+.2f", vm.diferenciaCaja)}",
-                            colorValor = if (vm.cadraCaja) BocattaSuccess else MaterialTheme.colorScheme.error,
+                            colorValor = if (vm.cadraCaja) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             negrita = true
                         )
                     }
@@ -306,7 +306,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                             context.startActivity(Intent.createChooser(intent, "Enviar cierre"))
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = BocattaSuccess),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Confirmar y enviar", fontWeight = FontWeight.Bold)

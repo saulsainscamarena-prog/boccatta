@@ -59,7 +59,7 @@ fun DevolucionesScreen(
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BocattaSecondary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary)
             )
         }
     ) { padding ->
@@ -95,19 +95,19 @@ private fun SolicitudCard(solicitud: SolicitudDevolucion, onAprobar: () -> Unit,
     ElevatedCard(shape = RoundedCornerShape(20.dp), colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Total: $${"%.2f".format(solicitud.totalVenta)}", fontWeight = FontWeight.Black, color = BocattaPrimary, fontSize = 20.sp)
+                Text("Total: $${"%.2f".format(solicitud.totalVenta)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, fontSize = 20.sp)
                 Text(sdf.format(Date(solicitud.fecha)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Surface(color = BocattaPrimary.copy(0.05f), shape = RoundedCornerShape(12.dp)) {
+            Surface(color = MaterialTheme.colorScheme.primary.copy(0.05f), shape = RoundedCornerShape(12.dp)) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("MOTIVO:", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = BocattaPrimary)
+                    Text("MOTIVO:", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
                     Text(solicitud.motivo, style = MaterialTheme.typography.bodyMedium)
                 }
             }
             Text("Solicitante: ${solicitud.solicitadoPor}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = onRechazar, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("RECHAZAR") }
-                Button(onClick = onAprobar, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = BocattaSuccess)) { Text("APROBAR") }
+                Button(onClick = onAprobar, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { Text("APROBAR") }
             }
         }
     }
@@ -154,7 +154,7 @@ private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionV
                     ElevatedCard(shape = RoundedCornerShape(16.dp), onClick = { ventaSeleccionada = venta; mostrarDialog = true }, colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {
-                                Text("$${"%.2f".format(venta.total)}", fontWeight = FontWeight.Black, color = BocattaPrimary, fontSize = 18.sp)
+                                Text("$${"%.2f".format(venta.total)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
                                 Text(venta.metodoPago.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Text(sdf.format(Date(venta.fecha)), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)

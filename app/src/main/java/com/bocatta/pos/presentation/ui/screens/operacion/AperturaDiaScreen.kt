@@ -59,14 +59,14 @@ fun AperturaDiaScreen(
                 title = {
                     Column {
                         Text("PROTOCOLOS", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("PROTOCOLO DE APERTURA · MERIDIAN V2", style = MaterialTheme.typography.labelSmall, color = BocattaNeonCyan, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("PROTOCOLO DE APERTURA · MERIDIAN V2", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(BocattaBgDark, Color(0xFF10121A))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
                 // STEPPER PREMIUM
                 Surface(
@@ -81,9 +81,9 @@ fun AperturaDiaScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         PasoItemPremium("1", "SUCURSAL", pasoActual >= 1, pasoActual == 0)
-                        Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 1) BocattaNeonGreen else Color.White.copy(0.1f)))
+                        Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 1) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
                         PasoItemPremium("2", "SURTIDO", pasoActual >= 2, pasoActual == 1)
-                        Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 2) BocattaNeonGreen else Color.White.copy(0.1f)))
+                        Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 2) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
                         PasoItemPremium("3", "FINANZAS", pasoActual >= 3, pasoActual == 2)
                     }
                 }
@@ -110,7 +110,7 @@ fun AperturaDiaScreen(
 
 @Composable
 fun PasoItemPremium(num: String, label: String, completado: Boolean, activo: Boolean) {
-    val color = if (activo) BocattaNeonCyan else if (completado) BocattaNeonGreen else Color.White.copy(0.3f)
+    val color = if (activo) MaterialTheme.colorScheme.primary else if (completado) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.3f)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier.size(36.dp).background(color.copy(0.15f), CircleShape).border(1.dp, color, CircleShape),
@@ -148,12 +148,12 @@ fun SeleccionSucursalPremium(vm: SessionViewModel, onConfirm: () -> Unit) {
             onClick = onConfirm, 
             modifier = Modifier.fillMaxWidth().height(64.dp).padding(bottom = 8.dp), 
             shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
-            Text("INGRESAR A ESTACIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = BocattaBgDark)
+            Text("INGRESAR A ESTACIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = MaterialTheme.colorScheme.background)
             Spacer(Modifier.width(12.dp))
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = BocattaBgDark)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.background)
         }
     }
 }
@@ -162,32 +162,32 @@ fun SeleccionSucursalPremium(vm: SessionViewModel, onConfirm: () -> Unit) {
 fun SucursalCardPremium(nombre: String, seleccionada: Boolean, sugerida: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        color = if (seleccionada) BocattaNeonMagenta.copy(0.08f) else Color.White.copy(0.03f),
+        color = if (seleccionada) MaterialTheme.colorScheme.tertiary.copy(0.08f) else Color.White.copy(0.03f),
         shape = RoundedCornerShape(28.dp), // Meridian Spec: 28dp
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (seleccionada) BocattaNeonMagenta else Color.White.copy(0.08f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (seleccionada) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.08f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
-                color = if (seleccionada) BocattaNeonMagenta.copy(0.15f) else Color.White.copy(0.05f), 
+                color = if (seleccionada) MaterialTheme.colorScheme.tertiary.copy(0.15f) else Color.White.copy(0.05f), 
                 shape = RoundedCornerShape(16.dp), 
                 modifier = Modifier.size(56.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Storefront, null, tint = if (seleccionada) BocattaNeonMagenta else Color.White.copy(0.3f), modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.Storefront, null, tint = if (seleccionada) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.3f), modifier = Modifier.size(32.dp))
                 }
             }
             Spacer(Modifier.width(20.dp))
             Column {
                 Text(nombre.uppercase(), fontWeight = FontWeight.Black, fontSize = 24.sp, color = if(seleccionada) Color.White else Color.White.copy(0.4f), letterSpacing = 1.sp)
                 if (sugerida) Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Verified, null, tint = BocattaNeonCyan, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Verified, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("SUGERIDA POR SISTEMA", color = BocattaNeonCyan, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp, letterSpacing = 0.5.sp)
+                    Text("SUGERIDA POR SISTEMA", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp, letterSpacing = 0.5.sp)
                 }
             }
             Spacer(Modifier.weight(1f))
-            if (seleccionada) Icon(Icons.Default.RadioButtonChecked, null, tint = BocattaNeonMagenta)
+            if (seleccionada) Icon(Icons.Default.RadioButtonChecked, null, tint = MaterialTheme.colorScheme.tertiary)
             else Icon(Icons.Default.RadioButtonUnchecked, null, tint = Color.White.copy(0.1f))
         }
     }
@@ -209,12 +209,12 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
                 Card(
                     shape = RoundedCornerShape(16.dp), 
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.05f)),
-                    border = if (cant > 0) androidx.compose.foundation.BorderStroke(1.dp, BocattaNeonCyan.copy(0.3f)) else null
+                    border = if (cant > 0) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(0.3f)) else null
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Surface(color = BocattaNeonCyan.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                        Surface(color = MaterialTheme.colorScheme.primary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Inventory2, null, tint = BocattaNeonCyan, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Inventory2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                         }
                         Spacer(Modifier.width(16.dp))
@@ -225,7 +225,7 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(Color.White.copy(0.1f), RoundedCornerShape(12.dp)).padding(2.dp)) {
                             IconButton(onClick = { if (cant > 0) transferencias[id] = cant - 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Remove, null, modifier = Modifier.size(18.dp), tint = Color.White) }
                             Text(cant.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp), color = Color.White)
-                            IconButton(onClick = { if (cant < disp) transferencias[id] = cant + 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Add, null, tint = BocattaNeonCyan, modifier = Modifier.size(18.dp)) }
+                            IconButton(onClick = { if (cant < disp) transferencias[id] = cant + 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
                         }
                     }
                 }
@@ -237,12 +237,12 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
             enabled = !vm.cargando,
             modifier = Modifier.fillMaxWidth().height(64.dp).padding(bottom = 8.dp), 
             shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonCyan),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
-            Icon(Icons.Default.CheckCircle, null, tint = BocattaBgDark)
+            Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.background)
             Spacer(Modifier.width(12.dp))
-            Text("CONFIRMAR Y CARGAR", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = BocattaBgDark)
+            Text("CONFIRMAR Y CARGAR", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = MaterialTheme.colorScheme.background)
         }
     }
 }
@@ -258,7 +258,7 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
         
         Surface(color = Color.White.copy(0.05f), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth(), border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.08f))) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.AccountBalanceWallet, null, tint = BocattaNeonCyan, modifier = Modifier.size(52.dp))
+                Icon(Icons.Default.AccountBalanceWallet, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(52.dp))
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = fondo, 
@@ -269,7 +269,7 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
                     shape = RoundedCornerShape(16.dp), 
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BocattaNeonCyan, unfocusedBorderColor = Color.White.copy(0.2f), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = Color.White.copy(0.2f), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
                 Spacer(Modifier.height(12.dp))
                 Text("Se requiere un fondo mínimo de $100.00 pesos.", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f))
@@ -281,7 +281,7 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
             enabled = !vm.cargando,
             modifier = Modifier.fillMaxWidth().height(64.dp), 
             shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BocattaNeonMagenta),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
             Icon(Icons.Default.PowerSettingsNew, null, tint = Color.White)

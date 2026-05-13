@@ -95,7 +95,7 @@ fun AdminScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BocattaOnSurface
+                    containerColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -104,7 +104,7 @@ fun AdminScreen(
 
             // Tabs principales
             Surface(
-                color = BocattaOnSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -141,7 +141,7 @@ fun AdminScreen(
             SecondaryTabRow(
                 selectedTabIndex = subTabSeleccionado,
                 containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = BocattaPrimary
+                contentColor = MaterialTheme.colorScheme.primary
             ) {
                 subTabLabels.forEachIndexed { i, label ->
                     Tab(
@@ -231,7 +231,7 @@ private fun TabDashboard(vm: AdminViewModel) {
             Spacer(Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BocattaMetricCard("Ventas", "$${"%.2f".format(totalVentas)}", BocattaSuccess, Modifier.weight(1f),
+                    BocattaMetricCard("Ventas", "$${"%.2f".format(totalVentas)}", MaterialTheme.colorScheme.primary, Modifier.weight(1f),
                         subtitulo = "${ventasHoy.size} transacciones")
                     BocattaMetricCard("Gastos", "$${"%.2f".format(totalGastos)}", MaterialTheme.colorScheme.error, Modifier.weight(1f))
                 }
@@ -240,10 +240,10 @@ private fun TabDashboard(vm: AdminViewModel) {
                     BocattaMetricCard(
                         "Alertas stock",
                         numAlertas.toString(),
-                        if (numAlertas > 0) BocattaDanger else BocattaSuccess,
+                        if (numAlertas > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         Modifier.weight(1f)
                     )
-                    BocattaMetricCard("Utilidad", "$${"%.2f".format(totalVentas - totalGastos)}", BocattaPrimary, Modifier.weight(1f))
+                    BocattaMetricCard("Utilidad", "$${"%.2f".format(totalVentas - totalGastos)}", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                 }
             }
         }
@@ -258,7 +258,7 @@ private fun TabDashboard(vm: AdminViewModel) {
                     text = { Text("¿Estás seguro de borrar TODOS los datos del sistema? Esta acción no se puede deshacer.") },
                     confirmButton = {
                         Button(onClick = { vm.realizarLimpiezaTotal(); showDeleteConfirm = false },
-                            colors = ButtonDefaults.buttonColors(containerColor = BocattaDanger)) {
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
                             Text("Sí, borrar todo")
                         }
                     },
@@ -271,9 +271,9 @@ private fun TabDashboard(vm: AdminViewModel) {
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Warning, null, tint = BocattaDanger, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Mantenimiento del sistema", fontWeight = FontWeight.Bold, color = BocattaDanger)
+                        Text("Mantenimiento del sistema", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                     }
                     Text("Solo usar en casos de reinicio total.", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer.copy(0.7f))
@@ -281,12 +281,12 @@ private fun TabDashboard(vm: AdminViewModel) {
                         OutlinedButton(
                             onClick = { showDeleteConfirm = true },
                             modifier = Modifier.weight(1f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BocattaDanger)
-                        ) { Text("Borrar todo", fontSize = 12.sp, color = BocattaDanger) }
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        ) { Text("Borrar todo", fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
                         Button(
                             onClick = { vm.inicializarV2() },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = BocattaSuccess)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) { Text("Cargar V2", fontSize = 12.sp) }
                     }
                 }
@@ -304,11 +304,11 @@ private fun TabDashboard(vm: AdminViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("$${"%.2f".format(v.total)}", fontWeight = FontWeight.Black, color = BocattaPrimary)
+                            Text("$${"%.2f".format(v.total)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             Text("Atendió: ${v.atendio}", style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline)
                         }
-                        BocattaBadge(v.sucursal.uppercase(), BocattaPrimary)
+                        BocattaBadge(v.sucursal.uppercase(), MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -373,7 +373,7 @@ private fun TabMenu(vm: AdminViewModel) {
                         }
                         Row {
                             IconButton(onClick = { productoEditar = producto }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = BocattaPrimary)
+                                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
                             }
                             IconButton(onClick = { vm.eliminarProducto(producto) }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
@@ -421,7 +421,7 @@ private fun DialogProducto(
                 LinearProgressIndicator(
                     progress = { (paso + 1) / 3f },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    color = BocattaPrimary
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         },
@@ -591,7 +591,7 @@ private fun TabBodegaGeneral(
             confirmButton = {
                 Button(
                     onClick = { vm.ajustarStock(insumoAjustar!!.id, nuevoStock.toDoubleOrNull() ?: 0.0); insumoAjustar = null; nuevoStock = "" },
-                    colors = ButtonDefaults.buttonColors(containerColor = BocattaSuccess)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) { Text("Guardar") }
             },
             dismissButton = { TextButton(onClick = { insumoAjustar = null }) { Text("Cancelar") } },
@@ -656,11 +656,11 @@ private fun TabBodegaGeneral(
                             Text(insumo.nombre, fontWeight = FontWeight.SemiBold)
                             if (esProduccion) {
                                 Spacer(Modifier.width(6.dp))
-                                BocattaBadge("PROD", BocattaPrimary)
+                                BocattaBadge("PROD", MaterialTheme.colorScheme.primary)
                             }
                             if (stockBajo) {
                                 Spacer(Modifier.width(6.dp))
-                                BocattaBadge("BAJO", BocattaDanger)
+                                BocattaBadge("BAJO", MaterialTheme.colorScheme.error)
                             }
                         }
                         Text("Mínimo: ${insumo.stockMinimo} ${insumo.unidadBase}",
@@ -703,14 +703,14 @@ private fun TabAuditoria(vm: AdminViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(log["productoNombre"]?.toString() ?: "Producto", fontWeight = FontWeight.Black)
-                        Text("Motivo: ${log["motivo"]}", style = MaterialTheme.typography.bodySmall, color = BocattaDanger)
+                        Text("Motivo: ${log["motivo"]}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         Text("Vendedor: ${log["vendedor"]}", style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(sdf.format(Date(log["fecha"] as? Long ?: 0L)),
                             style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                         IconButton(onClick = { vm.revisarCancelacion(log["id"].toString()) }) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = "Marcar revisado", tint = BocattaSuccess)
+                            Icon(Icons.Default.CheckCircle, contentDescription = "Marcar revisado", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -742,7 +742,7 @@ private fun TabRecetas(vm: AdminViewModel) {
             Spacer(Modifier.height(8.dp))
         }
         vm.productos.groupBy { it.categoria }.forEach { (cat, prods) ->
-            item { Text(cat, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = BocattaPrimary) }
+            item { Text(cat, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
             items(prods, key = { it.id }) { prod ->
                 ElevatedCard(shape = RoundedCornerShape(12.dp), onClick = { productoParaReceta = prod }) {
                     Row(modifier = Modifier.padding(14.dp).fillMaxWidth(),
@@ -751,7 +751,7 @@ private fun TabRecetas(vm: AdminViewModel) {
                             Text(prod.nombre, fontWeight = FontWeight.Bold)
                             val receta = vm.recetas[prod.id]
                             if (receta != null && receta.ingredientes.isNotEmpty())
-                                Text("${receta.ingredientes.size} ingredientes", style = MaterialTheme.typography.bodySmall, color = BocattaSuccess)
+                                Text("${receta.ingredientes.size} ingredientes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                             else
                                 Text("Sin receta — no descuenta inventario", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         }
@@ -843,7 +843,7 @@ private fun TabCostosInsumos(vm: AdminViewModel) {
                             label = { Text("$") }, modifier = Modifier.width(100.dp), shape = RoundedCornerShape(8.dp),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
                         IconButton(onClick = { vm.actualizarCostoInsumo(insumo.id, precioStr.toDoubleOrNull() ?: 0.0) }) {
-                            Icon(Icons.Default.Check, contentDescription = "Guardar costo", tint = BocattaSuccess)
+                            Icon(Icons.Default.Check, contentDescription = "Guardar costo", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }

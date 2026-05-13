@@ -16,9 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
 import com.bocatta.pos.presentation.viewmodel.ReportesInventarioViewModel
-import com.bocatta.pos.presentation.ui.theme.BocattaDanger
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
-import com.bocatta.pos.presentation.ui.theme.BocattaWarning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +49,7 @@ fun ReportesInventarioScreen(onBack: () -> Unit) {
                             vm.consumoInsumos.forEach { (insumo, cantidad) ->
                                 Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text(insumo, fontSize = 14.sp)
-                                    Text("${cantidad.toInt()} u.", fontWeight = FontWeight.Bold, color = BocattaPrimary)
+                                    Text("${cantidad.toInt()} u.", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -65,7 +62,7 @@ fun ReportesInventarioScreen(onBack: () -> Unit) {
                     Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column { Text(alerta.insumo, fontWeight = FontWeight.Bold); Text("Quedan ${alerta.diasRestantes} d�as", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            Surface(color = if (alerta.esCritico) BocattaDanger else BocattaWarning, shape = MaterialTheme.shapes.small) { Text("CR�TICO", Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                            Surface(color = if (alerta.esCritico) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error, shape = MaterialTheme.shapes.small) { Text("CR�TICO", Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
                         }
                     }
                 }
