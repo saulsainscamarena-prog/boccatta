@@ -191,33 +191,35 @@ fun CrepeBuilderDialog(
 
                 // SECCIÓN: TOPPINGS
                 SectionTitle("TOPPINGS", if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
-                val toppingsOpts = if (currentConfig.esSalada) InventoryDeductions.TOPPINGS_SALADOS else InventoryDeductions.TOPPINGS_DULCES
-                
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (topping in toppingsOpts) {
-                        val isSelected = currentConfig.toppings.contains(topping)
-                        Surface(
-                            onClick = {
-                                val newList = if (isSelected) currentConfig.toppings - topping else currentConfig.toppings + topping
-                                configs[currentConfigIndex] = currentConfig.copy(toppings = newList)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = if (isSelected) (if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta).copy(0.1f) else Color.White.copy(0.03f),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, if (isSelected) (if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta) else Color.White.copy(0.08f))
-                        ) {
-                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = null,
-                                    colors = CheckboxDefaults.colors(checkedColor = if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(topping, color = Color.White, fontSize = 16.sp)
-                            }
-                        }
-                    }
+    // Hardcoded placeholder toppings list
+    val toppingsOpts = listOf("Fresa", "Nutella", "Oreo", "Choco Chips")
+    
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (topping in toppingsOpts) {
+            val isSelected = currentConfig.toppings.contains(topping)
+            Surface(
+                onClick = {
+                    val newList = if (isSelected) currentConfig.toppings - topping else currentConfig.toppings + topping
+                    configs[currentConfigIndex] = currentConfig.copy(toppings = newList)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                color = if (isSelected) (if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta).copy(0.1f) else Color.White.copy(0.03f),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, if (isSelected) (if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta) else Color.White.copy(0.08f))
+            ) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = null,
+                        colors = CheckboxDefaults.colors(checkedColor = if(currentConfig.esSalada) BocattaNeonCyan else BocattaNeonMagenta)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(topping, color = Color.White, fontSize = 16.sp)
                 }
+            }
+        }
+    }
+
 
                 Spacer(Modifier.height(32.dp))
 

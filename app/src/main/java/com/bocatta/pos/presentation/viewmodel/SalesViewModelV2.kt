@@ -9,6 +9,10 @@ import com.bocatta.pos.di.SalesDependencies
 import com.bocatta.pos.network.NetworkStateProvider
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import java.math.BigDecimal
 import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.bocatta.pos.domain.repository.IProductRepository
@@ -41,10 +45,13 @@ class SalesViewModelV2(
    private val promocionesEngine: PromocionesEngine = deps.promocionesEngine
    private val promocionesRepository: PromocionesRepository = deps.promocionesRepository
 
-   var isOnline by mutableStateOf(true)
-      private set
+    private val _uiState = MutableStateFlow(SalesUiState())
+    val uiState: StateFlow<SalesUiState> = _uiState.asStateFlow()
 
-   private var _productos = mutableStateListOf<SalesInventoryProductV2>()
+    var isOnline by mutableStateOf(true)
+       private set
+
+    private var _productos = mutableStateListOf<SalesInventoryProductV2>()
    val productos: List<SalesInventoryProductV2> get() = _productos
    private val _carrito = mutableStateListOf<ItemCarritoV2>()
    val carrito: List<ItemCarritoV2> get() = _carrito
@@ -315,18 +322,20 @@ class SalesViewModelV2(
       _metodoPagoSeleccionado = MetodoPago.EFECTIVO
    }
 
-   fun finalizarVenta(sucursal: String, usuarioNombre: String) {
-      if (cargando || _carrito.isEmpty()) return
-      if (_esConsumoEmpleado && _rolUsuario == Rol.VENDEDOR) {
-         mensajeError = "Solo administradores pueden registrar consumos de cortesía"
-         return
-      }
+    fun finalizarVenta(sucursal: String, usuarioNombre: String) {
+       if (cargando || _carrito.isEmpty()) return
+       if (_esConsumoEmpleado && _rolUsuario == Rol.VENDEDOR) {
+          mensajeError = "Solo administradores pueden registrar consumos de cortesía"
+          return
+       }
 
-      viewModelScope.launch {
-         try {
-            cargando = true
-            mensajeError = null
-            isOnline = OfflineManager.isNetworkAvailable(getApplication())
+       viewModelScope.launch {
+          try {
+             _uiState.update { it.copy(isLoading = true, error = null, showSuccess = false) }
+             cargando = true
+             mensajeError = null
+             isOnline = OfflineManager.isNetworkAvailable(getApplication())
+
 
             // 1. Validación de Stock
             val stockOk = validarStockCarrito(sucursal)
@@ -341,6 +350,7 @@ class SalesViewModelV2(
             if (!isOnline) {
                procesarVentaOfflineConResultado(sucursal, usuarioNombre)
                mensajeFeedback = "✅ Venta guardada localmente (Modo Offline)"
+               _uiState.update { it.copy(showSuccess = true) }
                return@launch
             }
 
@@ -367,25 +377,29 @@ class SalesViewModelV2(
                giro = "FOOD"
             )
 
-            if (result.success) {
-               // 3. Éxito: Generar Ticket y Aplicar
-               val ticketNum = OfflineManager.obtenerUltimoTicketLocal(getApplication(), sucursal.lowercase()) + 1
-               val codigoTicket = TicketUtils.generarCodigoTicket(sucursal.lowercase(), ticketNum)
-               OfflineManager.guardarUltimoTicketLocal(getApplication(), sucursal.lowercase(), ticketNum)
-               
-               val resultado = com.bocatta.pos.domain.repository.ResultadoVenta(
-                  numeroTicket = ticketNum,
-                  codigoTicket = codigoTicket
-               )
-               aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
-               mensajeFeedback = "✅ Venta finalizada: TICKET #$ticketNum"
-            } else {
+             if (result.success) {
+                // 3. Éxito: Generar Ticket y Aplicar
+                val ticketNum = OfflineManager.obtenerUltimoTicketLocal(getApplication(), sucursal.lowercase()) + 1
+                val codigoTicket = TicketUtils.generarCodigoTicket(sucursal.lowercase(), ticketNum)
+                OfflineManager.guardarUltimoTicketLocal(getApplication(), sucursal.lowercase(), ticketNum)
+                
+                val resultado = com.bocatta.pos.domain.repository.ResultadoVenta(
+                   numeroTicket = ticketNum,
+                   codigoTicket = codigoTicket
+                )
+                aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
+                mensajeFeedback = "✅ Venta finalizada: TICKET #$ticketNum"
+                _uiState.update { it.copy(showSuccess = true) }
+             } else {
+
                throw IllegalStateException(result.error ?: "No se pudo procesar la venta en el servidor")
             }
 
-         } catch (e: Exception) {
-            mensajeError = e.message ?: "Error inesperado al procesar el cobro"
-            Timber.tag("SALE").e(e, "Error en flujo de venta")
+          } catch (e: Exception) {
+             mensajeError = e.message ?: "Error inesperado al procesar el cobro"
+             _uiState.update { it.copy(error = mensajeError) }
+             Timber.tag("SALE").e(e, "Error en flujo de venta")
+
             
             // Fallback Offline si es error de conexión/servidor (no de stock)
             if (e !is IllegalStateException && isOnline) {
@@ -396,11 +410,13 @@ class SalesViewModelV2(
                   mensajeError = "Fallo total: ${fallbackEx.message}"
                }
             }
-         } finally {
-            cargando = false
-         }
-      }
-   }
+          } finally {
+             cargando = false
+             _uiState.update { it.copy(isLoading = false) }
+          }
+       }
+    }
+
 
    private suspend fun procesarVentaOfflineConResultado(sucursal: String, usuarioNombre: String) {
       val totalVenta = calcularTotalVenta()
@@ -485,5 +501,10 @@ class SalesViewModelV2(
       }
    }
 
-   fun limpiarError() { mensajeError = null }
+    fun limpiarError() { mensajeError = null }
+
+    fun onErrorShown() {
+        _uiState.update { it.copy(error = null) }
+    }
 }
+

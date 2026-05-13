@@ -32,22 +32,9 @@ fun ProductionRegistrationDialog(
     sucursal: String,
     onDismiss: () -> Unit
 ) {
-    var insumoId by remember { mutableStateOf("masa_crepa") }
-    var numeroDeTandas by remember { mutableStateOf("1") }
-    var porcionesObtenidas by remember { mutableStateOf("60") }
+    val scope = rememberCoroutineScope()
+    var yieldText by remember { mutableStateOf("") }
     
-    val insumos = listOf("masa_crepa", "helado_vainilla", "helado_chocolate", "fresas_lavadas")
-
-    LaunchedEffect(insumoId, numeroDeTandas) {
-        val tandas = numeroDeTandas.toDoubleOrNull() ?: 0.0
-        porcionesObtenidas = when(insumoId) {
-            "masa_crepa" -> (tandas * 60).toInt().toString()
-            "helado_vainilla", "helado_chocolate" -> (tandas * 50).toInt().toString()
-            "fresas_lavadas" -> (tandas * 20).toInt().toString()
-            else -> porcionesObtenidas
-        }
-    }
-
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -79,58 +66,24 @@ fun ProductionRegistrationDialog(
 
                 Divider(color = Color.White.copy(0.05f))
 
-                Text("SELECCIONAR PRODUCTO BASE", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.6f))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(insumos) { id ->
-                        FilterChip(
-                            selected = insumoId == id,
-                            onClick = { insumoId = id },
-                            label = { Text(id.replace("_", " ").uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = BocattaNeonCyan,
-                                selectedLabelColor = BocattaBgDark,
-                                labelColor = Color.White.copy(0.5f)
-                            )
-                        )
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OutlinedTextField(
-                        value = numeroDeTandas,
-                        onValueChange = { numeroDeTandas = it },
-                        label = { Text("TANDAS", fontWeight = FontWeight.Bold) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BocattaNeonCyan,
-                            unfocusedBorderColor = Color.White.copy(0.1f),
-                            focusedLabelColor = BocattaNeonCyan,
-                            unfocusedLabelColor = Color.White.copy(0.4f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        )
+                Text("CANTIDAD PRODUCIDA", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White.copy(0.6f))
+                
+                OutlinedTextField(
+                    value = yieldText,
+                    onValueChange = { yieldText = it.filter { c -> c.isDigit() } },
+                    label = { Text("¿Cuántas porciones salieron?") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BocattaNeonCyan,
+                        unfocusedBorderColor = Color.White.copy(0.1f),
+                        focusedLabelColor = BocattaNeonCyan,
+                        unfocusedLabelColor = Color.White.copy(0.4f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
                     )
-
-                    OutlinedTextField(
-                        value = porcionesObtenidas,
-                        onValueChange = { porcionesObtenidas = it },
-                        label = { Text("RESULTADO", fontWeight = FontWeight.Bold) },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BocattaNeonCyan,
-                            unfocusedBorderColor = Color.White.copy(0.1f),
-                            focusedLabelColor = BocattaNeonCyan,
-                            unfocusedLabelColor = Color.White.copy(0.4f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        )
-                    )
-                }
+                )
 
                 Surface(
                     color = Color.White.copy(0.03f),
@@ -141,7 +94,7 @@ fun ProductionRegistrationDialog(
                         Icon(Icons.Default.Analytics, null, tint = BocattaNeonCyan, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Se descontarán ingredientes de Bodega Central y se cargarán $porcionesObtenidas unidades a ${sucursal.uppercase()}.",
+                            "Se registrarán las unidades producidas en ${sucursal.uppercase()}.",
                             fontSize = 11.sp,
                             color = Color.White.copy(0.7f),
                             fontWeight = FontWeight.Medium
@@ -151,17 +104,18 @@ fun ProductionRegistrationDialog(
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     NeonButton(
-                        texto = "EJECUTAR PRODUCCIÓN",
+                        texto = "REGISTRAR PRODUCCIÓN",
                         onClick = {
-                            val mp = numeroDeTandas.toDoubleOrNull() ?: 0.0
-                            val po = porcionesObtenidas.toDoubleOrNull() ?: 0.0
-                            vm.registrarProduccion(
-                                insumoId = insumoId,
-                                porcionesObtenidas = po,
-                                tandasPreparadas = mp, 
-                                sobranteAnterior = 0.0,
-                                onResult = { if (it) onDismiss() }
-                            )
+                            val yield = yieldText.toIntOrNull() ?: 0
+                            if (yield > 0) {
+                                vm.registrarProduccion(
+                                    insumoId = "masa_crepa", // Default to masa_crepa as requested for simplification
+                                    porcionesObtenidas = yield.toDouble(),
+                                    tandasPreparadas = 1.0, 
+                                    sobranteAnterior = 0.0,
+                                    onResult = { if (it) onDismiss() }
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         color = BocattaNeonCyan

@@ -58,7 +58,7 @@ object OfflineManager {
                 recetaId = item.producto.recetaId,
                 toppings = item.toppings,
                 base = item.base,
-                aderezo = item.aderezo,
+                aderezos = item.aderezos,
                 esSeparado = item.esSeparado,
                 cantidad = item.cantidad
             )
@@ -82,7 +82,7 @@ object OfflineManager {
                 "categoria" to item.producto.categoria,
                 "esSeparado" to item.esSeparado,
                 "base" to item.base,
-                "aderezo" to item.aderezo,
+                "aderezos" to item.aderezos,
                 "toppings" to item.toppings
             )
         })

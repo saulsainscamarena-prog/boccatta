@@ -117,11 +117,10 @@ class ItemVendidoV2Test {
         val item = ItemVendidoV2(
             productoId = "sin-extras",
             base = null,
-            aderezo = null,
             recetaId = null
         )
         assertNull(item.base)
-        assertNull(item.aderezo)
+        assertTrue(item.aderezos.isEmpty())
         assertNull(item.recetaId)
     }
 }

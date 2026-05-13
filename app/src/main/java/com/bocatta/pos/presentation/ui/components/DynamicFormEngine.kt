@@ -94,7 +94,6 @@ object DynamicFormEngine {
             if (value != null) {
                 result[field.key] = when (field) {
                     is FormField.NumberField -> {
-                        // Sanitización de números para evitar errores de casteo en Firestore
                         when (value) {
                             is Number -> value.toDouble()
                             is String -> value.toDoubleOrNull() ?: 0.0
@@ -111,6 +110,8 @@ object DynamicFormEngine {
         return result
     }
 }
+
+fun sanitizeLabel(label: String): String = label.replace(Regex("[\\x00-\\x1F\\x7F]"), "")
 
 @Composable
 fun DynamicProductForm(
@@ -132,7 +133,7 @@ fun DynamicProductForm(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Atributos: ${schema.label}",
+            text = "Atributos: ${sanitizeLabel(schema.label)}",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             color = BocattaPrimary
@@ -141,27 +142,28 @@ fun DynamicProductForm(
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         for (field in schema.fields) {
+            val label = sanitizeLabel(field.label)
             when (field) {
                 is FormField.TextField -> TextFormField(
-                    label = field.label,
+                    label = label,
                     value = (currentValues[field.key] as? String) ?: field.defaultValue as? String ?: "",
                     onValueChange = { currentValues[field.key] = it },
                     readOnly = readOnly
                 )
                 is FormField.NumberField -> NumberFormField(
-                    label = field.label,
+                    label = label,
                     value = (currentValues[field.key] as? Number)?.toDouble() ?: field.defaultValue as? Double ?: 0.0,
                     onValueChange = { currentValues[field.key] = it },
                     readOnly = readOnly
                 )
                 is FormField.BooleanField -> SwitchFormField(
-                    label = field.label,
+                    label = label,
                     checked = (currentValues[field.key] as? Boolean) ?: field.defaultValue as? Boolean ?: false,
                     onCheckedChange = { currentValues[field.key] = it },
                     readOnly = readOnly
                 )
                 is FormField.SelectField -> SelectFormField(
-                    label = field.label,
+                    label = label,
                     options = field.options,
                     selected = (currentValues[field.key] as? String) ?: field.defaultValue as? String ?: field.options.first(),
                     onSelected = { currentValues[field.key] = it },
@@ -169,7 +171,7 @@ fun DynamicProductForm(
                 )
                 is FormField.ListField -> {
                     Text(
-                        text = field.label,
+                        text = label,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface

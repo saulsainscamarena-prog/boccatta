@@ -900,7 +900,7 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
                                 vm.registrarProduccion(
                                     insumoId = selectedId!!,
                                     porcionesObtenidas = porcionesObtenidas.toDoubleOrNull() ?: 0.0,
-                                    materiaPrimaUsadaG = materiaUsada.toDoubleOrNull() ?: 0.0,
+                                    tandasPreparadas = materiaUsada.toDoubleOrNull() ?: 0.0,
                                     sobranteAnterior = 0.0
                                 ) { guardando = false; selectedId = null; materiaUsada = ""; porcionesObtenidas = "" }
                             },

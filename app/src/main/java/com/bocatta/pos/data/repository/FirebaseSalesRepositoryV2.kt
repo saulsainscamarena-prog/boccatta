@@ -83,7 +83,7 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                     cantidad = item.cantidad,
                     precioUnitario = item.precioFinal.toDouble(),
                     base = item.base,
-                    aderezo = item.aderezo,
+                    aderezos = item.aderezos,
                     toppings = item.toppings,
                     separadas = item.esSeparado,
                     recetaId = item.producto.recetaId,

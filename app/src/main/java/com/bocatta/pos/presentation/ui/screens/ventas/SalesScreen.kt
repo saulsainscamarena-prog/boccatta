@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -56,6 +57,7 @@ fun SalesScreen(
     var mostrarRetiroAlimento by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var mostrarCarritoMobile by remember { mutableStateOf(false) }
+    val uiState by vmV2.uiState.collectAsState()
     val isOnline = vmV2.isOnline
 
     val categorias = remember(vmV2.productos) {
@@ -92,6 +94,25 @@ fun SalesScreen(
                 duration = SnackbarDuration.Long
             )
             vmV2.limpiarError()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { msg ->
+            snackbarHostState.showSnackbar(
+                message = "❌ $msg",
+                duration = SnackbarDuration.Short
+            )
+            vmV2.onErrorShown()
+        }
+    }
+
+    LaunchedEffect(uiState.showSuccess) {
+        if (uiState.showSuccess) {
+            snackbarHostState.showSnackbar(
+                message = "✅ Venta registrada",
+                duration = SnackbarDuration.Short
+            )
         }
     }
 
@@ -296,22 +317,31 @@ fun SalesScreen(
                         }
                     }
 
-                    if (isTablet) {
-                        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
-                        CarritoPanelV2(
-                            carrito = vmV2.carrito,
-                            totalCarrito = vmV2.totalCarrito,
-                            descuentoLealtad = vmV2.descuentoLealtad,
-                            descuentoPromociones = vmV2.descuentoPromociones,
-                            clienteSeleccionado = vmV2.clienteSeleccionado,
-                            modifier = Modifier.weight(0.38f).fillMaxHeight(),
-                            onEliminarItem = { itemPorEliminar = it },
-                            onCobrar = { mostrarPago = true }
-                        )
-                    }
-                }
-            }
-            if (mostrarCarritoMobile && !isTablet) {
+                     if (isTablet) {
+                         VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
+                         CarritoPanelV2(
+                             carrito = vmV2.carrito,
+                             totalCarrito = vmV2.totalCarrito,
+                             descuentoLealtad = vmV2.descuentoLealtad,
+                             descuentoPromociones = vmV2.descuentoPromociones,
+                             clienteSeleccionado = vmV2.clienteSeleccionado,
+                             modifier = Modifier.weight(0.38f).fillMaxHeight(),
+                             onEliminarItem = { itemPorEliminar = it },
+                             onCobrar = { mostrarPago = true }
+                         )
+                     }
+                 }
+             }
+             if (uiState.isLoading) {
+                 Box(
+                     modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
+                     contentAlignment = Alignment.Center
+                 ) {
+                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                 }
+             }
+             if (mostrarCarritoMobile && !isTablet) {
+
                 ModalBottomSheet(onDismissRequest = { mostrarCarritoMobile = false }, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)) {
                     CarritoPanelV2(vmV2.carrito, vmV2.totalCarrito, vmV2.descuentoLealtad, vmV2.descuentoPromociones, vmV2.clienteSeleccionado, Modifier.fillMaxWidth(), { itemPorEliminar = it; mostrarCarritoMobile = false }, { mostrarCarritoMobile = false; mostrarPago = true })
                     Spacer(Modifier.height(32.dp))

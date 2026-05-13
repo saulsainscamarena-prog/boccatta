@@ -115,11 +115,11 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
         recetaId: String?,
         toppings: List<String>,
         base: String? = null,
-        aderezo: String? = null,
+        aderezos: List<String> = emptyList(),
         esSeparado: Boolean = false,
         cantidad: Int = 1
     ): Boolean {
-        val valido = validarStockLocal(calcularDeduccionesVentaOffline(productoId, recetaId, toppings, base, aderezo, esSeparado, cantidad))
+        val valido = validarStockLocal(calcularDeduccionesVentaOffline(productoId, recetaId, toppings, base, aderezos, esSeparado, cantidad))
         Timber.tag("INVENTORY").i("Validación de venta completa para $productoId: $valido")
         return valido
     }
@@ -131,7 +131,7 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
         cantidad: Int = 1
     ): Boolean {
         Timber.tag("INVENTORY").i("Procesando venta completa para $productoId con $cantidad unidades")
-        return descontarVentaCompleta(productoId, recetaId, toppings, null, null, false, cantidad)
+        return descontarVentaCompleta(productoId, recetaId, toppings, null, emptyList(), false, cantidad)
     }
 
     fun descontarVentaCompleta(
@@ -139,11 +139,11 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
         recetaId: String?,
         toppings: List<String>,
         base: String? = null,
-        aderezo: String? = null,
+        aderezos: List<String> = emptyList(),
         esSeparado: Boolean = false,
         cantidad: Int = 1
     ): Boolean {
-        val deducciones = calcularDeduccionesVentaOffline(productoId, recetaId, toppings, base, aderezo, esSeparado, cantidad)
+        val deducciones = calcularDeduccionesVentaOffline(productoId, recetaId, toppings, base, aderezos, esSeparado, cantidad)
         if (!validarStockLocal(deducciones)) {
             Timber.tag("INVENTORY").w("Stock insuficiente para $productoId")
             return false
@@ -158,7 +158,7 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
         recetaId: String?,
         toppings: List<String>,
         base: String?,
-        aderezo: String?,
+        aderezos: List<String>,
         esSeparado: Boolean,
         cantidad: Int
     ): Map<String, Double> {
@@ -170,7 +170,7 @@ class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
             precioFinal = BigDecimal.ZERO,
             cantidad = cantidad,
             base = base,
-            aderezo = aderezo,
+            aderezos = aderezos,
             toppings = toppings,
             esSeparado = esSeparado
         )

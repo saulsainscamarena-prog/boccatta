@@ -216,7 +216,7 @@ class InventoryDeductionsTest {
         val item = ItemCarritoV2(
             producto = SalesInventoryProductV2(id = "p1", nombre = "Crepa", esCombo = false),
             precioFinal = BigDecimal.valueOf(100),
-            aderezo = "chocolate"
+            aderezos = listOf("chocolate")
         )
         val ded = InventoryDeductions.calcularParaItem(item, emptyList())
         assertEquals(20.0, ded["granillo_chocolate"]!!, 0.01)
