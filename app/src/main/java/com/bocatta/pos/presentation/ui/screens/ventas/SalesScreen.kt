@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +40,10 @@ import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.presentation.ui.components.*
 import com.bocatta.pos.presentation.ui.theme.*
 import com.bocatta.pos.presentation.viewmodel.*
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.*
 import com.bocatta.pos.presentation.ui.screens.ventas.HeldOrdersScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -67,6 +72,28 @@ fun SalesScreen(
     var mostrarCancelarVentaPin by remember { mutableStateOf(false) }
     var mostrarHeldOrders by remember { mutableStateOf(false) }
     val heldOrderVm: HeldOrderViewModel = viewModel()
+    val scannerFocus = remember { FocusRequester() }
+    var scannerInput by remember { mutableStateOf("") }
+
+    LaunchedEffect(scannerInput) {
+        if (scannerInput.length >= 3) {
+            val prod = vmV2.productos.find { it.id == scannerInput || it.nombre.equals(scannerInput, ignoreCase = true) }
+            if (prod != null) { productoConfigurando = prod; scannerInput = "" }
+        }
+    }
+
+    val onKeyEvent: (KeyEvent) -> Boolean = { event ->
+        if (event.type == KeyEventType.KeyUp) {
+            when (event.key) {
+                Key.F1 -> { scannerFocus.requestFocus(); true }
+                Key.F2 -> { if (vmV2.carrito.isNotEmpty()) mostrarPago = true; true }
+                Key.F3 -> { mostrarBuscarCliente = true; true }
+                Key.Escape -> { mostrarCancelarVentaPin = true; true }
+                else -> false
+            }
+        } else false
+    }
+
     val uiState by vmV2.uiState.collectAsState()
     val isOnline = vmV2.isOnline
 
@@ -254,7 +281,17 @@ fun SalesScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    // Scanner oculto
+    Box(modifier = Modifier.size(1.dp).alpha(0f)) {
+        OutlinedTextField(
+            value = scannerInput,
+            onValueChange = { scannerInput = it },
+            modifier = Modifier.focusRequester(scannerFocus).size(1.dp),
+            singleLine = true
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).onKeyEvent(onKeyEvent)) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isTablet = maxWidth >= 720.dp // Meridian Spec: 720dp for tablet layout
             
