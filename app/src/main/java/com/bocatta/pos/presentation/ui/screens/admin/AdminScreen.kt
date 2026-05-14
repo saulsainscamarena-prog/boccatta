@@ -31,6 +31,10 @@ import com.bocatta.pos.presentation.ui.components.DynamicFormEngine
 import com.bocatta.pos.presentation.ui.components.DynamicProductForm
 import com.bocatta.pos.presentation.ui.components.GiroSelector
 import com.bocatta.pos.presentation.viewmodel.AdminViewModel
+import com.bocatta.pos.presentation.viewmodel.CatalogoViewModel
+import com.bocatta.pos.presentation.viewmodel.ConfigGlobalViewModel
+import com.bocatta.pos.presentation.viewmodel.ComboViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
@@ -134,7 +138,7 @@ fun AdminScreen(
             // Sub-tabs — tokens semánticos, sin colores hardcodeados
             val subTabLabels = when (tabPrincipal) {
                 0 -> listOf("Resumen", "Auditoría")
-                1 -> listOf("Catálogo", "Recetas", "Costos")
+                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos")
                 2 -> listOf("Stock", "Producción", "Config")
                 else -> emptyList()
             }
@@ -167,6 +171,9 @@ fun AdminScreen(
                     0 -> TabMenu(vm = vm)
                     1 -> TabRecetas(vm = vm)
                     2 -> TabCostosInsumos(vm = vm)
+                    3 -> TabCatalogos(vm = viewModel())
+                    4 -> TabConfigGlobal(vm = viewModel(), allProducts = vm.productos, allCategories = vm.categorias.map { CategoriaProducto(id = it.id, nombre = it.nombre) })
+                    5 -> TabCombos(vm = viewModel(), allProducts = vm.productos, onBack = { tabPrincipal = 1; subTabSeleccionado = 0 })
                 }
                 2 -> when (subTabSeleccionado) {
                     0 -> TabBodegaGeneral(
