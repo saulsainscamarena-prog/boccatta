@@ -62,7 +62,7 @@ fun AperturaDiaScreen(
                         Text("PROTOCOLO DE APERTURA · MERIDIAN V2", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
             )
         }
     ) { padding ->

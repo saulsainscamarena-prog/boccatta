@@ -318,7 +318,7 @@ fun SalesScreen(
                             }
                             Spacer(Modifier.width(16.dp))
                         },
-                        colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
                     )
                 },
                 bottomBar = {
@@ -349,18 +349,11 @@ fun SalesScreen(
                         }
                         
                         // Categorías con Estilo Premium
-                        ScrollableTabRow(
+                        PrimaryScrollableTabRow(
                             selectedTabIndex = if (categoriaSeleccionada == "TODOS") 0 else (categorias.indexOf(categoriaSeleccionada) + 1).coerceAtLeast(0),
                             containerColor = Color.Transparent,
                             edgePadding = 16.dp,
-                            divider = {},
-                            indicator = { tabPositions ->
-                                 val index = if (categoriaSeleccionada == "TODOS") 0 else (categorias.indexOf(categoriaSeleccionada) + 1).coerceAtLeast(0)
-                                 TabRowDefaults.SecondaryIndicator(
-                                     modifier = Modifier.tabIndicatorOffset(tabPositions[index]),
-                                     color = MaterialTheme.colorScheme.primary
-                                 )
-                            }
+                            divider = {}
                         ) {
                             Tab(selected = categoriaSeleccionada == "TODOS", onClick = { categoriaSeleccionada = "TODOS" }) {
                                 Text("TODOS", modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == "TODOS") FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == "TODOS") MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(0.5f))

@@ -91,7 +91,7 @@ fun InventoryScreen(
                         IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, null, tint = Color.White.copy(0.7f)) }
                         IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, null, tint = MaterialTheme.colorScheme.primary) }
                     },
-                    colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
                 )
             },
             floatingActionButton = {

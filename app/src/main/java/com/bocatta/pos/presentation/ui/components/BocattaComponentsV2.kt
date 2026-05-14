@@ -181,13 +181,14 @@ fun NeonButton(
     color: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true
 ) {
-    Button(
+    FilledTonalButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.height(56.dp).shadow(if(enabled) 12.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = color, spotColor = color),
+        modifier = modifier.height(56.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(
+        colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = color,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
