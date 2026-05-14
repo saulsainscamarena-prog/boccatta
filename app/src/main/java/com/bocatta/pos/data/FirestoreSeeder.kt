@@ -45,6 +45,24 @@ object FirestoreSeeder {
                 .addOnSuccessListener { Log.d("Seeder", "Insumo ${insumo["id"]} seeded") }
         }
 
+        // ============ PRESENTACIONES DE COMPRA ============
+        val presentaciones = listOf(
+            mapOf("insumoId" to "galleta_oreo", "nombre" to "Caja (21 paquetes)", "contenido" to 21, "unidadBase" to "paquete", "subunidades" to 14),
+            mapOf("insumoId" to "galleta_oreo", "nombre" to "Paquete individual", "contenido" to 1, "unidadBase" to "paquete", "subunidades" to 14),
+            mapOf("insumoId" to "galleta_maria", "nombre" to "Paquete (3 unidades de 170g)", "contenido" to 3, "unidadBase" to "pza", "subunidades" to 35),
+            mapOf("insumoId" to "galleta_mexicana", "nombre" to "Paquete (5 unidades de 135g)", "contenido" to 5, "unidadBase" to "pza", "subunidades" to 12),
+            mapOf("insumoId" to "boneless_bolsa", "nombre" to "Bolsa completa (2.6 kg)", "contenido" to 1, "unidadBase" to "kg", "subunidades" to 2600),
+            mapOf("insumoId" to "boneless_bolsa", "nombre" to "Porción individual (250g)", "contenido" to 1, "unidadBase" to "g", "subunidades" to 250),
+            mapOf("insumoId" to "papas_bolsa", "nombre" to "Bolsa completa (2.3 kg)", "contenido" to 1, "unidadBase" to "kg", "subunidades" to 2300),
+            mapOf("insumoId" to "papas_bolsa", "nombre" to "Porción individual (200g)", "contenido" to 1, "unidadBase" to "g", "subunidades" to 200)
+        )
+        presentaciones.forEachIndexed { i, p ->
+            val docId = "${p["insumoId"]}_pres_$i"
+            db.collection(FirestoreCollections.PRESENTACIONES).document(docId)
+                .set(p)
+                .addOnSuccessListener { Log.d("Seeder", "Presentación $docId seeded") }
+        }
+
         // ============ PRODUCTOS TERMINADOS ============
         // Helper para crear configuración de crepa
         fun baseCrepaOptions(dulce: Boolean) = listOf(

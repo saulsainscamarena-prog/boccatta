@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.bocatta.pos.presentation.ui.theme.*
 import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -34,8 +36,29 @@ fun ProductionRegistrationDialog(
     var sobranteText by remember { mutableStateOf("") }
     var compraPesoText by remember { mutableStateOf("") }
     var porcionPesoText by remember { mutableStateOf("") }
-    var modo by remember { mutableStateOf("producir") } // "producir" | "comprar"
+    var modo by remember { mutableStateOf("producir") } // "producir" | "peso" | "presentacion"
     var expandedMenu by remember { mutableStateOf(false) }
+    var expandedPresMenu by remember { mutableStateOf(false) }
+    var presentaciones by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var presentacionSeleccionada by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var cantidadPresentacionText by remember { mutableStateOf("") }
+
+    // Cargar presentaciones cuando cambia el insumo
+    LaunchedEffect(insumoSeleccionado) {
+        if (insumoSeleccionado.isNotBlank()) {
+            try {
+                val db = com.bocatta.pos.network.firebase.FirebaseFirestoreProvider.db
+                val snap = db.collection(com.bocatta.pos.core.constants.FirestoreCollections.PRESENTACIONES)
+                    .whereEqualTo("insumoId", insumoSeleccionado)
+                    .get().await()
+                presentaciones = snap.documents.mapNotNull { it.data?.plus("id" to it.id) }
+                presentacionSeleccionada = null
+                cantidadPresentacionText = ""
+            } catch (_: Exception) { presentaciones = emptyList() }
+        } else {
+            presentaciones = emptyList()
+        }
+    }
     val pesoTotal = compraPesoText.toDoubleOrNull() ?: 0.0
     val pesoPorcion = porcionPesoText.toDoubleOrNull()
         ?: (if (insumoSeleccionado.contains("boneless", true)) 250.0
@@ -89,13 +112,23 @@ fun ProductionRegistrationDialog(
                         )
                     )
                     FilterChip(
-                        selected = modo == "comprar",
-                        onClick = { modo = "comprar" },
+                        selected = modo == "peso",
+                        onClick = { modo = "peso" },
                         label = { Text("COMPRAR POR PESO") },
-                        leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(Icons.Default.MonitorWeight, null, modifier = Modifier.size(16.dp)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.tertiary,
                             selectedLabelColor = MaterialTheme.colorScheme.onTertiary
+                        )
+                    )
+                    FilterChip(
+                        selected = modo == "presentacion",
+                        onClick = { modo = "presentacion" },
+                        label = { Text("POR PRESENTACIÓN") },
+                        leadingIcon = { Icon(Icons.Default.Inventory2, null, modifier = Modifier.size(16.dp)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary
                         )
                     )
                 }
@@ -170,7 +203,9 @@ fun ProductionRegistrationDialog(
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
-                } else {
+                }
+
+                if (modo == "peso") {
                     // Modo compra por peso
                     OutlinedTextField(
                         value = compraPesoText,
@@ -238,7 +273,7 @@ fun ProductionRegistrationDialog(
                                     sobranteAnterior = sobrante,
                                     onResult = { if (it) onDismiss() }
                                 )
-                            } else if (modo == "comprar" && pesoTotal > 0 && pesoPorcion > 0) {
+                            } else if (modo == "peso" && pesoTotal > 0 && pesoPorcion > 0) {
                                 val totalKilos = pesoTotal
                                 val porcionesCalc = (totalKilos * 1000 / pesoPorcion).toInt()
                                 vm.registrarProduccion(
@@ -248,25 +283,52 @@ fun ProductionRegistrationDialog(
                                     sobranteAnterior = 0.0,
                                     onResult = { if (it) onDismiss() }
                                 )
+                            } else if (modo == "presentacion") {
+                                val pres = presentacionSeleccionada
+                                val cant = cantidadPresentacionText.toIntOrNull() ?: 0
+                                if (pres != null && cant > 0) {
+                                    val totalUnidades = cant * (pres["contenido"] as? Number)?.toInt()!! * (pres["subunidades"] as? Number)?.toInt()!!
+                                    vm.registrarProduccion(
+                                        insumoId = insumoSeleccionado,
+                                        porcionesObtenidas = totalUnidades.toDouble(),
+                                        tandasPreparadas = 1.0,
+                                        sobranteAnterior = 0.0,
+                                        onResult = { if (it) onDismiss() }
+                                    )
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (modo == "comprar") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                            containerColor = when (modo) {
+                                "peso" -> MaterialTheme.colorScheme.tertiary
+                                "presentacion" -> MaterialTheme.colorScheme.secondary
+                                else -> MaterialTheme.colorScheme.primary
+                            }
                         ),
                         enabled = insumoSeleccionado.isNotBlank() &&
                             ((modo == "producir" && (porcionesText.toIntOrNull() ?: 0) > 0) ||
-                             (modo == "comprar" && (compraPesoText.toDoubleOrNull() ?: 0.0) > 0 && (porcionPesoText.toDoubleOrNull() ?: 0.0) > 0))
+                             (modo == "peso" && (compraPesoText.toDoubleOrNull() ?: 0.0) > 0 && (porcionPesoText.toDoubleOrNull() ?: 0.0) > 0) ||
+                             (modo == "presentacion" && presentacionSeleccionada != null && (cantidadPresentacionText.toIntOrNull() ?: 0) > 0))
                     ) {
                         Icon(
-                            if (modo == "producir") Icons.Default.AddCircle else Icons.Default.ShoppingCartCheckout,
+                            when (modo) {
+                                "producir" -> Icons.Default.AddCircle
+                                "peso" -> Icons.Default.MonitorWeight
+                                "presentacion" -> Icons.Default.Inventory2
+                                else -> Icons.Default.ShoppingCartCheckout
+                            },
                             null,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (modo == "producir") "REGISTRAR PRODUCCIÓN" else "REGISTRAR COMPRA",
+                            when (modo) {
+                                "producir" -> "REGISTRAR PRODUCCIÓN"
+                                "presentacion" -> "REGISTRAR COMPRA POR PRESENTACIÓN"
+                                else -> "REGISTRAR COMPRA"
+                            },
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onPrimary
                         )

@@ -9,8 +9,13 @@ enum class TipoInsumo {
 data class PresentacionCompra(
     val nombre: String = "", // Ej: "Caja", "Paquete", "Garrafón"
     val factorConversion: Double = 1.0, // Ej: 294 (galletas por caja)
-    val ultimoPrecioPagado: Double = 0.0
-)
+    val ultimoPrecioPagado: Double = 0.0,
+    val contenido: Int = 1,
+    val unidadBase: String = "pza",
+    val subunidades: Int = 1
+) {
+    fun totalUnidades(cantidadComprada: Int): Int = cantidadComprada * contenido * subunidades
+}
 
 data class InventarioItem(
     val id: String = "",
