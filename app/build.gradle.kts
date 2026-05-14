@@ -3,8 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.serialization)
+    // alias(libs.plugins.ksp) // KSP aún no disponible para Kotlin 2.2.10 (pendiente)
     // id("org.jetbrains.kotlin.kapt")
-    // alias(libs.plugins.ksp) // Disabled until KSP2 Room compatibility is resolved
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
     id("jacoco")
 }
@@ -113,9 +113,8 @@ dependencies {
     // Serialización JSON para guardar ventas offline
     implementation(libs.kotlinx.serialization.json)
 
-    // Room — Disabled: native SQLiteOpenHelper + SQLiteStockAdjustmentQueue are the primary implementations.
-    // Room source files remain at data/local/room/ for reference. When KSP2 is compatible, re-enable with:
-    //   ksp(libs.room.compiler)
+    // Room — Pendiente: KSP no disponible para Kotlin 2.2.10. Usar SQLite nativa.
+    // ksp(libs.room.compiler)
     // implementation(libs.room.runtime)
     // implementation(libs.room.ktx)
 }

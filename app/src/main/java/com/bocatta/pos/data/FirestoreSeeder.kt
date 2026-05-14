@@ -259,6 +259,34 @@ object FirestoreSeeder {
             ),
             // === BOTANAS ===
             mapOf(
+                "nombre" to "Chalupas (7 pzas)",
+                "emoji" to "🫓",
+                "categoria" to "BOTANAS",
+                "precioVenta" to mapOf("atlixco" to 40.0, "metepec" to 40.0),
+                "esCombo" to false,
+                "configSchema" to listOf(
+                    mapOf(
+                        "key" to "salsa",
+                        "title" to "SALSA",
+                        "type" to "SINGLE_CHIP",
+                        "options" to listOf("Salsa Verde", "Salsa Roja"),
+                        "required" to true,
+                        "defaultValue" to "Salsa Verde"
+                    ),
+                    mapOf(
+                        "key" to "ingredientes",
+                        "title" to "INGREDIENTES EXTRAS",
+                        "type" to "MULTI_CHECKBOX",
+                        "options" to listOf("Cebolla", "Queso Rayado", "Crema"),
+                        "multiMax" to 3
+                    )
+                ),
+                "consumiblesAsociados" to listOf(
+                    mapOf("consumibleId" to "charola", "cantidad" to 1.0, "unidad" to "pz"),
+                    mapOf("consumibleId" to "servilleta", "cantidad" to 1.0, "unidad" to "pz")
+                )
+            ),
+            mapOf(
                 "nombre" to "Papas Fritas",
                 "emoji" to "🍟",
                 "categoria" to "BOTANAS",

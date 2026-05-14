@@ -14,5 +14,13 @@ data class SalesInventoryProductV2(
     val esProductoTopping: Boolean = false,
     val consumiblesAsociados: List<ConsumibleRequerido> = emptyList(),
     val fotoUrl: String? = null,
-    val configSchema: List<ConfigOptionGroup> = emptyList()
+    val configSchema: List<ConfigOptionGroup> = emptyList(),
+    val subcategoria: String = "",
+    val tipoProducto: String = "PREPARADO",
+    val comboMode: String = "COMBO_ONLY",
+    val rendimientoTanda: Int = 1,
+    val unidadCompra: String = "",
+    val pesoPorcion: Double? = null,
+    val overrideGrupos: OverrideGrupos = OverrideGrupos(),
+    val activo: Boolean = true
 )
