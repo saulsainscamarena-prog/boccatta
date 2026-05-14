@@ -222,6 +222,8 @@ fun PagoDialog(
         propinaCustom.toDoubleOrNull() ?: 0.0
     }
     var notaOrden by remember { mutableStateOf("") }
+    var mostrarSplit by remember { mutableStateOf(false) }
+    var splitPartes by remember { mutableStateOf(emptyList<com.bocatta.pos.domain.model.SplitParte>()) }
     val total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones).coerceAtLeast(0.0) + propina
     val cambio = (pagaCon.toDoubleOrNull() ?: 0.0) - total
     val esAdmin = vmV2.rolUsuario == com.bocatta.pos.domain.model.Rol.ADMIN
@@ -375,6 +377,38 @@ fun PagoDialog(
                             Text("Transf.", fontSize = 12.sp) 
                         }
                     }
+                }
+
+                // Dividir cuenta
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("DIVIDIR CUENTA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(8.dp))
+                    Switch(
+                        checked = mostrarSplit,
+                        onCheckedChange = {
+                            mostrarSplit = it
+                            if (it) splitPartes = com.bocatta.pos.domain.model.calcularSplit(total, 2, vmV2.metodoPagoSeleccionado)
+                            else splitPartes = emptyList()
+                        },
+                        colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
+                    )
+                }
+
+                if (mostrarSplit) {
+                    SplitPaymentDialog(
+                        total = total,
+                        initialParts = splitPartes,
+                        onConfirm = { partes -> splitPartes = partes; mostrarSplit = false },
+                        onDismiss = { mostrarSplit = false }
+                    )
+                    splitPartes.forEachIndexed { i, parte ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Persona ${i + 1}", fontSize = 12.sp)
+                            Text("$${"%.2f".format(parte.monto)}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                            Text(parte.metodoPago.valor, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
                 }
 
                 if (esAdmin) {
