@@ -62,10 +62,11 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 3
 
         const val TABLE_VENTAS = "ventas_pendientes"
         const val TABLE_OPS = "operaciones_pendientes"
+        const val TABLE_HELD_ORDERS = "held_orders"
 
         const val TABLE_INSUMOS = "insumos_v2"
         const val TABLE_CONSUMIBLES = "consumibles_v2"
@@ -132,6 +133,18 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     private fun createNewTables(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS $TABLE_HELD_ORDERS (
+                id TEXT PRIMARY KEY,
+                carritoJson TEXT NOT NULL,
+                clienteJson TEXT,
+                nota TEXT NOT NULL DEFAULT '',
+                fecha INTEGER NOT NULL,
+                sucursal TEXT NOT NULL,
+                total REAL NOT NULL DEFAULT 0.0
+            )
+        """)
+
         db.execSQL("""
             CREATE TABLE $TABLE_INSUMOS (
                 id TEXT PRIMARY KEY,
@@ -208,6 +221,19 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             createNewTables(db)
+        }
+        if (oldVersion < 3) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS $TABLE_HELD_ORDERS (
+                    id TEXT PRIMARY KEY,
+                    carritoJson TEXT NOT NULL,
+                    clienteJson TEXT,
+                    nota TEXT NOT NULL DEFAULT '',
+                    fecha INTEGER NOT NULL,
+                    sucursal TEXT NOT NULL,
+                    total REAL NOT NULL DEFAULT 0.0
+                )
+            """)
         }
     }
 

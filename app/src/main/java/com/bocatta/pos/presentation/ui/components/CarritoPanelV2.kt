@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -38,7 +39,8 @@ fun CarritoPanelV2(
     onEliminarItem: (ItemCarritoV2) -> Unit,
     onEditarItem: ((ItemCarritoV2) -> Unit)? = null,
     onCobrar: () -> Unit,
-    onApplyDiscount: ((Int) -> Unit)? = null
+    onApplyDiscount: ((Int) -> Unit)? = null,
+    onApartar: (() -> Unit)? = null
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
@@ -199,6 +201,20 @@ fun CarritoPanelV2(
 
             Spacer(Modifier.height(24.dp))
             
+            if (onApartar != null && carrito.isNotEmpty()) {
+                OutlinedButton(
+                    onClick = onApartar,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Icon(Icons.Default.Bookmark, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("APARTAR ORDEN", fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
             NeonButton(
                 texto = "FINALIZAR PEDIDO",
                 onClick = onCobrar,

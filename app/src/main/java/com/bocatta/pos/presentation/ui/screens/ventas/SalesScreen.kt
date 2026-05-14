@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -29,11 +31,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.presentation.ui.components.*
 import com.bocatta.pos.presentation.ui.theme.*
 import com.bocatta.pos.presentation.viewmodel.*
+import com.bocatta.pos.presentation.ui.screens.ventas.HeldOrdersScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -58,6 +65,8 @@ fun SalesScreen(
     var searchQuery by remember { mutableStateOf("") }
     var mostrarCarritoMobile by remember { mutableStateOf(false) }
     var mostrarCancelarVentaPin by remember { mutableStateOf(false) }
+    var mostrarHeldOrders by remember { mutableStateOf(false) }
+    val heldOrderVm: HeldOrderViewModel = viewModel()
     val uiState by vmV2.uiState.collectAsState()
     val isOnline = vmV2.isOnline
 
@@ -199,6 +208,52 @@ fun SalesScreen(
         )
     }
 
+    if (mostrarHeldOrders) {
+        AlertDialog(
+            onDismissRequest = { mostrarHeldOrders = false },
+            modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
+            title = { Text("ÓRDENES APARTADAS", fontWeight = FontWeight.Black) },
+            text = {
+                var ordersList by remember { mutableStateOf(heldOrderVm.orders.toList()) }
+                LaunchedEffect(Unit) { heldOrderVm.loadOrders() }
+                LaunchedEffect(heldOrderVm.orders.size) { ordersList = heldOrderVm.orders.toList() }
+                if (ordersList.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                        Text("No hay órdenes apartadas", color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                    }
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(ordersList, key = { it.id }) { order ->
+                            Surface(
+                                onClick = {
+                                    val items = heldOrderVm.parseCarrito(order.carritoJson)
+                                    items.forEach { vmV2.agregarAlCarrito(it.producto, order.sucursal, it.base, it.aderezos, it.toppings, it.esSeparado, it.componentesCombo) }
+                                    heldOrderVm.deleteOrder(order.id)
+                                    mostrarHeldOrders = false
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(0.5f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(order.fecha)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                                        Text("$${"%.2f".format(order.total)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    Icon(Icons.Default.Restore, null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { mostrarHeldOrders = false }) { Text("CERRAR") }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isTablet = maxWidth >= 720.dp // Meridian Spec: 720dp for tablet layout
@@ -246,7 +301,13 @@ fun SalesScreen(
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { mostrarCancelarVentaPin = true }) {
                                 Surface(color = MaterialTheme.colorScheme.error.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Cancel, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp))
+                                    Icon(Icons.Default.Block, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp))
+                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(onClick = { heldOrderVm.loadOrders(); mostrarHeldOrders = true }) {
+                                Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(10.dp))
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
@@ -347,7 +408,17 @@ fun SalesScreen(
                               onEliminarItem = { itemPorEliminar = it },
                               onEditarItem = { item -> productoConfigurando = item.producto },
                               onCobrar = { mostrarPago = true },
-                              onApplyDiscount = { vmV2.aplicarDescuentoManual(it) }
+                              onApplyDiscount = { vmV2.aplicarDescuentoManual(it) },
+                              onApartar = {
+                                  heldOrderVm.saveOrder(
+                                      carrito = vmV2.carrito,
+                                      cliente = vmV2.clienteSeleccionado,
+                                      nota = "",
+                                      sucursal = session.sucursalActual.lowercase(),
+                                      total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones - vmV2.descuentoManual).coerceAtLeast(0.0)
+                                  )
+                                  vmV2.limpiarCarrito()
+                              }
                           )
                       }
                   }
