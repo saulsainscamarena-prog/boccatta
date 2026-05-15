@@ -324,7 +324,8 @@ class SalesViewModelV2(
         }
 
         val precioBase = producto.precioVenta[sucursal.lowercase()] ?: 0.0
-        val precioCalculado = PricingEngine.calcularPrecioProducto(precioBase, producto.categoria, config)
+        val preciosExtra = producto.configSchema.flatMap { it.preciosExtra.entries }.associate { it.key to it.value }
+        val precioCalculado = PricingEngine.calcularPrecioProducto(precioBase, producto.categoria, config, preciosExtra)
 
        val item = ItemCarritoV2(
           producto = producto,

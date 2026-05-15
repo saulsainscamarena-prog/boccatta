@@ -4,18 +4,15 @@ import com.bocatta.pos.domain.model.ConfigResult
 
 object PricingEngine {
 
-    private val premiumToppings = setOf("oreo", "bombon", "nuez")
-    private val precioExtraTresMas = 10.0
-    private val precioExtraPremium = 10.0
+    private const val precioExtraTresMas = 10.0
 
-    fun calcularPrecioCrepa(precioBase: Double, config: ConfigResult): Double {
+    fun calcularPrecioCrepa(precioBase: Double, config: ConfigResult, preciosExtra: Map<String, Double> = emptyMap()): Double {
         val toppings = (config["toppings"] ?: emptyList()).map { it.lowercase() }
         val bases = (config["base"] ?: emptyList()).map { it.lowercase() }
         val totalItems = bases.size + toppings.size
 
         val extraPorCantidad = if (totalItems >= 3) precioExtraTresMas else 0.0
-        val tienePremium = toppings.any { it in premiumToppings }
-        val extraPremium = if (tienePremium) precioExtraPremium else 0.0
+        val extraPremium = toppings.sumOf { t -> preciosExtra.entries.find { it.key.lowercase() == t }?.value ?: 0.0 }
 
         return precioBase + extraPorCantidad + extraPremium
     }
@@ -26,14 +23,17 @@ object PricingEngine {
         return if (tieneBase) precioBase + 5.0 else precioBase
     }
 
-    fun calcularPrecioProducto(precioBase: Double, categoria: String, config: ConfigResult): Double {
+    fun calcularPrecioProducto(precioBase: Double, categoria: String, config: ConfigResult, preciosExtra: Map<String, Double> = emptyMap()): Double {
         val cat = categoria.lowercase()
         return when {
-            cat.contains("crepa") || cat == "combos" -> calcularPrecioCrepa(precioBase, config)
+            cat.contains("crepa") || cat == "combos" -> calcularPrecioCrepa(precioBase, config, preciosExtra)
             cat.contains("frape") || cat.contains("frappe") -> calcularPrecioFrappe(precioBase, config)
-            else -> precioBase
+            else -> {
+                val extras = config.entries.flatMap { (key, values) ->
+                    values.map { v -> preciosExtra.entries.find { it.key.lowercase() == v.lowercase() }?.value ?: 0.0 }
+                }.sum()
+                precioBase + extras
+            }
         }
     }
-
-    fun esPremium(topping: String): Boolean = topping.lowercase() in premiumToppings
 }

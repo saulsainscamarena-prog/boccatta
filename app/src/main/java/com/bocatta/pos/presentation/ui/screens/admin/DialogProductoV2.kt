@@ -56,6 +56,7 @@ fun DialogProducto(
     var editandoTitle = remember { mutableStateOf("") }
     var editandoType = remember { mutableStateOf("SINGLE_CHIP") }
     var editandoOptions = remember { mutableStateOf("") }
+    var editandoPremium = remember { mutableStateMapOf<String, Double>() }
     var showGroupEditor by remember { mutableStateOf(false) }
     var consumibles by remember { mutableStateOf(productoInicial?.consumiblesAsociados ?: emptyList()) }
 
@@ -166,12 +167,44 @@ fun DialogProducto(
                                                 FilterChip(selected = editandoType.value == t, onClick = { editandoType.value = t }, label = { Text(t.replace("_", " "), fontSize = 10.sp) }, modifier = Modifier.height(36.dp))
                                             }
                                         }
-                                        OutlinedTextField(value = editandoOptions.value, onValueChange = { editandoOptions.value = it }, label = { Text("Opciones (separadas por coma)") }, placeholder = { Text("Verde, Roja") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
+                                        Text("OPCIONES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                        Text("Escribe cada opción y marca si tiene costo extra (Premium):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                                        val optsList = editandoOptions.value.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                        optsList.forEach { opt ->
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text(opt, modifier = Modifier.weight(1f), fontSize = 13.sp)
+                                                var isPrem by remember(opt) { mutableStateOf(editandoPremium.containsKey(opt)) }
+                                                Switch(checked = isPrem, onCheckedChange = { v ->
+                                                    isPrem = v
+                                                    if (v) { if (!editandoPremium.containsKey(opt)) editandoPremium[opt] = 10.0 }
+                                                    else editandoPremium.remove(opt)
+                                                }, modifier = Modifier.height(28.dp))
+                                                if (isPrem) {
+                                                    OutlinedTextField(
+                                                        value = if (editandoPremium.containsKey(opt)) "%.0f".format(editandoPremium[opt]) else "10",
+                                                        onValueChange = { editandoPremium[opt] = it.toDoubleOrNull() ?: 10.0 },
+                                                        modifier = Modifier.width(60.dp).height(40.dp),
+                                                        label = { Text("\$", fontSize = 9.sp) },
+                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                                        singleLine = true,
+                                                        textStyle = MaterialTheme.typography.labelSmall
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        OutlinedTextField(value = editandoOptions.value, onValueChange = { editandoOptions.value = it; editandoPremium.clear() }, label = { Text("Opciones (separadas por coma)") }, placeholder = { Text("Oreja, Bombón, Nuez, Fresa") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
+                                        Text("💡 Las opciones marcadas como Premium generan un cargo extra al cliente.", fontSize = 10.sp, color = MaterialTheme.colorScheme.tertiary)
                                     }
                                 }, confirmButton = {
                                     Button(onClick = {
-                                        configSchema = configSchema + ConfigOptionGroup(key = editandoKey.value, title = editandoTitle.value, type = try { ConfigFieldType.valueOf(editandoType.value) } catch (_: Exception) { ConfigFieldType.SINGLE_CHIP }, options = editandoOptions.value.split(",").map { it.trim() }.filter { it.isNotBlank() })
-                                        showGroupEditor = false; editandoKey.value = ""; editandoTitle.value = ""; editandoOptions.value = ""
+                                        val opts = editandoOptions.value.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                        configSchema = configSchema + ConfigOptionGroup(
+                                            key = editandoKey.value, title = editandoTitle.value,
+                                            type = try { ConfigFieldType.valueOf(editandoType.value) } catch (_: Exception) { ConfigFieldType.SINGLE_CHIP },
+                                            options = opts,
+                                            preciosExtra = editandoPremium.toMap()
+                                        )
+                                        showGroupEditor = false; editandoKey.value = ""; editandoTitle.value = ""; editandoOptions.value = ""; editandoPremium.clear()
                                     }, enabled = editandoKey.value.isNotBlank() && editandoTitle.value.isNotBlank()) { Text("Agregar") }
                                 }, dismissButton = { TextButton(onClick = { showGroupEditor = false }) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
                             }
