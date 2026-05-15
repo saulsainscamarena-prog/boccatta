@@ -139,7 +139,7 @@ fun AdminScreen(
             // Sub-tabs — tokens semánticos, sin colores hardcodeados
             val subTabLabels = when (tabPrincipal) {
                 0 -> listOf("Resumen", "Auditoría")
-                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos", "Promos")
+                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos", "Promos", "Empleados")
                 2 -> listOf("Stock", "Producción", "Config")
                 else -> emptyList()
             }
@@ -176,6 +176,7 @@ fun AdminScreen(
                     4 -> TabConfigGlobal(vm = viewModel(), allProducts = vm.productos, allCategories = vm.categorias.map { CategoriaProducto(id = it.id, nombre = it.nombre) })
                     5 -> TabCombos(vm = viewModel(), allProducts = vm.productos, onBack = { tabPrincipal = 1; subTabSeleccionado = 0 })
                     6 -> TabPromociones(vm = viewModel(), allProducts = vm.productos)
+                    7 -> TabEmpleados(vm = vm)
                 }
                 2 -> when (subTabSeleccionado) {
                     0 -> TabBodegaGeneral(
