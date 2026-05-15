@@ -36,6 +36,7 @@ fun AperturaDiaScreen(
     sessionVm: SessionViewModel,
     aperturaVmV2: AperturaViewModelV2,
     cajaVm: CajaViewModel,
+    vm: com.bocatta.pos.presentation.viewmodel.InventoryViewModel,
     onAperturaCompleta: () -> Unit
 ) {
     var pasoActual by remember { mutableIntStateOf(0) }
@@ -82,7 +83,9 @@ fun AperturaDiaScreen(
                     ) {
                         PasoItemPremium("1", "SUCURSAL", pasoActual >= 1, pasoActual == 0)
                         Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 1) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
-                        PasoItemPremium("2", "CAJA", pasoActual >= 2, pasoActual == 1)
+                        PasoItemPremium("2", "INSUMO", pasoActual >= 2, pasoActual == 1)
+                        Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 2) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
+                        PasoItemPremium("3", "CAJA", pasoActual >= 3, pasoActual == 2)
                     }
                 }
                 
@@ -96,7 +99,8 @@ fun AperturaDiaScreen(
                     ) { step ->
                         when(step) {
                             0 -> SeleccionSucursalPremium(sessionVm) { verificarYAvanzar { pasoActual = 1 } }
-                            1 -> FondoCajaPremium(cajaVm, sessionVm) { onAperturaCompleta() }
+                            1 -> MasaPostresStep(sessionVm, vm) { pasoActual = 2 }
+                            2 -> FondoCajaPremium(cajaVm, sessionVm) { onAperturaCompleta() }
                         }
                     }
                 }

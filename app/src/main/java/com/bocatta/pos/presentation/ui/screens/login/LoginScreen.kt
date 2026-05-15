@@ -19,12 +19,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bocatta.pos.BuildConfig
 import com.bocatta.pos.R
-import com.bocatta.pos.presentation.ui.theme.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import com.bocatta.pos.presentation.viewmodel.AuthViewModelV2
 
 @Composable
@@ -51,6 +54,9 @@ fun LoginScreen(
     var isRegisterMode by remember { mutableStateOf(false) }
     var masterCode by remember { mutableStateOf("") }
     var nombreCompleto by remember { mutableStateOf("") }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val versionName = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { "2.6.0" } }
 
     Box(
         modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A)))).safeDrawingPadding(),
@@ -173,6 +179,14 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(), 
                         shape = RoundedCornerShape(16.dp), 
                         visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            if (!isLoading) {
+                                if (isRegisterMode) onRegisterClick(user, pass, nombreCompleto, masterCode, "")
+                                else onLoginClick(user, pass)
+                            }
+                        }),
                         leadingIcon = { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -220,18 +234,8 @@ fun LoginScreen(
                 )
             }
 
-            if (BuildConfig.DEMO_MODE_ENABLED) {
-                TextButton(
-                    onClick = { onLoginClick(BuildConfig.DEMO_EMAIL, BuildConfig.DEMO_PASSWORD) }, 
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(
-                        "ACCESO DEMO (Admin · sin registro)", 
-                        color = Color.White.copy(0.4f),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            }
+            Spacer(Modifier.height(12.dp))
+            Text("v$versionName", fontSize = 9.sp, color = Color.White.copy(0.15f), letterSpacing = 0.5.sp)
         }
     }
 }

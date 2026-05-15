@@ -62,11 +62,12 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 4
 
         const val TABLE_VENTAS = "ventas_pendientes"
         const val TABLE_OPS = "operaciones_pendientes"
         const val TABLE_HELD_ORDERS = "held_orders"
+        const val TABLE_JORNADAS = "registro_jornadas"
 
         const val TABLE_INSUMOS = "insumos_v2"
         const val TABLE_CONSUMIBLES = "consumibles_v2"
@@ -133,6 +134,18 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     private fun createNewTables(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS $TABLE_JORNADAS (
+                id TEXT PRIMARY KEY,
+                usuario TEXT NOT NULL,
+                sucursal TEXT NOT NULL,
+                accion TEXT NOT NULL,
+                rol TEXT NOT NULL DEFAULT '',
+                sesionId TEXT NOT NULL DEFAULT '',
+                timestamp INTEGER NOT NULL
+            )
+        """)
+
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS $TABLE_HELD_ORDERS (
                 id TEXT PRIMARY KEY,
@@ -232,6 +245,19 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                     fecha INTEGER NOT NULL,
                     sucursal TEXT NOT NULL,
                     total REAL NOT NULL DEFAULT 0.0
+                )
+            """)
+        }
+        if (oldVersion < 4) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS $TABLE_JORNADAS (
+                    id TEXT PRIMARY KEY,
+                    usuario TEXT NOT NULL,
+                    sucursal TEXT NOT NULL,
+                    accion TEXT NOT NULL,
+                    rol TEXT NOT NULL DEFAULT '',
+                    sesionId TEXT NOT NULL DEFAULT '',
+                    timestamp INTEGER NOT NULL
                 )
             """)
         }

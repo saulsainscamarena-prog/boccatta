@@ -129,6 +129,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("apertura") {
                         val aperturaVmV2: AperturaViewModelV2 = koinViewModel()
+                        val aperturaIvm: com.bocatta.pos.presentation.viewmodel.InventoryViewModel = koinViewModel()
                         if (sessionVm.cargandoSesion) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(color = BocattaPrimary)
@@ -147,6 +148,7 @@ class MainActivity : ComponentActivity() {
                             sessionVm = sessionVm,
                             aperturaVmV2 = aperturaVmV2,
                             cajaVm = cajaVm,
+                            vm = aperturaIvm,
                             onAperturaCompleta = { navController.navigate("ventas") { popUpTo("apertura") { inclusive = true } } }
                         )
                     }
