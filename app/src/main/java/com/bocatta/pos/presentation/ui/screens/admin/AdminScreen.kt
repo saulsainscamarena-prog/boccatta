@@ -34,6 +34,7 @@ import com.bocatta.pos.presentation.viewmodel.AdminViewModel
 import com.bocatta.pos.presentation.viewmodel.CatalogoViewModel
 import com.bocatta.pos.presentation.viewmodel.ConfigGlobalViewModel
 import com.bocatta.pos.presentation.viewmodel.ComboViewModel
+import com.bocatta.pos.presentation.viewmodel.MesaViewModel
 import com.bocatta.pos.presentation.viewmodel.PromocionViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
@@ -139,7 +140,7 @@ fun AdminScreen(
             // Sub-tabs — tokens semánticos, sin colores hardcodeados
             val subTabLabels = when (tabPrincipal) {
                 0 -> listOf("Resumen", "Auditoría")
-                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos", "Promos", "Empleados")
+                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos", "Promos", "Empleados", "Zonas")
                 2 -> listOf("Stock", "Producción", "Config")
                 else -> emptyList()
             }
@@ -177,6 +178,7 @@ fun AdminScreen(
                     5 -> TabCombos(vm = viewModel(), allProducts = vm.productos, onBack = { tabPrincipal = 1; subTabSeleccionado = 0 })
                     6 -> TabPromociones(vm = viewModel(), allProducts = vm.productos)
                     7 -> TabEmpleados(vm = vm)
+                    8 -> TabZonas(vm = viewModel())
                 }
                 2 -> when (subTabSeleccionado) {
                     0 -> TabBodegaGeneral(
