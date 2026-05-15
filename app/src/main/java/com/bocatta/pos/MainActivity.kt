@@ -32,6 +32,7 @@ import com.bocatta.pos.presentation.ui.screens.inventario.SyncInventarioScreen
 import com.bocatta.pos.presentation.ui.screens.bodega.DashboardBodegaScreen
 import com.bocatta.pos.presentation.ui.screens.ventas.SalesScreen
 import com.bocatta.pos.presentation.ui.screens.operacion.AperturaDiaScreen
+import com.bocatta.pos.presentation.ui.screens.operacion.TurnoActivoScreen
 import com.bocatta.pos.presentation.ui.theme.BocattaTheme
 import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
 import com.bocatta.pos.presentation.viewmodel.*
@@ -96,6 +97,12 @@ class MainActivity : ComponentActivity() {
                         val ivmLocal: InventoryViewModel = koinViewModel()
                         LaunchedEffect(sessionVm.sucursalActual) {
                             ivmLocal.configurarSucursal(sessionVm.sucursalActual)
+                            cajaVm.configurarSucursal(sessionVm.sucursalActual)
+                        }
+                        if (cajaVm.turnoActivo != null) {
+                            LaunchedEffect(Unit) {
+                                navController.navigate("turno_activo") { popUpTo("inicio_dia") { inclusive = true } }
+                            }
                         }
                         InicioDiaScreen(
                             sessionVm = sessionVm,
@@ -103,6 +110,21 @@ class MainActivity : ComponentActivity() {
                             onFinalizar = { navController.navigate("apertura") { popUpTo("inicio_dia") { inclusive = true } } },
                             onGestion = if (sessionVm.esAdmin) {{ navController.navigate("ventas") { popUpTo("inicio_dia") { inclusive = true } } }} else null
                         )
+                    }
+
+                    composable("turno_activo") {
+                        val turno = cajaVm.turnoActivo
+                        if (turno == null) {
+                            LaunchedEffect(Unit) { navController.navigate("inicio_dia") { popUpTo("turno_activo") { inclusive = true } } }
+                        } else {
+                            TurnoActivoScreen(
+                                turno = turno,
+                                sessionVm = sessionVm,
+                                onEntrarAVentas = { navController.navigate("ventas") { popUpTo("turno_activo") { inclusive = true } } },
+                                onAdministrarTienda = { if (sessionVm.esAdmin) navController.navigate("admin") { popUpTo("turno_activo") { inclusive = true } } },
+                                onLogout = { sessionVm.cerrarSesion(); authVm.logout() }
+                            )
+                        }
                     }
 
                     composable("apertura") {

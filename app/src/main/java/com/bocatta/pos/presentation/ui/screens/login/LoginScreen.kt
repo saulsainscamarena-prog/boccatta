@@ -83,7 +83,7 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        if (isRegisterMode) "NUEVO ACCESO" else "SISTEMA INDUSTRIAL", 
+                        if (isRegisterMode) "NUEVO ACCESO" else "BOCATTA", 
                         style = MaterialTheme.typography.headlineSmall, 
                         fontWeight = FontWeight.Black,
                         color = Color.White,
@@ -118,7 +118,7 @@ fun LoginScreen(
                         OutlinedTextField(
                             value = masterCode, 
                             onValueChange = { masterCode = it; onType() }, 
-                            label = { Text("CÓDIGO MAESTRO", fontWeight = FontWeight.Bold) }, 
+                            label = { Text("CÓDIGO DE ACCESO", fontWeight = FontWeight.Bold) }, 
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp), 
                             visualTransformation = PasswordVisualTransformation(),
@@ -199,6 +199,13 @@ fun LoginScreen(
                             letterSpacing = 1.sp
                         )
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (isRegisterMode) "Administrador · Empleado" else "Administrador o Empleado",
+                        fontSize = 10.sp,
+                        color = Color.White.copy(0.3f),
+                        letterSpacing = 0.5.sp
+                    )
                 }
             }
 
@@ -219,9 +226,9 @@ fun LoginScreen(
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Text(
-                        "MODO DEMO (Admin)", 
-                        color = Color.White.copy(0.5f),
-                        style = MaterialTheme.typography.labelMedium
+                        "ACCESO DEMO (Admin · sin registro)", 
+                        color = Color.White.copy(0.4f),
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
             }

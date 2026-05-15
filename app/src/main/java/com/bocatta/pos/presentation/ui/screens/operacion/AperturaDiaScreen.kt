@@ -82,9 +82,7 @@ fun AperturaDiaScreen(
                     ) {
                         PasoItemPremium("1", "SUCURSAL", pasoActual >= 1, pasoActual == 0)
                         Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 1) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
-                        PasoItemPremium("2", "SURTIDO", pasoActual >= 2, pasoActual == 1)
-                        Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp).background(if (pasoActual >= 2) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
-                        PasoItemPremium("3", "FINANZAS", pasoActual >= 3, pasoActual == 2)
+                        PasoItemPremium("2", "CAJA", pasoActual >= 2, pasoActual == 1)
                     }
                 }
                 
@@ -97,9 +95,8 @@ fun AperturaDiaScreen(
                         label = "AperturaSteps"
                     ) { step ->
                         when(step) {
-                            0 -> SeleccionSucursalPremium(sessionVm) { verificarYAvanzar { pasoActual = 1; aperturaVmV2.cargarGlobalStock() } }
-                            1 -> ValidacionStockPremium(aperturaVmV2, sessionVm.sucursalActual) { pasoActual = 2 }
-                            2 -> FondoCajaPremium(cajaVm, sessionVm) { onAperturaCompleta() }
+                            0 -> SeleccionSucursalPremium(sessionVm) { verificarYAvanzar { pasoActual = 1 } }
+                            1 -> FondoCajaPremium(cajaVm, sessionVm) { onAperturaCompleta() }
                         }
                     }
                 }
