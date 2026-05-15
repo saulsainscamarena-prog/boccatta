@@ -406,6 +406,7 @@ private fun TabBodegaGeneral(
     var insumoAjustar by remember { mutableStateOf<InsumoV2?>(null) }
     var nuevoStock by remember { mutableStateOf("") }
     var showPurchaseDialog by remember { mutableStateOf(false) }
+    var showNuevoInsumoDialog by remember { mutableStateOf(false) }
 
     if (insumoAjustar != null) {
         AlertDialog(
@@ -443,6 +444,47 @@ private fun TabBodegaGeneral(
         )
     }
 
+    if (showNuevoInsumoDialog) {
+        var nuevoNombre by remember { mutableStateOf("") }
+        var nuevaUnidad by remember { mutableStateOf("kg") }
+        var nuevoCosto by remember { mutableStateOf("0") }
+        var nuevaCategoria by remember { mutableStateOf("") }
+        val scope = rememberCoroutineScope()
+
+        AlertDialog(
+            onDismissRequest = { showNuevoInsumoDialog = false },
+            title = { Text("NUEVO INSUMO", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = nuevoNombre, onValueChange = { nuevoNombre = it },
+                        label = { Text("Nombre*") }, placeholder = { Text("Ej: Masa para Molotes") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = nuevaUnidad, onValueChange = { nuevaUnidad = it },
+                        label = { Text("Unidad base") }, placeholder = { Text("kg, g, ml, L, pza") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = nuevoCosto, onValueChange = { nuevoCosto = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Costo por unidad base (\$)") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = nuevaCategoria, onValueChange = { nuevaCategoria = it },
+                        label = { Text("Categoría") }, placeholder = { Text("Ej: Masas, Lácteos, Salsas") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    scope.launch {
+                        val insumo = InsumoV2(
+                            nombre = nuevoNombre.trim(),
+                            unidadBase = nuevaUnidad.ifBlank { "kg" },
+                            costoUnitarioBase = nuevoCosto.toDoubleOrNull() ?: 0.0,
+                            categoria = nuevaCategoria.ifBlank { "General" }
+                        )
+                        vm.agregarInsumo(insumo)
+                        showNuevoInsumoDialog = false
+                    }
+                }, enabled = nuevoNombre.isNotBlank()) { Text("Crear insumo", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { showNuevoInsumoDialog = false }) { Text("Cancelar") } },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -466,6 +508,16 @@ private fun TabBodegaGeneral(
             }
             Spacer(Modifier.height(8.dp))
             BocattaSectionTitle("Insumos — toca para ajustar stock")
+            OutlinedButton(
+                onClick = { showNuevoInsumoDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Nuevo insumo", fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(8.dp))
         }
         items(vm.insumosMaestros, key = { it.id }) { insumo ->
             val esProduccion = insumo.categoria == "Producción"

@@ -60,7 +60,7 @@ fun AperturaDiaScreen(
                 title = {
                     Column {
                         Text("PROTOCOLOS", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("PROTOCOLO DE APERTURA · MERIDIAN V2", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("PROTOCOLO DE APERTURA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)

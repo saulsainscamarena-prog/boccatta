@@ -76,10 +76,8 @@ fun MasaPostresStep(
                     )
                     Text(postre, fontSize = 14.sp, color = Color.White)
                 }
-            }
-            Text("* Fresas/Duraznos se preparan al pedido", fontSize = 10.sp, color = Color.White.copy(0.4f))
         }
-
+        }
         Spacer(Modifier.weight(1f))
         Button(
             onClick = {
