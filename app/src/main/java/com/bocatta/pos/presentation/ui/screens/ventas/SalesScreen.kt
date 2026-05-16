@@ -103,12 +103,20 @@ fun SalesScreen(
             .distinct()
             .sorted()
     }
+    val categoriasDisplay = remember(categorias) {
+        categorias.map { if (it.startsWith("CREPAS")) "CREPAS" else it }.distinct()
+    }
     var categoriaSeleccionada by remember { mutableStateOf("TODOS") }
 
     val filteredProducts = remember(vmV2.productos, categoriaSeleccionada, searchQuery) {
         vmV2.productos.filter { prod ->
             val catNorm = prod.categoria.uppercase()
-            (categoriaSeleccionada == "TODOS" || catNorm == categoriaSeleccionada) &&
+            val matchesCategoria = when {
+                categoriaSeleccionada == "TODOS" -> true
+                categoriaSeleccionada == "CREPAS" -> catNorm.startsWith("CREPAS")
+                else -> catNorm == categoriaSeleccionada
+            }
+            matchesCategoria &&
             (searchQuery.isEmpty() || prod.nombre.contains(searchQuery, ignoreCase = true))
         }
     }
@@ -387,7 +395,7 @@ fun SalesScreen(
                         
                         // Categorías con Estilo Premium
                         PrimaryScrollableTabRow(
-                            selectedTabIndex = if (categoriaSeleccionada == "TODOS") 0 else (categorias.indexOf(categoriaSeleccionada) + 1).coerceAtLeast(0),
+                            selectedTabIndex = if (categoriaSeleccionada == "TODOS") 0 else (categoriasDisplay.indexOf(categoriaSeleccionada) + 1).coerceAtLeast(0),
                             containerColor = Color.Transparent,
                             edgePadding = 16.dp,
                             divider = {}
@@ -395,7 +403,7 @@ fun SalesScreen(
                             Tab(selected = categoriaSeleccionada == "TODOS", onClick = { categoriaSeleccionada = "TODOS" }) {
                                 Text("TODOS", modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == "TODOS") FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == "TODOS") MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(0.5f))
                             }
-                            categorias.forEach { cat ->
+                            categoriasDisplay.forEach { cat ->
                                 Tab(selected = categoriaSeleccionada == cat, onClick = { categoriaSeleccionada = cat }) {
                                     Text(cat, modifier = Modifier.padding(16.dp), fontWeight = if (categoriaSeleccionada == cat) FontWeight.Black else FontWeight.Normal, fontSize = 12.sp, color = if(categoriaSeleccionada == cat) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(0.5f))
                                 }
