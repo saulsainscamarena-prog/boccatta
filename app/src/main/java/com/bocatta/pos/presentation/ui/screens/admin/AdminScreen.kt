@@ -185,6 +185,9 @@ fun AdminScreen(
                 2 -> when (subTabSeleccionado) {
                     0 -> TabBodegaGeneral(
                         vm = vm,
+                        nombreUsuario = session.nombreUsuario,
+                        usuarioId = session.uid ?: "",
+                        sucursal = session.sucursalActual,
                         onVerDashboardBodega = onVerDashboardBodega,
                         onVerGestionarSucursales = onVerGestionarSucursales,
                         onVerReportesInventario = onVerReportesInventario,
@@ -403,6 +406,9 @@ private fun TabMenu(vm: AdminViewModel) {
 @Composable
 private fun TabBodegaGeneral(
     vm: AdminViewModel,
+    nombreUsuario: String = "",
+    usuarioId: String = "",
+    sucursal: String = "",
     onVerDashboardBodega: () -> Unit,
     onVerGestionarSucursales: () -> Unit,
     onVerReportesInventario: () -> Unit,
@@ -438,14 +444,17 @@ private fun TabBodegaGeneral(
     }
 
     if (showPurchaseDialog) {
-        DialogRegistroCompra(
+        DialogCompraUnificado(
             insumos = vm.insumosMaestros,
-            onGuardar = { gasto, insumoId, cant ->
-                if (insumoId != null) vm.registrarCompraInsumo(gasto, insumoId, cant)
-                else vm.registrarGastoNegocio(gasto)
+            nombreUsuario = nombreUsuario,
+            usuarioId = usuarioId,
+            sucursal = sucursal,
+            esAdmin = true,
+            onConfirmar = { insumoId, insumoNombre, presentacion, cant, cont, precio ->
+                vm.registrarCompraRapida(insumoId, insumoNombre, presentacion, cant, cont, precio, usuarioId, nombreUsuario, sucursal, true)
                 showPurchaseDialog = false
             },
-            onCancelar = { showPurchaseDialog = false }
+            onDismiss = { showPurchaseDialog = false }
         )
     }
 
@@ -805,66 +814,4 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
     }
 }
 
-@Composable
-private fun DialogRegistroCompra(
-    insumos: List<InsumoV2>,
-    onGuardar: (GastoV2, String?, Double) -> Unit,
-    onCancelar: () -> Unit
-) {
-    var concepto by remember { mutableStateOf("") }
-    var monto by remember { mutableStateOf("") }
-    var selectedInsumo by remember { mutableStateOf<InsumoV2?>(null) }
-    var cantidadSurtida by remember { mutableStateOf("1") }
-    var expandInsumo by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onCancelar,
-        title = { Text("Registrar compra / gasto", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(value = monto, onValueChange = { monto = it }, label = { Text("Monto total ($)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                    leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = "Monto") })
-                Box {
-                    OutlinedTextField(value = selectedInsumo?.nombre ?: "Seleccionar insumo (opcional)",
-                        onValueChange = {}, readOnly = true, label = { Text("Insumo a reabastecer") },
-                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    Surface(onClick = { expandInsumo = true }, color = Color.Transparent, modifier = Modifier.matchParentSize()) {}
-                    DropdownMenu(expanded = expandInsumo, onDismissRequest = { expandInsumo = false }) {
-                        insumos.forEach { ins ->
-                            DropdownMenuItem(text = { Text(ins.nombre) }, onClick = {
-                                selectedInsumo = ins; concepto = "Compra de ${ins.nombre}"; expandInsumo = false
-                            })
-                        }
-                    }
-                }
-                if (selectedInsumo != null) {
-                    OutlinedTextField(value = cantidadSurtida, onValueChange = { cantidadSurtida = it },
-                        label = { Text("Cantidad (${selectedInsumo!!.unidadBase})") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                }
-                OutlinedTextField(value = concepto, onValueChange = { concepto = it }, label = { Text("Concepto") },
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-            }
-        },
-        confirmButton = {
-            Button(
-                enabled = monto.isNotBlank() && concepto.isNotBlank(),
-                onClick = {
-                    onGuardar(
-                        GastoV2(id = UUID.randomUUID().toString(), descripcion = concepto,
-                            monto = monto.toDoubleOrNull() ?: 0.0,
-                            categoria = if (selectedInsumo != null) "Insumos" else "General",
-                            fecha = System.currentTimeMillis(), sucursal = "global"),
-                        selectedInsumo?.id,
-                        cantidadSurtida.toDoubleOrNull() ?: 0.0
-                    )
-                }
-            ) { Text("Guardar") }
-        },
-        dismissButton = { TextButton(onClick = onCancelar) { Text("Cancelar") } },
-        shape = RoundedCornerShape(20.dp)
-    )
-}

@@ -46,6 +46,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import com.bocatta.pos.presentation.ui.screens.ventas.HeldOrdersScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -67,6 +68,8 @@ fun SalesScreen(
     var mostrarBuscarCliente by remember { mutableStateOf(false) }
     var mostrarRegistrarCliente by remember { mutableStateOf(false) }
     var mostrarRetiroAlimento by remember { mutableStateOf(false) }
+    var mostrarCompraRapida by remember { mutableStateOf(false) }
+    val adminVmCompra: AdminViewModel = koinViewModel()
     var searchQuery by remember { mutableStateOf("") }
     var mostrarCarritoMobile by remember { mutableStateOf(false) }
     var mostrarCancelarVentaPin by remember { mutableStateOf(false) }
@@ -193,6 +196,21 @@ fun SalesScreen(
             sucursalActual = session.sucursalActual,
             nombreUsuario = session.nombreUsuario,
             onDismiss = { mostrarRetiroAlimento = false }
+        )
+    }
+
+    if (mostrarCompraRapida) {
+        DialogCompraUnificado(
+            insumos = adminVmCompra.insumosMaestros,
+            nombreUsuario = session.nombreUsuario,
+            usuarioId = session.uid ?: "",
+            sucursal = session.sucursalActual,
+            esAdmin = session.esAdmin,
+            onConfirmar = { insumoId, insumoNombre, presentacion, cant, cont, precio ->
+                adminVmCompra.registrarCompraRapida(insumoId, insumoNombre, presentacion, cant, cont, precio, session.uid ?: "", session.nombreUsuario, session.sucursalActual, session.esAdmin)
+                mostrarCompraRapida = false
+            },
+            onDismiss = { mostrarCompraRapida = false }
         )
     }
 
@@ -341,6 +359,12 @@ fun SalesScreen(
                             IconButton(onClick = { mostrarRetiroAlimento = true }) {
                                 Surface(color = MaterialTheme.colorScheme.onBackground.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
                                     Icon(Icons.Default.Restaurant, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
+                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(onClick = { mostrarCompraRapida = true }) {
+                                Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                                    Icon(Icons.Default.AddShoppingCart, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(10.dp))
                                 }
                             }
                             Spacer(Modifier.width(8.dp))

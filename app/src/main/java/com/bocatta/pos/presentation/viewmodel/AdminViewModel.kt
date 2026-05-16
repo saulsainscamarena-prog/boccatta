@@ -12,6 +12,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 
 class AdminViewModel(
@@ -42,6 +43,8 @@ class AdminViewModel(
     var productos = mutableStateListOf<SalesInventoryProductV2>()
         private set
     var insumosMaestros = mutableStateListOf<InsumoV2>()
+        private set
+    var comprasPendientes = mutableStateListOf<CompraRegistro>()
         private set
     var historialVentasV2 = mutableStateListOf<VentaV2>()
         private set
@@ -76,6 +79,7 @@ class AdminViewModel(
         escucharConfigGlobal()
         escucharInsumosMaestrosAutomatico()
         escucharCategorias()
+        escucharComprasPendientes()
     }
 
     private fun escucharInsumosMaestrosAutomatico() {
@@ -159,6 +163,40 @@ class AdminViewModel(
                 }
             }
         }
+    }
+
+    private fun escucharComprasPendientes() {
+        db.collection(FirestoreCollections.COMPRAS)
+            .whereEqualTo("auditada", false)
+            .orderBy("fecha", Query.Direction.DESCENDING)
+            .addSnapshotListener { snap, _ ->
+                if (snap != null) {
+                    comprasPendientes.clear()
+                    snap.documents.forEach { doc ->
+                        val d = doc.data ?: return@forEach
+                        comprasPendientes.add(CompraRegistro(
+                            id = doc.id,
+                            insumoId = d["insumoId"]?.toString() ?: "",
+                            insumoNombre = d["insumoNombre"]?.toString() ?: "",
+                            presentacion = d["presentacion"]?.toString() ?: "",
+                            cantidadComprada = (d["cantidadComprada"] as? Number)?.toDouble() ?: 0.0,
+                            contenidoUnidades = (d["contenidoUnidades"] as? Number)?.toDouble() ?: 0.0,
+                            precioPagado = (d["precioPagado"] as? Number)?.toDouble() ?: 0.0,
+                            compradoPor = d["compradoPor"]?.toString() ?: "",
+                            compradoPorNombre = d["compradoPorNombre"]?.toString() ?: "",
+                            fecha = (d["fecha"] as? Number)?.toLong() ?: 0L,
+                            sucursal = d["sucursal"]?.toString() ?: "",
+                            auditada = d["auditada"] as? Boolean ?: false,
+                            estado = d["estado"]?.toString() ?: "pendiente",
+                            motivoAjuste = d["motivoAjuste"]?.toString() ?: "",
+                            motivoPerdida = d["motivoPerdida"]?.toString() ?: "",
+                            resueltoPor = d["resueltoPor"]?.toString() ?: "",
+                            resueltoPorNombre = d["resueltoPorNombre"]?.toString() ?: "",
+                            fechaResolucion = (d["fechaResolucion"] as? Number)?.toLong() ?: 0L
+                        ))
+                    }
+                }
+            }
     }
 
     fun agregarCategoria(nombre: String): Result<String> {
@@ -389,6 +427,158 @@ class AdminViewModel(
             batch.update(stockRef, "ultimaActualizacion", System.currentTimeMillis())
             batch.commit().await()
             mensajeExito = "Compra e inventario V2 registrados ?"
+        }
+    }
+
+    fun registrarCompraRapida(
+        insumoId: String, insumoNombre: String, presentacion: String,
+        cantidadComprada: Double, contenidoUnidades: Double, precioPagado: Double,
+        compradoPor: String, compradoPorNombre: String, sucursal: String, esAdmin: Boolean
+    ) {
+        viewModelScope.launch(safeHandler) {
+            val totalUnidades = cantidadComprada * contenidoUnidades
+            val batch = db.batch()
+
+            val compraRef = db.collection(FirestoreCollections.COMPRAS).document()
+            val compra = CompraRegistro(
+                id = compraRef.id,
+                insumoId = insumoId, insumoNombre = insumoNombre,
+                presentacion = presentacion,
+                cantidadComprada = cantidadComprada,
+                contenidoUnidades = contenidoUnidades,
+                precioPagado = precioPagado,
+                compradoPor = compradoPor, compradoPorNombre = compradoPorNombre,
+                fecha = System.currentTimeMillis(), sucursal = sucursal,
+                auditada = esAdmin,
+                estado = if (esAdmin) "aprobada" else "pendiente"
+            )
+            batch.set(compraRef, compra)
+
+            val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
+            batch.set(stockRef, mapOf(
+                "cantidadEnBase" to FieldValue.increment(totalUnidades),
+                "ultimaActualizacion" to System.currentTimeMillis()
+            ), com.google.firebase.firestore.SetOptions.merge())
+
+            if (esAdmin) {
+                val gasto = GastoV2(
+                    id = UUID.randomUUID().toString(),
+                    descripcion = "Compra rápida: $cantidadComprada $presentacion de $insumoNombre",
+                    monto = precioPagado,
+                    categoria = "Insumos",
+                    fecha = System.currentTimeMillis(),
+                    sucursal = sucursal,
+                    usuarioId = compradoPor
+                )
+                batch.set(db.collection(FirestoreCollections.GASTOS).document(gasto.id), gasto)
+            }
+
+            batch.commit().await()
+            mensajeExito = "Compra registrada: $cantidadComprada $presentacion de $insumoNombre"
+        }
+    }
+
+    fun aprobarCompra(compra: CompraRegistro, adminId: String, adminNombre: String, motivoAjuste: String = "") {
+        viewModelScope.launch(safeHandler) {
+            val data = mapOf<String, Any>(
+                "auditada" to true,
+                "estado" to "aprobada",
+                "resueltoPor" to adminId,
+                "resueltoPorNombre" to adminNombre,
+                "fechaResolucion" to System.currentTimeMillis(),
+                "motivoAjuste" to motivoAjuste
+            )
+            db.collection(FirestoreCollections.COMPRAS).document(compra.id).update(data).await()
+
+            val gasto = GastoV2(
+                id = UUID.randomUUID().toString(),
+                descripcion = "Compra aprobada: ${compra.cantidadComprada} ${compra.presentacion} de ${compra.insumoNombre}",
+                monto = compra.precioPagado,
+                categoria = "Insumos",
+                fecha = compra.fecha,
+                sucursal = compra.sucursal,
+                usuarioId = compra.compradoPor
+            )
+            db.collection(FirestoreCollections.GASTOS).document(gasto.id).set(gasto).await()
+            mensajeExito = "Compra aprobada: ${compra.insumoNombre}"
+        }
+    }
+
+    fun reajustarCompra(compra: CompraRegistro, nuevaCantidad: Double, nuevoPrecio: Double, motivo: String, adminId: String, adminNombre: String) {
+        viewModelScope.launch(safeHandler) {
+            val diffUnidades = (nuevaCantidad * compra.contenidoUnidades) - (compra.cantidadComprada * compra.contenidoUnidades)
+            val batch = db.batch()
+
+            val compraRef = db.collection(FirestoreCollections.COMPRAS).document(compra.id)
+            batch.update(compraRef, mapOf(
+                "cantidadComprada" to nuevaCantidad,
+                "precioPagado" to nuevoPrecio,
+                "auditada" to true,
+                "estado" to "ajustada",
+                "resueltoPor" to adminId,
+                "resueltoPorNombre" to adminNombre,
+                "fechaResolucion" to System.currentTimeMillis(),
+                "motivoAjuste" to motivo
+            ))
+
+            if (diffUnidades != 0.0) {
+                val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(compra.insumoId)
+                batch.set(stockRef, mapOf(
+                    "cantidadEnBase" to FieldValue.increment(diffUnidades),
+                    "ultimaActualizacion" to System.currentTimeMillis()
+                ), com.google.firebase.firestore.SetOptions.merge())
+            }
+
+            val gasto = GastoV2(
+                id = UUID.randomUUID().toString(),
+                descripcion = "Compra reajustada: ${compra.insumoNombre} — $motivo",
+                monto = nuevoPrecio,
+                categoria = "Insumos",
+                fecha = compra.fecha,
+                sucursal = compra.sucursal,
+                usuarioId = compra.compradoPor
+            )
+            batch.set(db.collection(FirestoreCollections.GASTOS).document(gasto.id), gasto)
+
+            batch.commit().await()
+            mensajeExito = "Compra reajustada: ${compra.insumoNombre}"
+        }
+    }
+
+    fun registrarPerdida(compra: CompraRegistro, motivo: String, adminId: String, adminNombre: String) {
+        viewModelScope.launch(safeHandler) {
+            val totalUnidades = compra.cantidadComprada * compra.contenidoUnidades
+            val batch = db.batch()
+
+            val compraRef = db.collection(FirestoreCollections.COMPRAS).document(compra.id)
+            batch.update(compraRef, mapOf(
+                "auditada" to true,
+                "estado" to "perdida",
+                "resueltoPor" to adminId,
+                "resueltoPorNombre" to adminNombre,
+                "fechaResolucion" to System.currentTimeMillis(),
+                "motivoPerdida" to motivo
+            ))
+
+            val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(compra.insumoId)
+            batch.set(stockRef, mapOf(
+                "cantidadEnBase" to FieldValue.increment(-totalUnidades),
+                "ultimaActualizacion" to System.currentTimeMillis()
+            ), com.google.firebase.firestore.SetOptions.merge())
+
+            val perdida = GastoV2(
+                id = UUID.randomUUID().toString(),
+                descripcion = "PÉRDIDA por compra rechazada: ${compra.insumoNombre} — $motivo",
+                monto = compra.precioPagado,
+                categoria = "Pérdida",
+                fecha = System.currentTimeMillis(),
+                sucursal = compra.sucursal,
+                usuarioId = compra.compradoPor
+            )
+            batch.set(db.collection(FirestoreCollections.GASTOS).document(perdida.id), perdida)
+
+            batch.commit().await()
+            mensajeExito = "Pérdida registrada: ${compra.insumoNombre}"
         }
     }
 

@@ -234,86 +234,285 @@ class DataSeederV2(
     private fun buildInsumos(): List<InsumoV2> = listOf(
         // Materia Prima
         InsumoV2("harina_kg", "Harina de Trigo", "Materia Prima", "g", 0.020, 5000.0, 500.0,
-            listOf(PresentacionInsumo("Saco 5kg", "kg", 5000.0, 1.0, 100.0))),
-        InsumoV2("leche_lt", "Leche Entera", "Materia Prima", "ml", 0.024, 3000.0, 500.0),
-        InsumoV2("mantequilla_kg", "Mantequilla", "Materia Prima", "g", 0.160, 1000.0, 100.0),
-        InsumoV2("huevo_pz", "Huevo", "Materia Prima", "pz", 3.0, 100.0, 12.0),
-        InsumoV2("polvora_hornear", "Polvo de Hornear", "Materia Prima", "g", 0.150, 200.0, 20.0),
-        InsumoV2("bicarbonato", "Bicarbonato", "Materia Prima", "g", 0.050, 200.0, 20.0),
-        InsumoV2("azucar", "Azúcar", "Materia Prima", "g", 0.020, 5000.0, 500.0),
-        InsumoV2("azucar_glas", "Azúcar Glass", "Materia Prima", "g", 0.040, 1000.0, 100.0),
-        InsumoV2("hielo", "Hielo", "Bases", "g", 0.010, 5000.0, 500.0),
+            presentaciones = listOf(PresentacionInsumo("Saco 5kg", "kg", 5000.0, 1.0, 100.0)),
+            presentacionesCompra = listOf(
+                pres("Bolsa 1 kg", "1 kg", 1000.0, 500.0, 5000.0, 20.0, 10.0, 60.0),
+                pres("Bolsa 5 kg", "5 kg", 5000.0, 2500.0, 10000.0, 100.0, 50.0, 300.0)
+            )),
+        InsumoV2("leche_lt", "Leche Entera", "Materia Prima", "ml", 0.024, 3000.0, 500.0,
+            presentacionesCompra = listOf(
+                pres("Litro", "1 L", 1000.0, 500.0, 2000.0, 24.0, 15.0, 35.0),
+                pres("Garrafón 4 L", "4 L", 4000.0, 2000.0, 6000.0, 96.0, 50.0, 150.0)
+            )),
+        InsumoV2("mantequilla_kg", "Mantequilla", "Materia Prima", "g", 0.160, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Barra 125 g", "125 g", 125.0, 100.0, 250.0, 20.0, 12.0, 40.0),
+                pres("Barra 500 g", "500 g", 500.0, 250.0, 1000.0, 80.0, 40.0, 160.0)
+            )),
+        InsumoV2("huevo_pz", "Huevo", "Materia Prima", "pz", 3.0, 100.0, 12.0,
+            presentacionesCompra = listOf(
+                pres("Pieza", "1 pieza", 1.0, 1.0, 1.0, 3.0, 2.0, 5.0),
+                pres("Cartón 12", "12 piezas", 12.0, 6.0, 24.0, 36.0, 20.0, 70.0),
+                pres("Cartón 30", "30 piezas", 30.0, 15.0, 36.0, 90.0, 50.0, 150.0)
+            )),
+        InsumoV2("polvora_hornear", "Polvo de Hornear", "Materia Prima", "g", 0.150, 200.0, 20.0,
+            presentacionesCompra = listOf(
+                pres("Sobre 20 g", "20 g", 20.0, 10.0, 50.0, 3.0, 1.0, 10.0),
+                pres("Bolsa 100 g", "100 g", 100.0, 50.0, 200.0, 15.0, 8.0, 30.0)
+            )),
+        InsumoV2("bicarbonato", "Bicarbonato", "Materia Prima", "g", 0.050, 200.0, 20.0,
+            presentacionesCompra = listOf(
+                pres("Sobre 20 g", "20 g", 20.0, 10.0, 50.0, 1.0, 0.5, 5.0),
+                pres("Bolsa 100 g", "100 g", 100.0, 50.0, 200.0, 5.0, 2.0, 15.0)
+            )),
+        InsumoV2("azucar", "Azúcar", "Materia Prima", "g", 0.020, 5000.0, 500.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 1 kg", "1 kg", 1000.0, 500.0, 5000.0, 20.0, 10.0, 60.0),
+                pres("Bolsa 5 kg", "5 kg", 5000.0, 2500.0, 10000.0, 100.0, 50.0, 300.0)
+            )),
+        InsumoV2("azucar_glas", "Azúcar Glass", "Materia Prima", "g", 0.040, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 200 g", "200 g", 200.0, 100.0, 500.0, 8.0, 4.0, 20.0),
+                pres("Bolsa 1 kg", "1 kg", 1000.0, 500.0, 2000.0, 40.0, 20.0, 100.0)
+            )),
+        InsumoV2("hielo", "Hielo", "Bases", "g", 0.010, 5000.0, 500.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 2 kg", "2 kg", 2000.0, 500.0, 5000.0, 20.0, 10.0, 40.0)
+            )),
         // Bases
-        InsumoV2("nutella_kg", "Nutella", "Bases", "g", 0.190, 1000.0, 100.0),
-        InsumoV2("queso_crema_kg", "Queso Crema", "Bases", "g", 0.150, 1000.0, 100.0),
-        InsumoV2("lechera_kg", "Lechera", "Bases", "g", 0.095, 1000.0, 100.0),
-        InsumoV2("media_crema", "Media Crema", "Bases", "g", 0.060, 1000.0, 100.0),
-        InsumoV2("leche_evaporada", "Leche Evaporada", "Bases", "ml", 0.080, 1000.0, 100.0),
-        InsumoV2("crema_batir", "Crema para Batir", "Bases", "ml", 0.070, 1000.0, 100.0),
-        InsumoV2("jugo_limon", "Jugo de Limón", "Bases", "ml", 0.040, 500.0, 50.0),
-        InsumoV2("cafe", "Café", "Bases", "ml", 0.060, 500.0, 50.0),
-        InsumoV2("cocoa", "Cocoa en Polvo", "Bases", "g", 0.080, 500.0, 50.0),
-        InsumoV2("salsa_tomate_lt", "Salsa de Tomate", "Salado", "ml", 0.050, 1000.0, 100.0),
-        InsumoV2("zarzamora_kg", "Zarzamora", "Bases", "g", 0.030, 500.0, 50.0),
-        InsumoV2("mermelada_fresa", "Mermelada de Fresa", "Bases", "g", 0.060, 500.0, 50.0),
+        InsumoV2("nutella_kg", "Nutella", "Bases", "g", 0.190, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Bote 200 g", "200 g", 200.0, 100.0, 400.0, 38.0, 20.0, 80.0),
+                pres("Bote 400 g", "400 g", 400.0, 200.0, 800.0, 76.0, 40.0, 160.0),
+                pres("Bote 750 g", "750 g", 750.0, 400.0, 1000.0, 142.0, 80.0, 250.0)
+            )),
+        InsumoV2("queso_crema_kg", "Queso Crema", "Bases", "g", 0.150, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Paquete 190 g", "190 g", 190.0, 100.0, 400.0, 28.0, 15.0, 60.0),
+                pres("Paquete 400 g", "400 g", 400.0, 200.0, 800.0, 60.0, 30.0, 120.0)
+            )),
+        InsumoV2("lechera_kg", "Lechera", "Bases", "g", 0.095, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Lata 385 g", "385 g", 385.0, 200.0, 500.0, 36.0, 20.0, 60.0)
+            )),
+        InsumoV2("media_crema", "Media Crema", "Bases", "g", 0.060, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Lata 220 g", "220 g", 220.0, 100.0, 400.0, 13.0, 8.0, 30.0),
+                pres("Lata 360 g", "360 g", 360.0, 200.0, 500.0, 21.0, 12.0, 40.0)
+            )),
+        InsumoV2("leche_evaporada", "Leche Evaporada", "Bases", "ml", 0.080, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Lata 360 ml", "360 ml", 360.0, 200.0, 500.0, 28.0, 15.0, 50.0)
+            )),
+        InsumoV2("crema_batir", "Crema para Batir", "Bases", "ml", 0.070, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Caja 250 ml", "250 ml", 250.0, 200.0, 400.0, 17.0, 10.0, 35.0),
+                pres("Caja 500 ml", "500 ml", 500.0, 300.0, 1000.0, 35.0, 20.0, 70.0)
+            )),
+        InsumoV2("jugo_limon", "Jugo de Limón", "Bases", "ml", 0.040, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 250 ml", "250 ml", 250.0, 100.0, 500.0, 10.0, 5.0, 25.0),
+                pres("Botella 500 ml", "500 ml", 500.0, 200.0, 1000.0, 20.0, 10.0, 50.0)
+            )),
+        InsumoV2("cafe", "Café", "Bases", "ml", 0.060, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Frasco 200 ml", "200 ml", 200.0, 100.0, 400.0, 12.0, 6.0, 30.0),
+                pres("Frasco 500 ml", "500 ml", 500.0, 200.0, 1000.0, 30.0, 15.0, 70.0)
+            )),
+        InsumoV2("cocoa", "Cocoa en Polvo", "Bases", "g", 0.080, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 200 g", "200 g", 200.0, 100.0, 400.0, 16.0, 8.0, 40.0),
+                pres("Bolsa 500 g", "500 g", 500.0, 250.0, 1000.0, 40.0, 20.0, 100.0)
+            )),
+        InsumoV2("salsa_tomate_lt", "Salsa de Tomate", "Salado", "ml", 0.050, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Botella 250 ml", "250 ml", 250.0, 100.0, 500.0, 12.0, 6.0, 30.0),
+                pres("Botella 500 ml", "500 ml", 500.0, 200.0, 1000.0, 25.0, 12.0, 60.0)
+            )),
+        InsumoV2("zarzamora_kg", "Zarzamora", "Bases", "g", 0.030, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 500 g", "500 g", 500.0, 200.0, 1000.0, 15.0, 8.0, 40.0)
+            )),
+        InsumoV2("mermelada_fresa", "Mermelada de Fresa", "Bases", "g", 0.060, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Bote 400 g", "400 g", 400.0, 200.0, 600.0, 24.0, 12.0, 50.0)
+            )),
         // Aderezos
-        InsumoV2("bbq", "Salsa BBQ", "Aderezo", "g", 0.050, 500.0, 50.0),
-        InsumoV2("buffalo", "Salsa Buffalo", "Aderezo", "g", 0.050, 500.0, 50.0),
-        InsumoV2("blue_cheese", "Blue Cheese", "Aderezo", "g", 0.080, 500.0, 50.0),
-        InsumoV2("valentina", "Valentina", "Aderezo", "g", 0.030, 500.0, 50.0),
-        InsumoV2("queso_amarillo", "Queso Amarillo", "Aderezo", "g", 0.070, 500.0, 50.0),
-        InsumoV2("catsup", "Catsup", "Aderezo", "g", 0.030, 500.0, 50.0),
-        InsumoV2("mayonesa", "Mayonesa", "Aderezo", "g", 0.040, 500.0, 50.0),
+        InsumoV2("bbq", "Salsa BBQ", "Aderezo", "g", 0.050, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 500 g", "500 g", 500.0, 200.0, 1000.0, 25.0, 12.0, 60.0)
+            )),
+        InsumoV2("buffalo", "Salsa Buffalo", "Aderezo", "g", 0.050, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 500 g", "500 g", 500.0, 200.0, 1000.0, 25.0, 12.0, 60.0)
+            )),
+        InsumoV2("blue_cheese", "Blue Cheese", "Aderezo", "g", 0.080, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 400 g", "400 g", 400.0, 200.0, 800.0, 32.0, 15.0, 80.0)
+            )),
+        InsumoV2("valentina", "Valentina", "Aderezo", "g", 0.030, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 350 ml", "350 ml", 350.0, 200.0, 500.0, 10.0, 5.0, 25.0)
+            )),
+        InsumoV2("queso_amarillo", "Queso Amarillo", "Aderezo", "g", 0.070, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 400 g", "400 g", 400.0, 200.0, 800.0, 28.0, 15.0, 60.0)
+            )),
+        InsumoV2("catsup", "Catsup", "Aderezo", "g", 0.030, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 500 g", "500 g", 500.0, 200.0, 1000.0, 15.0, 8.0, 40.0)
+            )),
+        InsumoV2("mayonesa", "Mayonesa", "Aderezo", "g", 0.040, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 400 g", "400 g", 400.0, 200.0, 800.0, 16.0, 8.0, 40.0)
+            )),
         // Salados
-        InsumoV2("queso_mozzarella_kg", "Queso Mozzarella", "Salado", "g", 0.180, 1000.0, 100.0),
-        InsumoV2("jamon_kg", "Jamón de Pierna", "Salado", "g", 0.120, 1000.0, 100.0),
-        InsumoV2("peperoni_kg", "Peperoni", "Salado", "g", 0.240, 500.0, 50.0),
-        InsumoV2("chorizo_kg", "Chorizo", "Salado", "g", 0.115, 500.0, 50.0),
-        InsumoV2("pina_kg", "Piña", "Salado", "g", 0.040, 500.0, 50.0),
+        InsumoV2("queso_mozzarella_kg", "Queso Mozzarella", "Salado", "g", 0.180, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 500 g", "500 g", 500.0, 200.0, 1000.0, 90.0, 40.0, 200.0),
+                pres("Bolsa 1 kg", "1 kg", 1000.0, 500.0, 2000.0, 180.0, 80.0, 400.0)
+            )),
+        InsumoV2("jamon_kg", "Jamón de Pierna", "Salado", "g", 0.120, 1000.0, 100.0,
+            presentacionesCompra = listOf(
+                pres("Paquete 200 g", "200 g", 200.0, 100.0, 500.0, 24.0, 12.0, 60.0),
+                pres("Paquete 500 g", "500 g", 500.0, 200.0, 1000.0, 60.0, 30.0, 150.0)
+            )),
+        InsumoV2("peperoni_kg", "Peperoni", "Salado", "g", 0.240, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Paquete 250 g", "250 g", 250.0, 100.0, 500.0, 60.0, 30.0, 140.0),
+                pres("Paquete 500 g", "500 g", 500.0, 200.0, 1000.0, 120.0, 60.0, 280.0)
+            )),
+        InsumoV2("chorizo_kg", "Chorizo", "Salado", "g", 0.115, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Paquete 250 g", "250 g", 250.0, 100.0, 500.0, 28.0, 15.0, 60.0),
+                pres("Paquete 500 g", "500 g", 500.0, 200.0, 1000.0, 57.0, 30.0, 140.0)
+            )),
+        InsumoV2("pina_kg", "Piña", "Salado", "g", 0.040, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Pieza entera ~1 kg", "~1 kg", 1000.0, 500.0, 2000.0, 40.0, 20.0, 100.0),
+                pres("Bolsa 500 g (precortada)", "500 g", 500.0, 200.0, 1000.0, 20.0, 10.0, 50.0)
+            )),
         // Toppings
-        InsumoV2("fresas", "Fresas", "Topping", "g", 0.050, 500.0, 50.0),
-        InsumoV2("durazno_kg", "Duraznos", "Topping", "g", 0.050, 500.0, 50.0),
-        InsumoV2("coco_rayado", "Coco Rayado", "Topping", "g", 0.080, 300.0, 30.0),
-        InsumoV2("granillo_chocolate", "Granillo Chocolate", "Topping", "g", 0.100, 300.0, 30.0),
-        InsumoV2("granillo_colores", "Granillo Colores", "Topping", "g", 0.080, 300.0, 30.0),
-        InsumoV2("bombon_kg", "Bombón", "Topping", "g", 0.150, 300.0, 30.0),
-        InsumoV2("nuez_kg", "Nuez", "Topping", "g", 0.200, 300.0, 30.0),
+        InsumoV2("fresas", "Fresas", "Topping", "g", 0.050, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Domo 496 g", "Domo 496 g", 496.0, 200.0, 600.0, 25.0, 15.0, 60.0),
+                pres("Granel por kg", "1 kg", 1000.0, 250.0, 5000.0, 50.0, 20.0, 150.0),
+                pres("1/2 kg", "500 g", 500.0, 400.0, 600.0, 25.0, 10.0, 80.0),
+                pres("1/4 kg", "250 g", 250.0, 200.0, 300.0, 12.0, 5.0, 40.0)
+            )),
+        InsumoV2("durazno_kg", "Duraznos", "Topping", "g", 0.050, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Lata 450 g", "450 g", 450.0, 200.0, 600.0, 22.0, 12.0, 50.0),
+                pres("Granel por kg", "1 kg", 1000.0, 250.0, 5000.0, 50.0, 20.0, 150.0)
+            )),
+        InsumoV2("coco_rayado", "Coco Rayado", "Topping", "g", 0.080, 300.0, 30.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 100 g", "100 g", 100.0, 50.0, 200.0, 8.0, 4.0, 20.0),
+                pres("Bolsa 200 g", "200 g", 200.0, 100.0, 400.0, 16.0, 8.0, 40.0)
+            )),
+        InsumoV2("granillo_chocolate", "Granillo Chocolate", "Topping", "g", 0.100, 300.0, 30.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 200 g", "200 g", 200.0, 100.0, 400.0, 20.0, 10.0, 50.0)
+            )),
+        InsumoV2("granillo_colores", "Granillo Colores", "Topping", "g", 0.080, 300.0, 30.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 200 g", "200 g", 200.0, 100.0, 400.0, 16.0, 8.0, 40.0)
+            )),
+        InsumoV2("bombon_kg", "Bombón", "Topping", "g", 0.150, 300.0, 30.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 200 g", "200 g", 200.0, 100.0, 400.0, 30.0, 15.0, 80.0)
+            )),
+        InsumoV2("nuez_kg", "Nuez", "Topping", "g", 0.200, 300.0, 30.0,
+            presentacionesCompra = listOf(
+                pres("Bolsa 150 g", "150 g", 150.0, 50.0, 300.0, 30.0, 15.0, 80.0),
+                pres("Bolsa 300 g", "300 g", 300.0, 150.0, 500.0, 60.0, 30.0, 150.0)
+            )),
         // Snacks
         InsumoV2("boneless", "Boneless", "Snacks", "g", 0.080, 5000.0, 500.0,
-            listOf(PresentacionInsumo("Bolsa 2.6kg", "kg", 2600.0, 10.0, 208.0))),
+            presentaciones = listOf(PresentacionInsumo("Bolsa 2.6kg", "kg", 2600.0, 10.0, 208.0)),
+            presentacionesCompra = listOf(
+                pres("Bolsa 2.6 kg", "2.6 kg", 2600.0, 1500.0, 5000.0, 208.0, 100.0, 400.0),
+                pres("Porción 250 g", "250 g", 250.0, 200.0, 300.0, 20.0, 10.0, 40.0)
+            )),
         InsumoV2("nuggets", "Nuggets", "Snacks", "g", 0.070, 5000.0, 500.0,
-            listOf(PresentacionInsumo("Bolsa 2.6kg", "kg", 2600.0, 10.0, 182.0))),
+            presentaciones = listOf(PresentacionInsumo("Bolsa 2.6kg", "kg", 2600.0, 10.0, 182.0)),
+            presentacionesCompra = listOf(
+                pres("Bolsa 2.6 kg", "2.6 kg", 2600.0, 1500.0, 5000.0, 182.0, 100.0, 400.0),
+                pres("Porción 200 g", "~7-8 pz", 200.0, 150.0, 250.0, 14.0, 8.0, 30.0)
+            )),
         InsumoV2("papas", "Papas", "Snacks", "g", 0.040, 5000.0, 500.0,
-            listOf(PresentacionInsumo("Bolsa 2.3kg", "kg", 2300.0, 10.0, 92.0))),
+            presentaciones = listOf(PresentacionInsumo("Bolsa 2.3kg", "kg", 2300.0, 10.0, 92.0)),
+            presentacionesCompra = listOf(
+                pres("Bolsa 2.3 kg", "2.3 kg", 2300.0, 1500.0, 5000.0, 92.0, 50.0, 200.0),
+                pres("Bolsa 1 kg", "1 kg", 1000.0, 500.0, 2000.0, 40.0, 20.0, 100.0)
+            )),
         // Galletas
         InsumoV2("oreo", "Galleta Oreo", "Topping", "pz", 0.50, 294.0, 28.0,
-            listOf(PresentacionInsumo("Caja (21 paquetes)", "box", 294.0, 5.0, 147.0),
-                PresentacionInsumo("Paquete (14 pz)", "pkg", 14.0, 50.0, 7.0))),
+            presentaciones = listOf(
+                PresentacionInsumo("Caja (21 paquetes)", "box", 294.0, 5.0, 147.0),
+                PresentacionInsumo("Paquete (14 pz)", "pkg", 14.0, 50.0, 7.0)),
+            presentacionesCompra = listOf(
+                pres("Caja", "21 paquetes × 14 galletas", 294.0, 200.0, 400.0, 147.0, 80.0, 250.0),
+                pres("Paquete individual 14", "14 galletas", 14.0, 10.0, 16.0, 7.0, 4.0, 20.0),
+                pres("Paquete individual 4", "4 galletas", 4.0, 4.0, 6.0, 2.0, 1.0, 8.0)
+            )),
         InsumoV2("galletas_maria", "Galletas María", "Bases", "pz", 0.035, 200.0, 40.0,
-            listOf(PresentacionInsumo("Paquete (40 pz)", "pkg", 40.0, 20.0, 15.0))),
+            presentaciones = listOf(PresentacionInsumo("Paquete (40 pz)", "pkg", 40.0, 20.0, 15.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 3 unid", "3 × 170 g ~35-40 pz c/u", 120.0, 80.0, 160.0, 15.0, 8.0, 30.0),
+                pres("Paquete individual", "170 g ~35-40 pz", 40.0, 30.0, 50.0, 5.0, 3.0, 12.0)
+            )),
         InsumoV2("galletas_mexicana", "Galletas Mexicanas", "Bases", "pz", 0.025, 180.0, 60.0,
-            listOf(PresentacionInsumo("Paquete 5u (60 pz)", "pkg", 60.0, 15.0, 45.0))),
-        // Producción (insumos intermedios fabricados en sucursal)
-        InsumoV2("masa_crepa", "Masa de Crepa Preparada", "Producción", "pz", 5.0, 60.0, 12.0),
+            presentaciones = listOf(PresentacionInsumo("Paquete 5u (60 pz)", "pkg", 60.0, 15.0, 45.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 5 unid", "5 × 135 g ~12-15 pz c/u", 75.0, 50.0, 100.0, 45.0, 25.0, 80.0),
+                pres("Paquete individual", "135 g ~12-15 pz", 15.0, 10.0, 20.0, 9.0, 5.0, 20.0)
+            )),
+        // Producción
+        InsumoV2("masa_crepa", "Masa de Crepa Preparada", "Producción", "pz", 5.0, 60.0, 12.0,
+            presentacionesCompra = listOf(
+                pres("Tanda (60 crepas)", "60 piezas", 60.0, 30.0, 120.0, 300.0, 150.0, 600.0)
+            )),
         InsumoV2("carlota_unidad", "Carlota de Limón", "Producción", "pz", 15.0, 0.0, 4.0),
         InsumoV2("tiramisu_unidad", "Tiramisú", "Producción", "pz", 22.0, 0.0, 4.0),
         InsumoV2("fresas_crema_unidad", "Fresas con Crema", "Producción", "pz", 18.0, 0.0, 4.0),
         InsumoV2("duraznos_crema_unidad", "Duraznos con Crema", "Producción", "pz", 18.0, 0.0, 4.0),
         // Consumibles
         InsumoV2("charola", "Charola Unicel", "Consumible", "pz", 1.60, 200.0, 50.0,
-            listOf(PresentacionInsumo("Bolsa (50 pz)", "pz", 1.0, 200.0, 80.0))),
+            presentaciones = listOf(PresentacionInsumo("Bolsa (50 pz)", "pz", 1.0, 200.0, 80.0)),
+            presentacionesCompra = listOf(
+                pres("Bolsa 50 pz", "50 piezas", 50.0, 25.0, 100.0, 80.0, 40.0, 150.0)
+            )),
         InsumoV2("tenedor", "Tenedor Plástico", "Consumible", "pz", 0.50, 200.0, 50.0,
-            listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0))),
+            presentaciones = listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 50 pz", "50 piezas", 50.0, 25.0, 100.0, 25.0, 12.0, 50.0)
+            )),
         InsumoV2("servilletas", "Servilletas", "Consumible", "pz", 0.25, 600.0, 100.0,
-            listOf(PresentacionInsumo("Paquete (200 pz)", "pz", 1.0, 600.0, 45.0))),
+            presentaciones = listOf(PresentacionInsumo("Paquete (200 pz)", "pz", 1.0, 600.0, 45.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 200 pz", "200 piezas", 200.0, 100.0, 400.0, 45.0, 25.0, 80.0)
+            )),
         InsumoV2("vaso", "Vaso 16oz", "Consumible", "pz", 0.50, 200.0, 50.0,
-            listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0))),
+            presentaciones = listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 50 pz", "50 piezas", 50.0, 25.0, 100.0, 25.0, 12.0, 50.0)
+            )),
         InsumoV2("domo", "Domo", "Consumible", "pz", 0.50, 200.0, 50.0,
-            listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0))),
+            presentaciones = listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 50 pz", "50 piezas", 50.0, 25.0, 100.0, 25.0, 12.0, 50.0)
+            )),
         InsumoV2("papel_hamburguesero", "Papel Hamburguesero", "Consumible", "pz", 0.30, 300.0, 50.0,
-            listOf(PresentacionInsumo("Paquete (100 pz)", "pz", 1.0, 300.0, 30.0))),
+            presentaciones = listOf(PresentacionInsumo("Paquete (100 pz)", "pz", 1.0, 300.0, 30.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 100 pz", "100 piezas", 100.0, 50.0, 200.0, 30.0, 15.0, 60.0)
+            )),
         InsumoV2("cuchara", "Cuchara", "Consumible", "pz", 0.50, 200.0, 50.0,
-            listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0)))
+            presentaciones = listOf(PresentacionInsumo("Paquete (50 pz)", "pz", 1.0, 200.0, 25.0)),
+            presentacionesCompra = listOf(
+                pres("Paquete 50 pz", "50 piezas", 50.0, 25.0, 100.0, 25.0, 12.0, 50.0)
+            ))
     )
 
     private fun ing(id: String, nombre: String, cantidad: Double, unidad: String = "g") =
@@ -321,6 +520,12 @@ class DataSeederV2(
 
     private fun consumible(id: String, cantidad: Double = 1.0) =
         ConsumibleRequerido(id, cantidad, "pz")
+
+    private fun pres(
+        nombre: String, descripcion: String = "",
+        contenidoSugerido: Double, contenidoMin: Double, contenidoMax: Double,
+        precioSugerido: Double, precioMin: Double, precioMax: Double
+    ) = PresentacionCompraPreview(nombre, descripcion, contenidoSugerido, contenidoMin, contenidoMax, precioSugerido, precioMin, precioMax)
 
     private fun buildProductosConRecetas(): List<Pair<SalesInventoryProductV2, RecetaV2>> {
         val consumiblesCrepa = listOf(consumible("charola"), consumible("tenedor"), consumible("servilletas"), consumible("papel_hamburguesero"))

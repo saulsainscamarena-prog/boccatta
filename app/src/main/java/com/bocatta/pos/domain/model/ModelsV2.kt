@@ -66,7 +66,8 @@ data class InsumoV2(
     val costoUnitarioBase: Double = 0.0,
     val cantidadEnBase: Double = 0.0,
     val stockMinimo: Double = 10.0,
-    val presentaciones: List<PresentacionInsumo> = emptyList()
+    val presentaciones: List<PresentacionInsumo> = emptyList(),
+    val presentacionesCompra: List<PresentacionCompraPreview> = emptyList()
 )
 
 data class PresentacionInsumo(
@@ -75,6 +76,38 @@ data class PresentacionInsumo(
     val factorConversionABase: Double = 1.0,
     val cantidadDisponible: Double = 0.0,
     val ultimoPrecioPagado: Double = 0.0
+)
+
+data class PresentacionCompraPreview(
+    val nombre: String = "",
+    val descripcion: String = "",
+    val contenidoSugerido: Double = 1.0,
+    val contenidoMin: Double = 1.0,
+    val contenidoMax: Double = 9999.0,
+    val precioSugerido: Double = 0.0,
+    val precioMin: Double = 0.0,
+    val precioMax: Double = 99999.0
+)
+
+data class CompraRegistro(
+    val id: String = "",
+    val insumoId: String = "",
+    val insumoNombre: String = "",
+    val presentacion: String = "",
+    val cantidadComprada: Double = 1.0,
+    val contenidoUnidades: Double = 0.0,
+    val precioPagado: Double = 0.0,
+    val compradoPor: String = "",
+    val compradoPorNombre: String = "",
+    val fecha: Long = 0L,
+    val sucursal: String = "",
+    val auditada: Boolean = false,
+    val estado: String = "pendiente",
+    val motivoAjuste: String = "",
+    val motivoPerdida: String = "",
+    val resueltoPor: String = "",
+    val resueltoPorNombre: String = "",
+    val fechaResolucion: Long = 0L
 )
 
 data class VentaV2(
