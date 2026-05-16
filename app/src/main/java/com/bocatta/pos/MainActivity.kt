@@ -96,10 +96,11 @@ class MainActivity : ComponentActivity() {
 
                     composable("turnos") {
                         val ivmLocal: InventoryViewModel = koinViewModel()
-                        val turnoIvm: InventoryViewModel = koinViewModel()
+                        val horarioVm: HorarioViewModel = koinViewModel()
                         LaunchedEffect(sessionVm.sucursalActual) {
                             cajaVm.configurarSucursal(sessionVm.sucursalActual)
                             ivmLocal.configurarSucursal(sessionVm.sucursalActual)
+                            if (sessionVm.uid != null) horarioVm.cargarJornadaActiva(sessionVm.uid!!)
                         }
                         val participList = remember { mutableStateListOf<RegistroJornada>() }
                         LaunchedEffect(Unit) {
@@ -112,6 +113,7 @@ class MainActivity : ComponentActivity() {
                             cajaVm = cajaVm,
                             inventarioVm = ivmLocal,
                             participantes = participList,
+                            jornadaActiva = horarioVm.jornadaActiva != null,
                             onIniciarTurno = { navController.navigate("apertura") { popUpTo("turnos") { inclusive = true } } },
                             onUnirseTurno = { navController.navigate("ventas") { popUpTo("turnos") { inclusive = true } } },
                             onAdministrarTienda = { if (sessionVm.esAdmin) navController.navigate("admin") { popUpTo("turnos") { inclusive = true } } },

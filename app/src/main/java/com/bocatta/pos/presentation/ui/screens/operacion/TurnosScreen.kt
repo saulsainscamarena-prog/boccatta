@@ -24,8 +24,9 @@ import java.util.*
 fun TurnosScreen(
     sessionVm: SessionViewModel,
     cajaVm: CajaViewModel,
-    inventarioVm: InventoryViewModel,
+    inventarioVm: com.bocatta.pos.presentation.viewmodel.InventoryViewModel,
     participantes: List<RegistroJornada>,
+    jornadaActiva: Boolean = false,
     onIniciarTurno: () -> Unit,
     onUnirseTurno: () -> Unit,
     onAdministrarTienda: () -> Unit,
@@ -99,6 +100,17 @@ fun TurnosScreen(
                 }
 
                 Spacer(Modifier.height(32.dp))
+
+                if (jornadaActiva) {
+                    Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.tertiary)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Jornada en curso", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.tertiary)
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
 
                 // Botón principal
                 Button(
