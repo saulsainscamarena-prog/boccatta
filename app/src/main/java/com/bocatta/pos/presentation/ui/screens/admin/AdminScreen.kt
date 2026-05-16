@@ -140,7 +140,7 @@ fun AdminScreen(
             // Sub-tabs — tokens semánticos, sin colores hardcodeados
             val subTabLabels = when (tabPrincipal) {
                 0 -> listOf("Resumen", "Auditoría")
-                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos", "Promos", "Empleados", "Zonas", "Sueldos")
+                1 -> listOf("Catálogo", "Recetas", "Costos", "Catálogos", "Config", "Combos", "Promos", "Empleados", "Zonas", "Sueldos", "Notif.")
                 2 -> listOf("Stock", "Producción", "Config")
                 else -> emptyList()
             }
@@ -180,6 +180,7 @@ fun AdminScreen(
                     7 -> TabEmpleados(vm = vm)
                     8 -> TabZonas(vm = viewModel())
                     9 -> TabSueldos(salarioVm = viewModel(), adminVm = vm)
+                    10 -> TabNotificaciones(vm = viewModel())
                 }
                 2 -> when (subTabSeleccionado) {
                     0 -> TabBodegaGeneral(
