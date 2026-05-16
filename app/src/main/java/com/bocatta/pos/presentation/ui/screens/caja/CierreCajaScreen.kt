@@ -26,8 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.presentation.ui.components.*
 import com.bocatta.pos.presentation.ui.theme.*
+import com.bocatta.pos.domain.model.CompraRegistro
 import com.bocatta.pos.presentation.viewmodel.CajaViewModel
 import com.bocatta.pos.presentation.viewmodel.SessionViewModel
+import com.bocatta.pos.presentation.viewmodel.AdminViewModel
+import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +41,13 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
 
     val snackbarHost = remember { SnackbarHostState() }
     var mostrarCierre by remember { mutableStateOf(false) }
+    val adminVm: AdminViewModel = koinViewModel()
+    var compraAccion by remember { mutableStateOf<CompraRegistro?>(null) }
+    var accionTipo by remember { mutableStateOf("") }
+    var motivoTexto by remember { mutableStateOf("") }
+    var confirmacionEscrita by remember { mutableStateOf("") }
+    var nuevoPrecioAjuste by remember { mutableStateOf("") }
+    var nuevaCantidadAjuste by remember { mutableStateOf("") }
 
     LaunchedEffect(vm.mensajeExito, vm.mensajeError) {
         val msg = vm.mensajeExito ?: vm.mensajeError ?: return@LaunchedEffect
@@ -229,6 +239,88 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
+                            }
+                        }
+                    }
+
+                    // ── COMPRAS PENDIENTES ─────────────────────────────────────────────
+                    val adminVm: AdminViewModel = koinViewModel()
+                    if (session.esAdmin && adminVm.comprasPendientes.isNotEmpty()) {
+                        Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.tertiary.copy(0.1f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(0.3f))) {
+                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text("COMPRAS PENDIENTES DE AUDITORÍA", fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.tertiary)
+                                adminVm.comprasPendientes.forEach { compra ->
+                                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)) {
+                                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                Column(Modifier.weight(1f)) {
+                                                    Text(compra.insumoNombre, fontWeight = FontWeight.Bold)
+                                                    Text("${compra.cantidadComprada} ${compra.presentacion} (${"%.0f".format(compra.contenidoUnidades)} uds) · $$${"%.2f".format(compra.precioPagado)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                                                    Text("${compra.compradoPorNombre} · ${java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault()).format(java.util.Date(compra.fecha))}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
+                                                }
+                                            }
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                Button(onClick = { adminVm.aprobarCompra(compra, session.uid ?: "", session.nombreUsuario, "") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("✓ Aprobar", fontSize = 11.sp) }
+                                                OutlinedButton(onClick = {
+                                                    compraAccion = compra; accionTipo = "reajustar"
+                                                    nuevoPrecioAjuste = compra.precioPagado.toString()
+                                                    nuevaCantidadAjuste = compra.cantidadComprada.toString()
+                                                }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("✏️ Reajustar", fontSize = 11.sp) }
+                                                OutlinedButton(onClick = {
+                                                    compraAccion = compra; accionTipo = "perdida"
+                                                }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("🗑 Pérdida", fontSize = 11.sp) }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Diálogos de auditoría
+                    compraAccion?.let { compra ->
+                        when (accionTipo) {
+                            "reajustar" -> {
+                                AlertDialog(
+                                    onDismissRequest = { compraAccion = null; motivoTexto = "" },
+                                    title = { Text("Reajustar compra: ${compra.insumoNombre}", fontWeight = FontWeight.Bold) },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            OutlinedTextField(value = nuevaCantidadAjuste, onValueChange = { nuevaCantidadAjuste = it }, label = { Text("Cantidad (${compra.presentacion})") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                                            OutlinedTextField(value = nuevoPrecioAjuste, onValueChange = { nuevoPrecioAjuste = it }, label = { Text("Nuevo precio ($)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                                            OutlinedTextField(value = motivoTexto, onValueChange = { motivoTexto = it }, label = { Text("Motivo del ajuste *") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), minLines = 2)
+                                        }
+                                    },
+                                    confirmButton = {
+                                        Button(onClick = {
+                                            adminVm.reajustarCompra(compra, nuevaCantidadAjuste.toDoubleOrNull() ?: compra.cantidadComprada, nuevoPrecioAjuste.toDoubleOrNull() ?: compra.precioPagado, motivoTexto, session.uid ?: "", session.nombreUsuario)
+                                            compraAccion = null; motivoTexto = ""
+                                        }, enabled = motivoTexto.isNotBlank()) { Text("Guardar y aprobar") }
+                                    },
+                                    dismissButton = { TextButton(onClick = { compraAccion = null; motivoTexto = "" }) { Text("Cancelar") } },
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                            }
+                            "perdida" -> {
+                                AlertDialog(
+                                    onDismissRequest = { compraAccion = null; motivoTexto = ""; confirmacionEscrita = "" },
+                                    title = { Text("¿Registrar como pérdida?", fontWeight = FontWeight.Bold) },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Text("⚠️ Esta acción descuenta ${"%.0f".format(compra.cantidadComprada * compra.contenidoUnidades)} uds del stock y registra $$${"%.2f".format(compra.precioPagado)} como pérdida del día.")
+                                            OutlinedTextField(value = motivoTexto, onValueChange = { motivoTexto = it }, label = { Text("Motivo obligatorio *") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), minLines = 2)
+                                            OutlinedTextField(value = confirmacionEscrita, onValueChange = { confirmacionEscrita = it }, label = { Text("Escribe CONFIRMAR") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
+                                        }
+                                    },
+                                    confirmButton = {
+                                        Button(onClick = {
+                                            adminVm.registrarPerdida(compra, motivoTexto, session.uid ?: "", session.nombreUsuario)
+                                            compraAccion = null; motivoTexto = ""; confirmacionEscrita = ""
+                                        }, enabled = motivoTexto.isNotBlank() && confirmacionEscrita == "CONFIRMAR", colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Registrar pérdida") }
+                                    },
+                                    dismissButton = { TextButton(onClick = { compraAccion = null; motivoTexto = ""; confirmacionEscrita = "" }) { Text("Cancelar") } },
+                                    shape = RoundedCornerShape(20.dp)
+                                )
                             }
                         }
                     }
