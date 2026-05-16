@@ -527,6 +527,9 @@ class DataSeederV2(
         precioSugerido: Double, precioMin: Double, precioMax: Double
     ) = PresentacionCompraPreview(nombre, descripcion, contenidoSugerido, contenidoMin, contenidoMax, precioSugerido, precioMin, precioMax)
 
+    private fun cfg(key: String, title: String, type: ConfigFieldType, options: List<String>, required: Boolean = false, multiMax: Int? = null, preciosExtra: Map<String, Double> = emptyMap()) =
+        ConfigOptionGroup(key, title, type, options, required, multiMax, preciosExtra = preciosExtra)
+
     private fun buildProductosConRecetas(): List<Pair<SalesInventoryProductV2, RecetaV2>> {
         val consumiblesCrepa = listOf(consumible("charola"), consumible("tenedor"), consumible("servilletas"), consumible("papel_hamburguesero"))
         val consumiblesPostre = listOf(consumible("vaso"), consumible("domo"), consumible("cuchara"), consumible("servilletas"))
@@ -587,7 +590,17 @@ class DataSeederV2(
                 mapOf("atlixco" to 65.0, "metepec" to 55.0), esCombo = true,
                 recetaId = "receta_combo_duo", consumiblesAsociados = listOf(
                     consumible("charola"), consumible("tenedor", 2.0),
-                    consumible("servilletas", 2.0), consumible("papel_hamburguesero"))) to
+                    consumible("servilletas", 2.0), consumible("papel_hamburguesero")),
+                configSchema = listOf(
+                    cfg("base_dulce", "Base crepa dulce", ConfigFieldType.SINGLE_CHIP, listOf("Nutella", "Philadelphia", "Lechera", "Zarzamora", "Mermelada de Fresa"), required = true),
+                    cfg("toppings_dulces", "Toppings dulces (hasta 3)", ConfigFieldType.MULTI_CHIP, listOf("Fresa Natural", "Durazno", "Coco Rayado", "Granillo Chocolate", "Granillo Colores"), multiMax = 3),
+                    cfg("toppings_premium", "Toppings premium (+$10)", ConfigFieldType.MULTI_CHIP, listOf("Oreo", "Nuez", "Bombón"), preciosExtra = mapOf("Oreo" to 10.0, "Nuez" to 10.0, "Bombón" to 10.0)),
+                    cfg("tipo_salada", "Tipo crepa salada", ConfigFieldType.SINGLE_CHIP, listOf("Hawaiana", "Peperoni", "Jamón y Queso"), required = true),
+                    cfg("base_salada", "Base crepa salada", ConfigFieldType.SINGLE_CHIP, listOf("Tomate", "Philadelphia"), required = true),
+                    cfg("toppings_salados", "Toppings salados", ConfigFieldType.MULTI_CHIP, listOf("Jamón", "Peperoni", "Piña")),
+                    cfg("aderezos", "Aderezos", ConfigFieldType.MULTI_CHECKBOX, listOf("BBQ", "Buffalo", "Blue Cheese", "Queso Amarillo", "Cátsup", "Mayonesa", "Valentina")),
+                    cfg("presentacion", "Presentación", ConfigFieldType.SINGLE_CHIP, listOf("Juntas", "Separadas"), required = true)
+                )) to
             RecetaV2("receta_combo_duo", "Combo Dulce y Salada", "combo_duo", listOf(
                 ing("masa_crepa", "Masa de Crepa", 2.0, "pz"),
                 ing("charola", "Charola", 1.0, "pz"),
