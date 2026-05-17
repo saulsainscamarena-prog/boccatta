@@ -125,7 +125,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
                         onClick = { selectedInsumo = insumo; showDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         border = BorderStroke(1.dp, Color.White.copy(0.1f))
                     ) {
                         Row(
@@ -199,5 +199,6 @@ class SyncInventarioViewModel : ViewModel() {
         }
     }
 }
+
 
 

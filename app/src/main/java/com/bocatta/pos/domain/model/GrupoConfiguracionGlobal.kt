@@ -49,3 +49,4 @@ data class CambioGrupoConfig(
     val revertido: Boolean = false
 )
 
+

@@ -77,3 +77,4 @@ object CostCalculator {
         return costoTotal / (1 - margenDeseado / 100.0)
     }
 }
+

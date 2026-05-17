@@ -1,16 +1,16 @@
-锘縫ackage com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.domain.model.*
 import timber.log.Timber
 
 /**
- * Gesti贸n de Producci贸n (Yield Management).
- * Permite registrar tandas de producci贸n (masa, postres) y actualizar inventarios.
+ * Gesti髇 de Producci髇 (Yield Management).
+ * Permite registrar tandas de producci髇 (masa, postres) y actualizar inventarios.
  */
 class ProductionManager(private val inventoryRepository: InventoryRepository) {
 
     /**
-     * Registra una tanda de producci贸n.
+     * Registra una tanda de producci髇.
      */
     fun registrarTandaProduccion(
         recetaProduccionId: String,
@@ -30,7 +30,7 @@ class ProductionManager(private val inventoryRepository: InventoryRepository) {
             inventoryRepository.addStock(recetaProduccionId, cantidadProducida)
             true
         } catch (e: Exception) {
-            Timber.tag("PRODUCTION").e(e, "Error al registrar tanda de producci贸n")
+            Timber.tag("PRODUCTION").e(e, "Error al registrar tanda de producci髇")
             false
         }
     }
@@ -39,4 +39,5 @@ class ProductionManager(private val inventoryRepository: InventoryRepository) {
         return registrarTandaProduccion(recetaProduccionId, porcionesProducidas.toDouble(), porcionesProducidas.toDouble())
     }
 }
+
 

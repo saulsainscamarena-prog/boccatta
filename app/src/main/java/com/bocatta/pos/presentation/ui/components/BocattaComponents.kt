@@ -452,3 +452,4 @@ fun BocattaSearchBar(
         )
     )
 }
+

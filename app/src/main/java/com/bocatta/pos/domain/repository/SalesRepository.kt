@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.domain.repository
+package com.bocatta.pos.domain.repository
 
 import com.bocatta.pos.domain.model.ItemCarritoV2
 
@@ -25,4 +25,5 @@ interface SalesRepository {
         usuarioId: String
     ): Boolean
 }
+
 

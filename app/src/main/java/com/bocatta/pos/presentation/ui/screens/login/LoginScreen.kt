@@ -84,7 +84,7 @@ fun LoginScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 border = BorderStroke(1.dp, Color.White.copy(0.1f))
             ) {
                 Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -239,3 +239,4 @@ fun LoginScreen(
         }
     }
 }
+

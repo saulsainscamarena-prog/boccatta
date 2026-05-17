@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import android.util.Log
 import com.bocatta.pos.domain.model.PromocionUniversal
@@ -41,7 +41,7 @@ class PromocionesRepository(
             db.collection(COLLECTION_NAME).document(docId).set(promoParaGuardar).await()
             true
         } catch (e: Exception) {
-            Log.e("PromocionesRepo", "Error al guardar promociÃ³n", e)
+            Log.e("PromocionesRepo", "Error al guardar promoción", e)
             false
         }
     }
@@ -51,8 +51,9 @@ class PromocionesRepository(
             db.collection(COLLECTION_NAME).document(id).delete().await()
             true
         } catch (e: Exception) {
-            Log.e("PromocionesRepo", "Error al eliminar promociÃ³n", e)
+            Log.e("PromocionesRepo", "Error al eliminar promoción", e)
             false
         }
     }
 }
+

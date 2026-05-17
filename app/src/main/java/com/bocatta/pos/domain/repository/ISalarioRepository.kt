@@ -11,3 +11,4 @@ interface ISalarioRepository {
     suspend fun registrarPago(pago: RegistroPago): Boolean
     suspend fun marcarPagado(id: String, fecha: Long): Boolean
 }
+

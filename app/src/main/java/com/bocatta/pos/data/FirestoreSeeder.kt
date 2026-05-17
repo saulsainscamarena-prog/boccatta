@@ -351,3 +351,4 @@ object FirestoreSeeder {
         Log.d("Seeder", "✅ Seed completado")
     }
 }
+

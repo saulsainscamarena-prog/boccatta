@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.sync
+package com.bocatta.pos.data.sync
 
 import android.content.Context
 import androidx.work.*
@@ -57,4 +57,5 @@ object SyncScheduler {
         WorkManager.getInstance(context).cancelUniqueWork(SYNC_WORK_NAME)
     }
 }
+
 

@@ -7,3 +7,4 @@ interface IConfigGlobalRepository {
     suspend fun guardar(grupo: GrupoConfiguracionGlobal): Boolean
     suspend fun eliminar(id: String): Boolean
 }
+

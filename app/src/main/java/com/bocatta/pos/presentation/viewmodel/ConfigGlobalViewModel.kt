@@ -54,3 +54,4 @@ class ConfigGlobalViewModel : ViewModel() {
 
     fun limpiarFeedback() { _mensajeFeedback.value = null }
 }
+

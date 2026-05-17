@@ -43,3 +43,4 @@ class HorarioRepository : IHorarioRepository {
         snap.documents.firstOrNull()?.toObject(JornadaLaboral::class.java)?.copy(id = snap.documents.first().id)
     } catch (e: Exception) { Timber.e(e, "Error getJornadaActiva"); null }
 }
+

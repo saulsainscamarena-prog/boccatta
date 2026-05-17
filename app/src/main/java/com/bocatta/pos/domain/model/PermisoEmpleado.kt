@@ -15,3 +15,4 @@ data class PermisoEmpleado(
     val zonasAsignadas: List<String> = emptyList(),
     val puesto: String = "Mesero"
 )
+

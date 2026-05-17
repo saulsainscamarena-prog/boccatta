@@ -1,4 +1,4 @@
-ï»¿package com.bocatta.pos.logging
+package com.bocatta.pos.logging
 
 import android.content.Context
 import android.util.Log
@@ -12,27 +12,27 @@ import java.util.Locale
 /**
  * Helper singleton to initialise logging.
  *
- * â€¢ En modo debug escribe en Logcat (Timber DebugTree) y en un archivo JSON local.
- * â€¢ En modo release puedes plantar un Ã¡rbol de Crashlytics (aÃºn no incluido).
- * â€¢ Al arrancar, elimina automÃ¡ticamente los archivos de log mayores de 15 dÃ­as.
+ * • En modo debug escribe en Logcat (Timber DebugTree) y en un archivo JSON local.
+ * • En modo release puedes plantar un árbol de Crashlytics (aún no incluido).
+ * • Al arrancar, elimina automáticamente los archivos de log mayores de 15 días.
  */
 object LogHelper {
     /** Initialise Timber with the appropriate trees. */
     fun init(context: Context, isDebug: Boolean) {
-        pruneOldLogs(context)                     // 1ï¸âƒ£ limpia logs viejos
+        pruneOldLogs(context)                     // 1?? limpia logs viejos
         if (isDebug) {
             Timber.plant(Timber.DebugTree())
             Timber.plant(FileLoggingTree(context))
         } else {
-            // TODO: plantar Ã¡rbol Crashlytics si lo deseas
+            // TODO: plantar árbol Crashlytics si lo deseas
         }
     }
 
-    /** Elimina los archivos de log que tengan mÃ¡s de 15 dÃ­as. */
+    /** Elimina los archivos de log que tengan más de 15 días. */
     internal fun pruneOldLogs(context: Context) {
         val logDir = getLogDirectory(context)
         if (!logDir.exists()) return
-        val cutoff = System.currentTimeMillis() - 15L * 24 * 60 * 60 * 1000   // 15 dÃ­as en ms
+        val cutoff = System.currentTimeMillis() - 15L * 24 * 60 * 60 * 1000   // 15 días en ms
         logDir.listFiles()?.forEach { file ->
             if (file.isFile && file.lastModified() < cutoff) {
                 if (!file.delete()) {
@@ -50,7 +50,7 @@ object LogHelper {
         return external ?: File(context.filesDir, "logs")
     }
 
-    /** Ãrbol que escribe cada entrada en un archivo JSON (un archivo por dÃ­a). */
+    /** Árbol que escribe cada entrada en un archivo JSON (un archivo por día). */
     private class FileLoggingTree(private val ctx: Context) : Timber.Tree() {
         private val logDir: File = getLogDirectory(ctx).apply { if (!exists()) mkdirs() }
         private val dateFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
@@ -85,4 +85,5 @@ object LogHelper {
         }
     }
 }
+
 

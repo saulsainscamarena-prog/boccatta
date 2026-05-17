@@ -12,3 +12,4 @@ data class InventoryItem(
     fun isBelowThreshold(): Boolean = currentQty <= minThreshold
     fun hasStock(): Boolean = currentQty > 0.0
 }
+

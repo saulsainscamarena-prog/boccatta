@@ -7,3 +7,4 @@ interface ISolicitudTurnoRepository {
     suspend fun guardar(solicitud: SolicitudTurnoExtra): Boolean
     suspend fun responder(id: String, estado: String, respondidoPor: String): Boolean
 }
+

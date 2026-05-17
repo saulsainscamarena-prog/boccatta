@@ -356,3 +356,4 @@ private fun GraficaBarras(datos: List<VentaPorDia>, color: Color) {
         datos.forEach { Text(it.etiqueta, fontSize = 9.sp, color = MaterialTheme.colorScheme.outline) }
     }
 }
+

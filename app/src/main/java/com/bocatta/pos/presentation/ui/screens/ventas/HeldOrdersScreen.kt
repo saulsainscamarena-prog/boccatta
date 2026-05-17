@@ -27,7 +27,7 @@ fun HeldOrdersScreen(
     onDelete: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    Scaffold(
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
         topBar = {
             TopAppBar(
                 title = { Text("ÓRDENES APARTADAS", fontWeight = FontWeight.Black) },
@@ -173,3 +173,5 @@ private fun HeldOrderCard(
         }
     }
 }
+
+

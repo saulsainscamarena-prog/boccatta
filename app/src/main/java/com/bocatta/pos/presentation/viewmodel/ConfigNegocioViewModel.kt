@@ -144,3 +144,4 @@ class ConfigNegocioViewModel(private val repository: ConfiguracionRepository = C
 
 
 }
+

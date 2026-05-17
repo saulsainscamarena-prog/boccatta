@@ -108,7 +108,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 }
 
                 if (vm.turnoActivo == null) {
-                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
                         BocattaEmptyState(
                             icono = Icons.Default.LockOpen,
                             titulo = "TURNO INACTIVO",
@@ -123,7 +123,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     // ── CONTEO INDUSTRIAL ────────────────────────────────────────────────
                     Text("AUDITORÍA DE CAJA", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), letterSpacing = 1.sp)
 
-                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                             BocattaFilaResumen("FONDO INICIAL", "$${"%.2f".format(turno.fondoInicial)}")
                             BocattaFilaResumen("ESPERADO EN CAJA", "$${"%.2f".format(esperado)}", negrita = true)
@@ -249,7 +249,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text("COMPRAS PENDIENTES DE AUDITORÍA", fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.tertiary)
                                 adminVm.comprasPendientes.forEach { compra ->
-                                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)) {
+                                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
                                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                                 Column(Modifier.weight(1f)) {
@@ -410,3 +410,4 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
         )
     }
 }
+

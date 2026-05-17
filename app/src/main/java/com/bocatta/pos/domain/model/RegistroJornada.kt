@@ -9,3 +9,4 @@ data class RegistroJornada(
     val sesionId: String = "",
     val timestamp: Long = 0L
 )
+

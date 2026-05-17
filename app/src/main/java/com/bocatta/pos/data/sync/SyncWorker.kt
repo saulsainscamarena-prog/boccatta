@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.sync
+package com.bocatta.pos.data.sync
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -85,7 +85,7 @@ class SyncWorker(
             }
         }
 
-        // ── Process pending stock adjustments (Two-Phase Commit) ──────────────────
+        // -- Process pending stock adjustments (Two-Phase Commit) ------------------
         val pending = adjustmentQueue.getAllPending()
         if (pending.isNotEmpty()) {
             Timber.tag("SYNC_WORKER").i("SYNC_STARTED: ${pending.size} pending adjustments")
@@ -249,5 +249,6 @@ class SyncWorker(
                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 }
+
 
 

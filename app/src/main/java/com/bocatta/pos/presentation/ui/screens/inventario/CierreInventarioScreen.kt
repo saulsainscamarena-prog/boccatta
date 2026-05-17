@@ -147,7 +147,7 @@ fun CierreInventarioScreen(
         }
 
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainer)))) {
             LazyColumn(
                 modifier = Modifier.padding(padding).padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -167,7 +167,7 @@ fun CierreInventarioScreen(
                     }
                     Surface(
                         shape = RoundedCornerShape(28.dp), 
-                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         border = BorderStroke(1.dp, statusColor.copy(0.4f))
                     ) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -211,3 +211,4 @@ fun CierreInventarioScreen(
         }
     }
 }
+

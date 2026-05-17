@@ -29,7 +29,6 @@ fun M3Theme(
             val controller = WindowCompat.getInsetsController(window, view)
             controller.isAppearanceLightStatusBars = !darkTheme
             controller.isAppearanceLightNavigationBars = !darkTheme
-            window.statusBarColor = colorScheme.background.toArgb()
         }
     }
 
@@ -44,7 +43,7 @@ fun M3Theme(
 @Composable
 fun BocattaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     M3Theme(

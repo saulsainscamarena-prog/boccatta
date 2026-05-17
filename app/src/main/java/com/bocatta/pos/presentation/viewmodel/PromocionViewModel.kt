@@ -67,3 +67,4 @@ class PromocionViewModel : ViewModel() {
 
     fun limpiarFeedback() { _mensajeFeedback.value = null }
 }
+

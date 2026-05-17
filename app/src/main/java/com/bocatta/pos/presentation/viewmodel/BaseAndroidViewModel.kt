@@ -25,3 +25,4 @@ abstract class BaseAndroidViewModel(application: Application) : AndroidViewModel
         mensajeError = null
     }
 }
+

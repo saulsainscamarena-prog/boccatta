@@ -152,3 +152,4 @@ class SessionViewModel(application: Application) : BaseAndroidViewModel(applicat
         networkCallback?.let { connectivityManager.unregisterNetworkCallback(it) }
     }
 }
+

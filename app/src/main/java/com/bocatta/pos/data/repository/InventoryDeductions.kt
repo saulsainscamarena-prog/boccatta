@@ -131,3 +131,4 @@ object InventoryDeductions {
             .lowercase()
     }
 }
+

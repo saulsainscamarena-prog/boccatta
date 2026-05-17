@@ -36,7 +36,7 @@ fun DialogEditarInsumo(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         title = {
             Text("📦 ${insumo.nombre}", fontWeight = FontWeight.Black, fontSize = 18.sp)
         },
@@ -168,3 +168,4 @@ fun DialogEditarInsumo(
         dismissButton = {}
     )
 }
+

@@ -24,3 +24,4 @@ class ZonaRepository : IZonaRepository {
         col.document(id).delete().await(); true
     } catch (e: Exception) { false }
 }
+

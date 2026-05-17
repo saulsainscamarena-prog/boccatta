@@ -823,3 +823,4 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
 }
 
 
+

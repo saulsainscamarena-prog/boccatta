@@ -41,13 +41,13 @@ fun TurnosScreen(
     else participantes.filter { it.rol != "ADMIN" }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             modifier = Modifier.padding(24.dp).widthIn(max = 500.dp),
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
         ) {
             Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -152,3 +152,4 @@ fun TurnosScreen(
         }
     }
 }
+

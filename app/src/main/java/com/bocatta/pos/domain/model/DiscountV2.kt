@@ -10,3 +10,4 @@ data class DiscountV2(
     val startDate: Long = 0L,
     val endDate: Long? = null
 )
+

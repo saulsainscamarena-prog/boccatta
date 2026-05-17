@@ -35,7 +35,7 @@ fun TabPromociones(
     var editingPromo by remember { mutableStateOf<PromocionUniversal?>(null) }
     val promos by vm.promociones.collectAsState()
 
-    Scaffold(
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { editingPromo = null; showDialog = true },
@@ -231,3 +231,5 @@ private fun DialogoCrearPromocion(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
+

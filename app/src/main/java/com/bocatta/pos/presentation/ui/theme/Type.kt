@@ -116,3 +116,4 @@ val M3Typography = Typography(
 
 // Alias para retrocompatibilidad durante la migración
 val BocattaTypography = M3Typography
+

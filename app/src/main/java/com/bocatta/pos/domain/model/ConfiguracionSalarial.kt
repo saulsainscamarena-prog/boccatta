@@ -37,3 +37,4 @@ data class RegistroPago(
     val notas: String = ""
 )
 
+

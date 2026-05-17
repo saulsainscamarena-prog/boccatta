@@ -73,3 +73,4 @@ object PromotionsEngineV2 {
         return avgPrice * freeQty * sets
     }
 }
+

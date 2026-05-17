@@ -7,3 +7,4 @@ interface IZonaRepository {
     suspend fun guardar(zona: Zona): Boolean
     suspend fun eliminar(id: String): Boolean
 }
+

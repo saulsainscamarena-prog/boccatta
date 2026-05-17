@@ -15,3 +15,4 @@ data class StockAdjustmentEntity(
     val timestamp: Long = 0L,
     val status: Int = 0
 )
+

@@ -1,4 +1,4 @@
-ï»¿package com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.domain.model.Rol
 import com.bocatta.pos.domain.model.Usuario
@@ -11,7 +11,7 @@ class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestoreProvider.db
 
-    /** Devuelve el UID si el login fue exitoso, lanza excepciÃ³n si fallÃ³ */
+    /** Devuelve el UID si el login fue exitoso, lanza excepción si falló */
     suspend fun loginConUid(email: String, pass: String): Result<String> {
         // Modo demo para testing
         if (email.lowercase().contains("demo") && pass == "demo123") {
@@ -27,7 +27,7 @@ class AuthRepository {
         }
     }
 
-    /** Devuelve el UID si el registro fue exitoso, lanza excepciÃ³n si fallÃ³ */
+    /** Devuelve el UID si el registro fue exitoso, lanza excepción si falló */
     suspend fun registrarUsuarioConUid(email: String, pass: String, nombre: String, rol: String): Result<String> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, pass).await()
@@ -49,14 +49,14 @@ class AuthRepository {
     }
 
     /**
-     * Valida el cÃ³digo de registro y determina el rol automÃ¡ticamente.
-     * - CÃ³digo admin (Firebase: configuracion/seguridad â†’ codigo_maestro) â†’ Rol.ADMIN
-     * - Cualquier otro cÃ³digo â†’ null (invÃ¡lido)
+     * Valida el código de registro y determina el rol automáticamente.
+     * - Código admin (Firebase: configuracion/seguridad ? codigo_maestro) ? Rol.ADMIN
+     * - Cualquier otro código ? null (inválido)
      */
     suspend fun validarCodigoYObtenerRol(codigo: String): Rol? {
         val codigoLimpio = codigo.trim()
 
-        // Verificar cÃ³digos dinÃ¡micos desde Firebase (Fuente de verdad en producciÃ³n)
+        // Verificar códigos dinámicos desde Firebase (Fuente de verdad en producción)
         return try {
             val doc = db.collection(FirestoreCollections.CONFIGURACION).document("seguridad").get().await()
             val codigoAdmin = doc.getString("codigo_maestro")?.trim()
@@ -72,16 +72,16 @@ class AuthRepository {
         }
     }
 
-    /** Traduce los cÃ³digos de error de Firebase a espaÃ±ol amigable */
+    /** Traduce los códigos de error de Firebase a español amigable */
     private fun traducirErrorFirebase(e: Exception): String {
         val msg = e.localizedMessage ?: ""
         return when {
-            msg.contains("ERROR_WRONG_PASSWORD") || msg.contains("wrong-password") -> "ContraseÃ±a incorrecta"
+            msg.contains("ERROR_WRONG_PASSWORD") || msg.contains("wrong-password") -> "Contraseña incorrecta"
             msg.contains("ERROR_USER_NOT_FOUND") || msg.contains("user-not-found") -> "Usuario no registrado"
-            msg.contains("ERROR_INVALID_EMAIL") || msg.contains("invalid-email") -> "Correo electrÃ³nico invÃ¡lido"
-            msg.contains("ERROR_EMAIL_ALREADY_IN_USE") || msg.contains("email-already-in-use") -> "Este correo ya estÃ¡ en uso"
-            msg.contains("ERROR_WEAK_PASSWORD") || msg.contains("weak-password") -> "La contraseÃ±a es muy dÃ©bil"
-            msg.contains("network-request-failed") -> "Sin conexiÃ³n a internet"
+            msg.contains("ERROR_INVALID_EMAIL") || msg.contains("invalid-email") -> "Correo electrónico inválido"
+            msg.contains("ERROR_EMAIL_ALREADY_IN_USE") || msg.contains("email-already-in-use") -> "Este correo ya está en uso"
+            msg.contains("ERROR_WEAK_PASSWORD") || msg.contains("weak-password") -> "La contraseña es muy débil"
+            msg.contains("network-request-failed") -> "Sin conexión a internet"
             else -> "Error de acceso: Credenciales incorrectas o problema de red"
         }
     }
@@ -91,6 +91,7 @@ class AuthRepository {
         return validarCodigoYObtenerRol(codigo) != null
     }
 }
+
 
 
 

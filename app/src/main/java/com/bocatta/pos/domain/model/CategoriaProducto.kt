@@ -5,3 +5,4 @@ data class CategoriaProducto(
     val nombre: String = "",
     val subcategorias: List<String> = emptyList()
 )
+

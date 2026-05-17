@@ -494,3 +494,4 @@ private fun DialogoGrupoConfig(
         shape = RoundedCornerShape(20.dp)
     )
 }
+

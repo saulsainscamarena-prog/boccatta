@@ -116,3 +116,4 @@ private fun DialogConfigSalario(
         shape = RoundedCornerShape(20.dp)
     )
 }
+

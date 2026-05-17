@@ -14,3 +14,4 @@ inline fun <reified T : Enum<T>> fromFirestoreKey(key: String?, default: T): T {
 interface FirestoreKeyProvider {
     val firestoreKey: String
 }
+

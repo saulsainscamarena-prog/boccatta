@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.network.firebase
+package com.bocatta.pos.network.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -9,4 +9,5 @@ import com.google.firebase.firestore.FirebaseFirestore
 object FirebaseFirestoreProvider {
     val db: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 }
+
 

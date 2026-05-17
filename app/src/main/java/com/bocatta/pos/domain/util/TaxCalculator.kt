@@ -41,3 +41,4 @@ data class TaxResult(
     val taxTotal: Double,
     val totalVerified: Boolean
 )
+

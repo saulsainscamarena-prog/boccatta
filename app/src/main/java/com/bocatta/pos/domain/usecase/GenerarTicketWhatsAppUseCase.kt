@@ -44,3 +44,4 @@ class GenerarTicketWhatsAppUseCase {
         return sb.toString()
     }
 }
+

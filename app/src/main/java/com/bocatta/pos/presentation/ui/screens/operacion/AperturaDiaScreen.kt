@@ -52,7 +52,7 @@ fun AperturaDiaScreen(
         siguiente()
     }
 
-    Scaffold(
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
@@ -291,3 +291,5 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
         }
     }
 }
+
+

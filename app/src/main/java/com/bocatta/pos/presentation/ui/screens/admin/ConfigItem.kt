@@ -5,3 +5,4 @@ data class ConfigItem(
     val nombre: String,
     val valor: String
 )
+

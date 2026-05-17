@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.local
+package com.bocatta.pos.data.local
 
 import android.content.ContentValues
 import android.content.Context
@@ -184,7 +184,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             CREATE TABLE $TABLE_PRODUCTOS (
                 id TEXT PRIMARY KEY,
                 nombre TEXT NOT NULL,
-                emoji TEXT DEFAULT '🍩',
+                emoji TEXT DEFAULT '??',
                 categoria TEXT,
                 precioVenta TEXT,
                 esCombo INTEGER NOT NULL DEFAULT 0,
@@ -604,3 +604,4 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return null
     }
 }
+

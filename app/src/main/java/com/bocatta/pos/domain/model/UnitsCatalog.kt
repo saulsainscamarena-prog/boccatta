@@ -10,3 +10,4 @@ data class UnitDefV2(
     val factorToBase: Double = 1.0,
     val symbol: String = ""
 )
+

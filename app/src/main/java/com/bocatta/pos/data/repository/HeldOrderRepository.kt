@@ -66,3 +66,4 @@ class HeldOrderRepository(private val dbHelper: OfflineDatabase) : IHeldOrderRep
         private const val TABLE = OfflineDatabase.TABLE_HELD_ORDERS
     }
 }
+

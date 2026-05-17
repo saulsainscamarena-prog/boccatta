@@ -15,3 +15,4 @@ data class SolicitudTurnoExtra(
     val respondidoEn: Long? = null,
     val respondidoPor: String? = null
 )
+

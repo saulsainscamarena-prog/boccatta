@@ -321,7 +321,7 @@ fun SalesScreen(
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isTablet = maxWidth >= 720.dp // Meridian Spec: 720dp for tablet layout
             
-            Scaffold(
+            Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 containerColor = Color.Transparent,
                 topBar = {
@@ -393,7 +393,7 @@ fun SalesScreen(
                 bottomBar = {
                     if (!isTablet) {
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier.fillMaxWidth().height(84.dp).clickable { mostrarCarritoMobile = true },
                             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
@@ -515,3 +515,5 @@ fun SalesScreen(
         }
     }
 }
+
+

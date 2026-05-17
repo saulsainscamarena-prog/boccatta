@@ -8,3 +8,4 @@ interface ICatalogoRepository {
     suspend fun guardar(opcion: OpcionCatalogo): Boolean
     suspend fun eliminar(id: String): Boolean
 }
+

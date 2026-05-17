@@ -17,3 +17,4 @@ data class SalesDependencies(
     val promocionesEngine: PromocionesEngine,
     val promocionesRepository: PromocionesRepository
 )
+

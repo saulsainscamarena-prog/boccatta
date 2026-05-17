@@ -24,3 +24,4 @@ data class SalesInventoryProductV2(
     val overrideGrupos: OverrideGrupos = OverrideGrupos(),
     val activo: Boolean = true
 )
+

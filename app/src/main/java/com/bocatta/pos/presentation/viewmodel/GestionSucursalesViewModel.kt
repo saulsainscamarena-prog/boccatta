@@ -182,3 +182,4 @@ class GestionSucursalesViewModel(
         listenerSucursales?.remove()
     }
 }
+

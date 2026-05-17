@@ -33,3 +33,4 @@ object StockManager {
         return StockResult.Suficiente
     }
 }
+

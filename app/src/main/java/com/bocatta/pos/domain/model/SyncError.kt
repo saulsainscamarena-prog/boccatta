@@ -11,3 +11,4 @@ data class SyncError(
     val appVersion: String = "",
     val stackTrace: String? = null
 )
+

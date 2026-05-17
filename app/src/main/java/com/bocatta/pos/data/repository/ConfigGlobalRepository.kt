@@ -46,3 +46,4 @@ class ConfigGlobalRepository : IConfigGlobalRepository {
             .addOnFailureListener { cont.resume(false) }
     }
 }
+

@@ -192,3 +192,4 @@ class AperturaViewModelV2 : BaseViewModel() {
 }
 
 
+

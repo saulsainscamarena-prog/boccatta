@@ -71,3 +71,4 @@ fun ReportesInventarioScreen(onBack: () -> Unit) {
     }
 }
 
+

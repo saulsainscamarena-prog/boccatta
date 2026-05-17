@@ -40,3 +40,4 @@ interface IStockAdjustmentQueue {
     suspend fun clearAll()
 
 }
+

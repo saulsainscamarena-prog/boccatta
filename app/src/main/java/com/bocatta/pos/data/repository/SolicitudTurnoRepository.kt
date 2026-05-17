@@ -29,3 +29,4 @@ class SolicitudTurnoRepository : ISolicitudTurnoRepository {
         ).await(); true
     } catch (e: Exception) { Timber.e(e, "Error responder solicitud"); false }
 }
+

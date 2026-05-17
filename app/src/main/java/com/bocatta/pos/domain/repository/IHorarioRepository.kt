@@ -10,3 +10,4 @@ interface IHorarioRepository {
     suspend fun cerrarJornada(jornadaId: String, fin: Long, horas: Double): Boolean
     suspend fun getJornadaActiva(empleadoId: String): JornadaLaboral?
 }
+

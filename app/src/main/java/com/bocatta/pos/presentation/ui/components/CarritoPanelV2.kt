@@ -43,7 +43,7 @@ fun CarritoPanelV2(
     onApartar: (() -> Unit)? = null
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier.fillMaxHeight(),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
     ) {
@@ -225,3 +225,4 @@ fun CarritoPanelV2(
         }
     }
 }
+

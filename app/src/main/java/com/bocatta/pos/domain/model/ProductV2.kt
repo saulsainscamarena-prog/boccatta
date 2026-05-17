@@ -20,3 +20,4 @@ data class InventoryProductV2(
     fun isService(): Boolean = type == "SERVICE"
     fun isKit(): Boolean = type == "KIT"
 }
+

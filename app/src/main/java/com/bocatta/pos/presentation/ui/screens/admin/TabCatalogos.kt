@@ -30,7 +30,7 @@ fun TabCatalogos(vm: CatalogoViewModel) {
     val filtered = if (searchQuery.isBlank()) opciones
     else opciones.filter { it.nombre.lowercase().contains(searchQuery.lowercase()) }
 
-    Scaffold(
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { editingItem = null; showDialog = true },
@@ -190,3 +190,5 @@ private fun DialogoOpcionCatalogo(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
+

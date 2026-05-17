@@ -25,3 +25,4 @@ data class ItemVendidoV2(
     /** Subtotal calculado de esta línea: precio unitario * cantidad */
     val subtotal: Double get() = precioUnitario * cantidad
 }
+

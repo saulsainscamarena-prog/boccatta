@@ -55,3 +55,4 @@ fun SeccionConfiguracion(
         content()
     }
 }
+

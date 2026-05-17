@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import kotlinx.coroutines.tasks.await
@@ -71,5 +71,6 @@ data class ReporteDiarioResumen(
     val totalGastos: Double = 0.0,
     val costoProduccionReal: Double = 0.0
 )
+
 
 

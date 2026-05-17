@@ -31,7 +31,7 @@ fun TurnoActivoScreen(
         Surface(
             modifier = Modifier.padding(24.dp).widthIn(max = 500.dp),
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
         ) {
             Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -122,3 +122,4 @@ fun TurnoActivoScreen(
         }
     }
 }
+

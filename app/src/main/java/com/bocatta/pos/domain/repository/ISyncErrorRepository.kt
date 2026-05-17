@@ -8,3 +8,4 @@ import com.bocatta.pos.domain.model.SyncError
 interface ISyncErrorRepository {
     suspend fun reportError(error: SyncError): Boolean
 }
+

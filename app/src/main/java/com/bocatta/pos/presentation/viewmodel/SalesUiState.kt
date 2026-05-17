@@ -5,3 +5,4 @@ data class SalesUiState(
     val error: String? = null,
     val showSuccess: Boolean = false
 )
+

@@ -34,3 +34,4 @@ data class TransactionModifier(
     val qty: Double = 0.0,
     val unit: String = "pza"
 )
+

@@ -16,3 +16,4 @@ data class OpcionCatalogo(
     val creadoEn: Long = 0L
 )
 
+

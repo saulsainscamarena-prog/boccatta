@@ -8,3 +8,4 @@ fun Double.fiscalRound(): Double =
 
 fun BigDecimal.fiscalRound(): BigDecimal =
     setScale(2, RoundingMode.HALF_UP)
+

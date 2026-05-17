@@ -119,3 +119,4 @@ private fun DialogMesa(mesaInicial: Mesa, zonas: List<Zona>, onSave: (Mesa) -> U
         confirmButton = { Button(onClick = { onSave(Mesa(id = mesaInicial.id, numero = numero.toIntOrNull() ?: 0, capacidad = capacidad.toIntOrNull() ?: 4, zonaId = zonaId)); onDismiss() }, enabled = numero.isNotBlank()) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
 }
+

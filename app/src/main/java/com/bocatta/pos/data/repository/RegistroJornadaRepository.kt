@@ -99,3 +99,4 @@ class RegistroJornadaRepository(
         return list
     }
 }
+

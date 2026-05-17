@@ -32,3 +32,4 @@ fun calcularSplit(total: Double, personas: Int, metodoPorDefecto: MetodoPago): L
 
     return partes
 }
+

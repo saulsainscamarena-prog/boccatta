@@ -60,7 +60,8 @@ fun AdminPinDialog(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(28.dp)
     )
 }
+

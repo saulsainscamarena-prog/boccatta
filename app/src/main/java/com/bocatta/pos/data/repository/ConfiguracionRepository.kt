@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
@@ -134,3 +134,4 @@ class ConfiguracionRepository {
             .await()
     }
 }
+

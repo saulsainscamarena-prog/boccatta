@@ -60,7 +60,7 @@ fun ProductCardPremium(
         onClick = onClick,
         enabled = !agotado,
         shape = RoundedCornerShape(28.dp),
-        color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.05f) else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.05f) else MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
@@ -207,7 +207,7 @@ fun BocattaMetricCardPremium(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, color.copy(alpha = 0.2f)),
         tonalElevation = 0.dp
     ) {
@@ -250,7 +250,7 @@ fun GastoCard(
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.05f)),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -273,3 +273,4 @@ fun GastoCard(
         }
     }
 }
+

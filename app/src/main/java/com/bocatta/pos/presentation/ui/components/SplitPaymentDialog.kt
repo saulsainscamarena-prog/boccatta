@@ -102,3 +102,4 @@ fun SplitPaymentDialog(
         shape = RoundedCornerShape(24.dp)
     )
 }
+

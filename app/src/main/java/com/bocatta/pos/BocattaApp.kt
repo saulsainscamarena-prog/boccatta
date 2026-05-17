@@ -1,4 +1,4 @@
-ï»¿package com.bocatta.pos
+package com.bocatta.pos
 
 import android.app.Application
 import com.bocatta.pos.di.appModule
@@ -15,9 +15,9 @@ import java.util.concurrent.TimeUnit
 class BocattaApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        // Inicializa Timber y el Ã¡rbol de archivo. Siempre habilitado en debug.
+        // Inicializa Timber y el árbol de archivo. Siempre habilitado en debug.
         LogHelper.init(this, true)
-        // Programa limpieza diaria de logs (>15 dÃ­as) mediante WorkManager
+        // Programa limpieza diaria de logs (>15 días) mediante WorkManager
         val cleanupRequest = PeriodicWorkRequestBuilder<LogCleanupWorker>(1, TimeUnit.DAYS).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "log_cleanup",
@@ -31,4 +31,5 @@ class BocattaApp : Application() {
         }
     }
 }
+
 

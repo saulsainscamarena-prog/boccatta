@@ -84,3 +84,4 @@ object SuggestionEngine {
         return sugerencias.sortedBy { it.prioridad }
     }
 }
+

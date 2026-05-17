@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.sync
+package com.bocatta.pos.data.sync
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -50,7 +50,7 @@ object OfflineManager {
         val db = OfflineDatabase.getInstance(context)
         val inventoryRepo = InventoryRepository(db)
 
-        // Procesar deducción de inventario local INMEDIATAMENTE
+        // Procesar deducci�n de inventario local INMEDIATAMENTE
         var stockSuficiente = true
         for (item in carrito) {
             val exito = inventoryRepo.descontarVentaCompleta(
@@ -150,4 +150,5 @@ object OfflineManager {
         prefs.edit().putLong("last_ticket_$sucursalId", ticket).apply()
     }
 }
+
 

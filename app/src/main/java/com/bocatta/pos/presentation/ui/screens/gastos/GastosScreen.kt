@@ -126,7 +126,7 @@ fun GastosScreen(
                     Spacer(Modifier.height(12.dp))
                     Surface(
                         shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         border = BorderStroke(1.dp, Color.White.copy(0.1f))
                     ) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -267,7 +267,7 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, color.copy(0.3f))
     ) {
         Row(
@@ -292,3 +292,4 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
         }
     }
 }
+

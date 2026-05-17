@@ -49,7 +49,7 @@ fun DialogCompraUnificado(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.fillMaxWidth().heightIn(max = 700.dp),
         title = {
             Text(
@@ -259,3 +259,4 @@ fun DialogCompraUnificado(
         }
     )
 }
+

@@ -34,3 +34,4 @@ class MesaRepository : IMesaRepository {
         col.document(id).update("estado", estado).await(); true
     } catch (e: Exception) { false }
 }
+

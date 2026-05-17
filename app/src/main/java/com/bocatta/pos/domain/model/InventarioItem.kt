@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.domain.model
+package com.bocatta.pos.domain.model
 
 enum class TipoInsumo(val firestoreKey: String) {
     PORCIONADO("porcionado"),
@@ -7,7 +7,7 @@ enum class TipoInsumo(val firestoreKey: String) {
 }
 
 data class PresentacionCompra(
-    val nombre: String = "", // Ej: "Caja", "Paquete", "Garrafón"
+    val nombre: String = "", // Ej: "Caja", "Paquete", "Garraf�n"
     val factorConversion: Double = 1.0, // Ej: 294 (galletas por caja)
     val ultimoPrecioPagado: Double = 0.0,
     val contenido: Int = 1,
@@ -26,4 +26,5 @@ data class InventarioItem(
     val tipo: TipoInsumo = TipoInsumo.PORCIONADO,
     val presentaciones: List<PresentacionCompra> = emptyList()
 )
+
 

@@ -12,3 +12,4 @@ data class MovementV2(
     val timestamp: Long = 0L,
     val metadata: Map<String, Any> = emptyMap()
 )
+

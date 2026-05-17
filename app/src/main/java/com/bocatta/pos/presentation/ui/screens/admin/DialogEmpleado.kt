@@ -62,3 +62,4 @@ fun DialogEmpleado(
         shape = RoundedCornerShape(20.dp)
     )
 }
+

@@ -9,3 +9,4 @@ interface IMesaRepository {
     suspend fun eliminar(id: String): Boolean
     suspend fun actualizarEstado(id: String, estado: String): Boolean
 }
+

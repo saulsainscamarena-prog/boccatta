@@ -38,6 +38,7 @@ import com.bocatta.pos.domain.model.RegistroJornada
 import com.bocatta.pos.presentation.ui.theme.BocattaTheme
 import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
 import com.bocatta.pos.presentation.viewmodel.*
+import com.bocatta.pos.navigation.Routes
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
@@ -81,22 +82,22 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(authVm.estaLogueado) {
                     if (!authVm.estaLogueado) {
-                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                        navController.navigate(Routes.Login) { popUpTo(0) { inclusive = true } }
                     }
                 }
 
                 NavHost(
                     navController = navController,
-                    startDestination = if (authVm.estaLogueado) "turnos" else "login"
+                    startDestination = if (authVm.estaLogueado) Routes.Turnos else Routes.Login
                 ) {
-                    composable("login") {
+                    composable<Routes.Login> {
                         LoginScreen(vm = authVm, onLoginExitoso = { uid ->
                             sessionVm.cargarUsuario(uid)
-                            navController.navigate("turnos") { popUpTo("login") { inclusive = true } }
+                            navController.navigate(Routes.Turnos) { popUpTo("login") { inclusive = true } }
                         })
                     }
 
-                    composable("turnos") {
+                    composable<Routes.Turnos> {
                         val ivmLocal: InventoryViewModel = koinViewModel()
                         val horarioVm: HorarioViewModel = koinViewModel()
                         LaunchedEffect(sessionVm.sucursalActual) {
@@ -116,14 +117,14 @@ class MainActivity : ComponentActivity() {
                             inventarioVm = ivmLocal,
                             participantes = participList,
                             jornadaActiva = horarioVm.jornadaActiva != null,
-                            onIniciarTurno = { navController.navigate("apertura") { popUpTo("turnos") { inclusive = true } } },
-                            onUnirseTurno = { navController.navigate("ventas") { popUpTo("turnos") { inclusive = true } } },
-                            onAdministrarTienda = { if (sessionVm.esAdmin) navController.navigate("admin") { popUpTo("turnos") { inclusive = true } } },
+                            onIniciarTurno = { navController.navigate(Routes.Apertura) { popUpTo("turnos") { inclusive = true } } },
+                            onUnirseTurno = { navController.navigate(Routes.Ventas) { popUpTo("turnos") { inclusive = true } } },
+                            onAdministrarTienda = { if (sessionVm.esAdmin) navController.navigate(Routes.Admin) { popUpTo("turnos") { inclusive = true } } },
                             onLogout = { sessionVm.cerrarSesion(); authVm.logout() }
                         )
                     }
 
-                    composable("apertura") {
+                    composable<Routes.Apertura> {
                         val aperturaVmV2: AperturaViewModelV2 = koinViewModel()
                         val aperturaIvm: com.bocatta.pos.presentation.viewmodel.InventoryViewModel = koinViewModel()
                         if (sessionVm.cargandoSesion) {
@@ -137,7 +138,7 @@ class MainActivity : ComponentActivity() {
                         }
                         if (cajaVm.turnoActivo != null) {
                             LaunchedEffect(Unit) {
-                                navController.navigate("ventas") { popUpTo("apertura") { inclusive = true } }
+                                navController.navigate(Routes.Ventas) { popUpTo("apertura") { inclusive = true } }
                             }
                         }
                         AperturaDiaScreen(
@@ -145,11 +146,11 @@ class MainActivity : ComponentActivity() {
                             aperturaVmV2 = aperturaVmV2,
                             cajaVm = cajaVm,
                             vm = aperturaIvm,
-                            onAperturaCompleta = { navController.navigate("ventas") { popUpTo("apertura") { inclusive = true } } }
+                            onAperturaCompleta = { navController.navigate(Routes.Ventas) { popUpTo("apertura") { inclusive = true } } }
                         )
                     }
 
-                    composable("ventas") {
+                    composable<Routes.Ventas> {
                         if (sessionVm.cargandoSesion) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(color = BocattaPrimary)
@@ -159,17 +160,17 @@ class MainActivity : ComponentActivity() {
                         SalesScreen(
                             vmV2 = salesVmV2,
                             session = sessionVm,
-                            onVerInventario = { navController.navigate("inventario") },
-                            onVerReportes = { if (sessionVm.esAdmin) navController.navigate("reportes") },
-                            onVerGastos = { navController.navigate("gastos") },
-                            onVerAdmin = { if (sessionVm.esAdmin) navController.navigate("admin") },
-                            onVerCaja = { navController.navigate("caja") },
-                            onVerDevoluciones = { navController.navigate("devoluciones") },
+                            onVerInventario = { navController.navigate(Routes.Inventario) },
+                            onVerReportes = { if (sessionVm.esAdmin) navController.navigate(Routes.Reportes) },
+                            onVerGastos = { navController.navigate(Routes.Gastos) },
+                            onVerAdmin = { if (sessionVm.esAdmin) navController.navigate(Routes.Admin) },
+                            onVerCaja = { navController.navigate(Routes.Caja) },
+                            onVerDevoluciones = { navController.navigate(Routes.Devoluciones) },
                             onLogout = { sessionVm.cerrarSesion(); authVm.logout() }
                         )
                     }
 
-                    composable("inventario") {
+                    composable<Routes.Inventario> {
                         LaunchedEffect(sessionVm.sucursalActual) {
                             inventoryVm.configurarSucursal(sessionVm.sucursalActual)
                         }
@@ -177,24 +178,24 @@ class MainActivity : ComponentActivity() {
                             vm = inventoryVm,
                             session = sessionVm,
                             onBack = { navController.popBackStack() },
-                            onCierreInventario = { navController.navigate("cierre_inventario") },
-                            onAperturaInventario = { navController.navigate("apertura_inventario") }
+                            onCierreInventario = { navController.navigate(Routes.CierreInventario) },
+                            onAperturaInventario = { navController.navigate(Routes.AperturaInventario) }
                         )
                     }
 
-                    composable("reportes") {
+                    composable<Routes.Reportes> {
                         if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         val reportVmV2: ReportViewModelV2 = koinViewModel()
                         ReportScreen(vmV2 = reportVmV2, sucursal = sessionVm.sucursalActual, onBack = { navController.popBackStack() })
                     }
 
-                    composable("gastos") {
+                    composable<Routes.Gastos> {
                         val gastosVmV2: ExpensesViewModelV2 = koinViewModel()
                         LaunchedEffect(sessionVm.sucursalActual) { gastosVmV2.cargarGastos(sessionVm.sucursalActual) }
                         GastosScreen(vm = gastosVmV2, session = sessionVm, onBack = { navController.popBackStack() })
                     }
 
-                    composable("admin") {
+                    composable<Routes.Admin> {
                         if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         val adminVmV2: AdminViewModel = koinViewModel()
                         LaunchedEffect(sessionVm.usuario) { adminVmV2.configurarUsuario(sessionVm.usuario) }
@@ -203,61 +204,61 @@ class MainActivity : ComponentActivity() {
                             inventoryVm = inventoryVm,
                             session = sessionVm,
                             onBack = { navController.popBackStack() },
-                            onVerClientes = { navController.navigate("clientes") },
-                            onVerDashboardBodega = { navController.navigate("dashboard_bodega") },
-                            onVerReportesInventario = { navController.navigate("reportes_inventario") },
-                            onVerSyncInventario = { navController.navigate("sync_inventario") },
-                            onVerGestionarSucursales = { navController.navigate("gestionar_sucursales") }
+                            onVerClientes = { navController.navigate(Routes.Clientes) },
+                            onVerDashboardBodega = { navController.navigate(Routes.DashboardBodega) },
+                            onVerReportesInventario = { navController.navigate(Routes.ReportesInventario) },
+                            onVerSyncInventario = { navController.navigate(Routes.SyncInventario) },
+                            onVerGestionarSucursales = { navController.navigate(Routes.GestionarSucursales) }
                         )
                     }
 
-                    composable("devoluciones") {
+                    composable<Routes.Devoluciones> {
                         val devolucionVm: DevolucionViewModel = koinViewModel()
                         DevolucionesScreen(vm = devolucionVm, session = sessionVm, onBack = { navController.popBackStack() })
                     }
 
-                    composable("caja") {
+                    composable<Routes.Caja> {
                         CierreCajaScreen(vm = cajaVm, session = sessionVm, onBack = { navController.popBackStack() })
                     }
 
-                    composable("clientes") {
+                    composable<Routes.Clientes> {
                         val clienteVm: ClienteViewModel = koinViewModel()
                         ClientesScreen(vm = clienteVm, onBack = { navController.popBackStack() })
                     }
 
-                    composable("compras") {
+                    composable<Routes.Compras> {
                         ComprasScreen(onBack = { navController.popBackStack() })
                     }
 
-                    composable("cierre_inventario") {
+                    composable<Routes.CierreInventario> {
                         CierreInventarioScreen(vm = inventoryVm, session = sessionVm, onBack = { navController.popBackStack() })
                     }
 
-                    composable("apertura_inventario") {
+                    composable<Routes.AperturaInventario> {
                         AperturaInventarioScreen(vm = inventoryVm, session = sessionVm, onBack = { navController.popBackStack() })
                     }
 
-                    composable("dashboard_bodega") {
+                    composable<Routes.DashboardBodega> {
                         if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         DashboardBodegaScreen(
                             onBack = { navController.popBackStack() },
-                            onSync = { navController.navigate("sync_inventario") },
-                            onReportes = { navController.navigate("reportes_inventario") }
+                            onSync = { navController.navigate(Routes.SyncInventario) },
+                            onReportes = { navController.navigate(Routes.ReportesInventario) }
                         )
                     }
 
-                    composable("reportes_inventario") {
+                    composable<Routes.ReportesInventario> {
                         if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         ReportesInventarioScreen(onBack = { navController.popBackStack() })
                     }
 
-                    composable("sync_inventario") {
+                    composable<Routes.SyncInventario> {
                         if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         SyncInventarioScreen(onBack = { navController.popBackStack() })
                     }
 
                     // ── GESTIÓN DE SUCURSALES (NUEVO) ─────────────────────────
-                    composable("gestionar_sucursales") {
+                    composable<Routes.GestionarSucursales> {
                         if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         val sucursalesVm: GestionSucursalesViewModel = koinViewModel()
                         GestionSucursalesScreen(
@@ -270,3 +271,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
+

@@ -1,4 +1,4 @@
-Ôªøpackage com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import kotlinx.coroutines.tasks.await
@@ -54,7 +54,7 @@ class MaintenanceRepository {
         
         if (snapshot.isEmpty) return
 
-        // Firestore permite batches de m√°ximo 500 documentos
+        // Firestore permite batches de m·ximo 500 documentos
         val chunks = snapshot.documents.chunked(500)
         for (chunk in chunks) {
             val batch = db.batch()
@@ -66,7 +66,7 @@ class MaintenanceRepository {
     }
 
     /**
-     * Prepara la estructura base para la V2 creando documentos semilla vac√≠os
+     * Prepara la estructura base para la V2 creando documentos semilla vacÌos
      * si fuera necesario, o simplemente asegurando que las colecciones existan.
      */
     suspend fun inicializarEstructuraV2() {
@@ -78,5 +78,6 @@ class MaintenanceRepository {
         )).await()
     }
 }
+
 
 

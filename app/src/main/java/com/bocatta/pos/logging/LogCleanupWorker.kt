@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.logging
+package com.bocatta.pos.logging
 
 import android.content.Context
 import androidx.work.Worker
@@ -21,4 +21,5 @@ class LogCleanupWorker(appContext: Context, workerParams: WorkerParameters) : Wo
         }
     }
 }
+
 

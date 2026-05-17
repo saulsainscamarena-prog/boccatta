@@ -222,3 +222,4 @@ fun DialogoCrearPromocion(onDismiss: () -> Unit, onSave: (PromocionUniversal) ->
         }
     )
 }
+

@@ -119,3 +119,4 @@ val appModule = module {
     viewModel { ConfigNegocioViewModel(get()) }
     viewModel { GestionSucursalesViewModel(get(), get()) }  // seeder + productoRepo
 }
+

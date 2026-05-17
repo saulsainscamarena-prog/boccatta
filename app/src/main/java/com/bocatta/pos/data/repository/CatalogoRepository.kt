@@ -47,3 +47,4 @@ class CatalogoRepository : ICatalogoRepository {
             .addOnFailureListener { cont.resume(false) }
     }
 }
+

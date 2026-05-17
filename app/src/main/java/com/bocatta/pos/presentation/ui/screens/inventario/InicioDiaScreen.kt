@@ -53,7 +53,7 @@ fun InicioDiaScreen(
         Surface(
             modifier = Modifier.padding(24.dp).widthIn(max = 500.dp),
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
             border = BorderStroke(1.dp, Color.White.copy(0.1f))
         ) {
             Column(
@@ -183,3 +183,4 @@ fun InicioDiaScreen(
         }
     }
 }
+

@@ -168,3 +168,4 @@ data class SaleResult(
     val discounts: List<PromotionsEngineV2.DiscountResult> = emptyList(),
     val error: String? = null
 )
+

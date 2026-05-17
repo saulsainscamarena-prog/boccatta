@@ -1,7 +1,7 @@
-Ôªøpackage com.bocatta.pos.domain.model
+package com.bocatta.pos.domain.model
 
 object OpcionesProducto {
-    // --- CATEGOR√çAS ---
+    // --- CATEGORÕAS ---
     val categorias = listOf("CREPAS_DULCES", "CREPAS_SALADAS", "POSTRES", "BEBIDAS", "SNACKS", "CONSUMIBLES")
 
     // --- BASES DE CREPAS DULCES ---
@@ -9,29 +9,30 @@ object OpcionesProducto {
     
     // --- TOPPINGS DULCES ---
     val toppingsDulces = listOf("Fresa Natural", "Durazno", "Coco Rayado", "Granillo Chocolate", "Granillo Colores")
-    val toppingsPremium = listOf("Oreo", "Nuez", "Bomb√≥n")
-    val espolvoreados = listOf("Az√∫car Glass", "Cocoa Espolvoreada")
+    val toppingsPremium = listOf("Oreo", "Nuez", "BombÛn")
+    val espolvoreados = listOf("Az˙car Glass", "Cocoa Espolvoreada")
 
     // --- BASES DE CREPAS SALADAS ---
-    val basesSaladas = listOf("Tomate", "Philadelphia") // Tomate base para pizzas, Philly para jam√≥n
-    val toppingsSalados = listOf("Peperoni", "Jam√≥n", "Chorizo", "Pi√±a")
-    val tiposCrepaSalada = listOf("Hawaiana", "Peperoni", "Jam√≥n y Queso")
+    val basesSaladas = listOf("Tomate", "Philadelphia") // Tomate base para pizzas, Philly para jamÛn
+    val toppingsSalados = listOf("Peperoni", "JamÛn", "Chorizo", "PiÒa")
+    val tiposCrepaSalada = listOf("Hawaiana", "Peperoni", "JamÛn y Queso")
     
     // --- SNACKS Y ADEREZOS ---
-    val aderezosSnacks = listOf("Valentina", "BBQ", "Buffalo", "Blue Cheese", "Queso Amarillo", "C√°tsup", "Mayonesa")
+    val aderezosSnacks = listOf("Valentina", "BBQ", "Buffalo", "Blue Cheese", "Queso Amarillo", "C·tsup", "Mayonesa")
     
     // --- CONSUMIBLES (Despacho) ---
-    // Nota: El usuario indic√≥ que es "Charola de Unicel", no de cart√≥n.
+    // Nota: El usuario indicÛ que es "Charola de Unicel", no de cartÛn.
     val consumiblesDisponibles = listOf(
         "Vaso 16oz", "Domo", "Charola Unicel", "Tenedor", "Cuchara", "Servilleta", "Papel Hamburguesero"
     )
 
     // --- POSTRES (Recetas complejas) ---
-    val postresList = listOf("Carlota de Lim√≥n", "Tiramis√∫", "Fresas con Crema", "Duraznos con Crema")
+    val postresList = listOf("Carlota de LimÛn", "Tiramis˙", "Fresas con Crema", "Duraznos con Crema")
 
     // --- FRAPPES ---
     val frappesList = listOf("Oreo", "Cocoa", "Fresa", "Fresa y Cocoa")
     
-    val motivosCancelacion = listOf("Cliente cambi√≥ opini√≥n", "Error de captura", "Prueba de sistema", "Mantenimiento", "Otro")
+    val motivosCancelacion = listOf("Cliente cambiÛ opiniÛn", "Error de captura", "Prueba de sistema", "Mantenimiento", "Otro")
 }
+
 

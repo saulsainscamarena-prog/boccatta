@@ -22,3 +22,4 @@ abstract class BaseViewModel : ViewModel() {
         mensajeError = null
     }
 }
+

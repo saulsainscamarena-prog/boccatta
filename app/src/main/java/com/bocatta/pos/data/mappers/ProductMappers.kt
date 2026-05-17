@@ -36,3 +36,4 @@ fun InventoryProductV2.toLegacy(): SalesInventoryProductV2 = SalesInventoryProdu
     costoToppingExtra = (attributes["costoToppingExtra"] as? Number)?.toDouble() ?: 10.0,
     esProductoTopping = (attributes["esProductoTopping"] as? Boolean) ?: false
 )
+

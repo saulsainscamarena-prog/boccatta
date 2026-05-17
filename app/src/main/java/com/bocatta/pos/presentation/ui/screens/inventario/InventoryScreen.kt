@@ -49,7 +49,7 @@ fun InventoryScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
-        Scaffold(
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = Color.Transparent,
             topBar = {
@@ -143,7 +143,7 @@ fun InventoryScreen(
 @Composable
 fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoStock: Boolean) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(28.dp),
         border = BorderStroke(1.dp, if(bajoStock) MaterialTheme.colorScheme.error.copy(0.4f) else Color.White.copy(0.08f)),
         modifier = Modifier.fillMaxWidth()
@@ -174,4 +174,6 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoS
         }
     }
 }
+
+
 

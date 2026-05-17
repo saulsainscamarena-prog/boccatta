@@ -34,3 +34,4 @@ data class RecipeInput(
     val qty: Double = 0.0,
     val unit: String = "g"
 )
+

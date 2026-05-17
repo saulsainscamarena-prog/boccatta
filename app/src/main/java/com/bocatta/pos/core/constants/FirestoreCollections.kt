@@ -41,3 +41,4 @@ object FirestoreCollections {
     // Configuración de Negocio
     const val MEMBRESIA_CICLO_VISITAS = 5
 }
+

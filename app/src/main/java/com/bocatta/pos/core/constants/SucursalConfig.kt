@@ -50,3 +50,4 @@ data class SucursalInfo(
     val prefijo: String,
     val displayName: String
 )
+

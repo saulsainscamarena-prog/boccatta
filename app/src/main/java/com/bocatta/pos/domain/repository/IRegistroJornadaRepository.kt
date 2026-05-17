@@ -7,3 +7,4 @@ interface IRegistroJornadaRepository {
     suspend fun getParticipantes(sucursal: String): List<RegistroJornada>
     suspend fun getHistorial(usuario: String): List<RegistroJornada>
 }
+

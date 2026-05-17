@@ -82,3 +82,4 @@ data class BatchResult(
     val outputUnit: String = "",
     val error: String? = null
 )
+

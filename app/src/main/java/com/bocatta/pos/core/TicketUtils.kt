@@ -12,3 +12,4 @@ object TicketUtils {
         return "$prefijo$fecha-${numero.toString().padStart(3, '0')}"
     }
 }
+

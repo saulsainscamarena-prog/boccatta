@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.data.repository
+package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.core.TicketUtils
 import com.bocatta.pos.core.constants.FirestoreCollections
@@ -177,5 +177,6 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
         }
     }
 }
+
 
 

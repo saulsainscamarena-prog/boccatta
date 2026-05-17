@@ -55,3 +55,4 @@ class CatalogoViewModel : ViewModel() {
 
     fun limpiarFeedback() { _mensajeFeedback.value = null }
 }
+

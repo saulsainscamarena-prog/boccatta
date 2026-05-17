@@ -46,3 +46,4 @@ class ConfiguracionSalarialRepository : ISalarioRepository {
         pagosCol.document(id).update("pagado", true, "fechaPago", fecha).await(); true
     } catch (e: Exception) { false }
 }
+
