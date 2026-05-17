@@ -9,6 +9,8 @@ import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.bocatta.pos.domain.repository.IProductRepository
 import com.bocatta.pos.domain.repository.StockDeduction
 import com.bocatta.pos.domain.util.TaxCalculator
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 class SalesFlowUseCase(
     private val productRepo: IProductRepository,
@@ -25,14 +27,16 @@ class SalesFlowUseCase(
     ): SaleResult {
         val transactionId = java.util.UUID.randomUUID().toString()
         val transactionItems = mutableListOf<TransactionItemV2>()
-        var subtotal = 0.0
+        var subtotalBD = BigDecimal.ZERO
 
         for (item in items) {
             val baseUnit = productRepo.getProductBaseUnit(item.productId)
             val unit = baseUnit ?: item.unit
 
-            val itemSubtotal = item.unitPrice * item.quantity
-            subtotal += itemSubtotal
+            val unitPriceBD = BigDecimal.valueOf(item.unitPrice)
+            val qtyBD = BigDecimal.valueOf(item.quantity)
+            val itemSubtotalBD = unitPriceBD * qtyBD
+            subtotalBD += itemSubtotalBD
 
             transactionItems.add(TransactionItemV2(
                 productId = item.productId,
@@ -40,11 +44,13 @@ class SalesFlowUseCase(
                 quantity = item.quantity,
                 unit = unit,
                 unitPrice = item.unitPrice,
-                subtotal = itemSubtotal,
+                subtotal = itemSubtotalBD.setScale(2, RoundingMode.HALF_UP).toDouble(),
                 taxRate = item.taxRate,
                 modifiers = item.modifiers
             ))
         }
+
+        val subtotal = subtotalBD.setScale(2, RoundingMode.HALF_UP).toDouble()
 
         val itemCategories = items.map { it.category }.filterNotNull()
         val discountResults = promotionsEngine.calculate(
@@ -55,16 +61,17 @@ class SalesFlowUseCase(
             discounts = discounts
         )
 
-        val discountTotal = discountResults.sumOf { it.amount }
-
-        val netSubtotal = subtotal - discountTotal
+        val discountTotal = discountResults.sumOf { BigDecimal.valueOf(it.amount) }
+        val netSubtotal = subtotalBD - discountTotal
+        val netSubtotalD = netSubtotal.setScale(2, RoundingMode.HALF_UP).toDouble()
 
         val taxResult = TaxCalculator.calculatePerItem(
-            subtotal = subtotal,
-            discountTotal = discountTotal,
+            subtotal = netSubtotalD,
+            discountTotal = discountTotal.setScale(2, RoundingMode.HALF_UP).toDouble(),
             items = transactionItems
         )
-        val taxTotal = taxResult.taxTotal
+        val taxTotalBD = BigDecimal.valueOf(taxResult.taxTotal)
+        val grandTotalBD = netSubtotal + taxTotalBD
 
         val deductions = mutableListOf<StockDeduction>()
         for (item in items) {
@@ -126,10 +133,10 @@ class SalesFlowUseCase(
             userId = userId,
             type = "SALE",
             status = "COMPLETED",
-            subtotal = subtotal,
-            discountTotal = discountTotal,
-            taxTotal = taxTotal,
-            grandTotal = netSubtotal + taxTotal,
+            subtotal = netSubtotalD,
+            discountTotal = discountTotal.setScale(2, RoundingMode.HALF_UP).toDouble(),
+            taxTotal = taxTotalBD.setScale(2, RoundingMode.HALF_UP).toDouble(),
+            grandTotal = grandTotalBD.setScale(2, RoundingMode.HALF_UP).toDouble(),
             items = transactionItems,
             createdAt = System.currentTimeMillis()
         )
