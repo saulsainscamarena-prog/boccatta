@@ -67,7 +67,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -92,7 +92,7 @@ dependencies {
     jacoco
     // Crashlytics & Analytics (explicit versions to guarantee resolution)
     //implementation("com.google.firebase:firebase-crashlytics-ktx:18.6.2")
-    implementation("com.google.firebase:firebase-analytics-ktx:21.5.0")
+    implementation("com.google.firebase:firebase-analytics")
     // Timber (logging)
     implementation("com.jakewharton.timber:timber:5.0.1")
     implementation(libs.kotlinx.coroutines.play.services)

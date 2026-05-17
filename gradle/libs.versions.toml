@@ -4,15 +4,15 @@ coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-kotlinxCoroutinesTest = "1.7.3"
-lifecycleRuntimeKtx = "2.6.1"
-activityCompose = "1.8.0"
+kotlinxCoroutinesTest = "1.9.0"
+lifecycleRuntimeKtx = "2.8.7"
+activityCompose = "1.9.3"
 kotlin = "2.2.10"
 composeBom = "2026.02.01"
 googleServices = "4.4.4"
-firebaseBom = "34.12.0"
-room = "2.6.1"
-workManager = "2.9.0"
+firebaseBom = "34.13.0"
+room = "2.7.1"
+workManager = "2.10.0"
 ksp = "2.3.6"
 serialization = "1.6.3"
 
@@ -35,7 +35,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
-kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version = "1.7.3" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version = "1.9.0" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
