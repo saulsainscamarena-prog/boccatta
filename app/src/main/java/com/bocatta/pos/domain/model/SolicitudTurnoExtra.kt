@@ -1,6 +1,6 @@
 package com.bocatta.pos.domain.model
 
-enum class EstadoSolicitudTurno { PENDIENTE, APROBADA, RECHAZADA }
+enum class EstadoSolicitudTurno(val firestoreKey: String) { PENDIENTE("pendiente"), APROBADA("aprobada"), RECHAZADA("rechazada") }
 
 data class SolicitudTurnoExtra(
     val id: String = "",
@@ -15,4 +15,5 @@ data class SolicitudTurnoExtra(
     val respondidoEn: Long? = null,
     val respondidoPor: String? = null
 )
+
 

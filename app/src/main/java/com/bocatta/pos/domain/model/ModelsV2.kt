@@ -290,3 +290,4 @@ data class PromocionUniversal(
     val etiquetas: List<String> = emptyList()
 )
 
+
