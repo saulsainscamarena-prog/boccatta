@@ -21,6 +21,7 @@ class ConfigGlobalRepository : IConfigGlobalRepository {
         listener = collection.addSnapshotListener { snap, error ->
             if (error != null) {
                 Timber.e(error, "Error grupos configuración")
+                cont.resume(emptyList())
                 return@addSnapshotListener
             }
             _cache.clear()

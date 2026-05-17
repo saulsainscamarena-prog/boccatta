@@ -23,7 +23,7 @@ class CatalogoRepository : ICatalogoRepository {
     override suspend fun getAll(): List<OpcionCatalogo> = suspendCoroutine { cont ->
         listener?.remove()
         listener = collection.addSnapshotListener { snap, error ->
-            if (error != null) { Timber.e(error, "Error catálogo"); return@addSnapshotListener }
+            if (error != null) { Timber.e(error, "Error catálogo"); cont.resume(emptyList()); return@addSnapshotListener }
             _cache.clear()
             snap?.documents?.forEach { doc ->
                 doc.toObject(OpcionCatalogo::class.java)?.let {

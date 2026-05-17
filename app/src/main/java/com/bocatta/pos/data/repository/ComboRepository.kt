@@ -22,6 +22,7 @@ class ComboRepository {
         listener = collection.addSnapshotListener { snap, error ->
             if (error != null) {
                 Timber.e(error, "Error loading combos")
+                cont.resume(emptyList())
                 return@addSnapshotListener
             }
             _cache.clear()

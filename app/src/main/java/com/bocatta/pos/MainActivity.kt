@@ -184,7 +184,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Routes.Reportes> {
-                        if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         val reportVmV2: ReportViewModelV2 = koinViewModel()
                         ReportScreen(vmV2 = reportVmV2, sucursal = sessionVm.sucursalActual, onBack = { navController.popBackStack() })
                     }
@@ -196,7 +195,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Routes.Admin> {
-                        if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         val adminVmV2: AdminViewModel = koinViewModel()
                         LaunchedEffect(sessionVm.usuario) { adminVmV2.configurarUsuario(sessionVm.usuario) }
                         AdminScreen(
@@ -205,10 +203,10 @@ class MainActivity : ComponentActivity() {
                             session = sessionVm,
                             onBack = { navController.popBackStack() },
                             onVerClientes = { navController.navigate(Routes.Clientes) },
-                            onVerDashboardBodega = { navController.navigate(Routes.DashboardBodega) },
-                            onVerReportesInventario = { navController.navigate(Routes.ReportesInventario) },
-                            onVerSyncInventario = { navController.navigate(Routes.SyncInventario) },
-                            onVerGestionarSucursales = { navController.navigate(Routes.GestionarSucursales) }
+                            onVerDashboardBodega = { if (sessionVm.esAdmin) navController.navigate(Routes.DashboardBodega) },
+                            onVerReportesInventario = { if (sessionVm.esAdmin) navController.navigate(Routes.ReportesInventario) },
+                            onVerSyncInventario = { if (sessionVm.esAdmin) navController.navigate(Routes.SyncInventario) },
+                            onVerGestionarSucursales = { if (sessionVm.esAdmin) navController.navigate(Routes.GestionarSucursales) }
                         )
                     }
 
@@ -239,7 +237,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Routes.DashboardBodega> {
-                        if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         DashboardBodegaScreen(
                             onBack = { navController.popBackStack() },
                             onSync = { navController.navigate(Routes.SyncInventario) },
@@ -248,18 +245,15 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Routes.ReportesInventario> {
-                        if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         ReportesInventarioScreen(onBack = { navController.popBackStack() })
                     }
 
                     composable<Routes.SyncInventario> {
-                        if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         SyncInventarioScreen(onBack = { navController.popBackStack() })
                     }
 
                     // ── GESTIÓN DE SUCURSALES (NUEVO) ─────────────────────────
                     composable<Routes.GestionarSucursales> {
-                        if (!sessionVm.esAdmin) { navController.popBackStack(); return@composable }
                         val sucursalesVm: GestionSucursalesViewModel = koinViewModel()
                         GestionSucursalesScreen(
                             vm = sucursalesVm,
