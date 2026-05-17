@@ -58,9 +58,9 @@ fun TabZonas(vm: MesaViewModel) {
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     mesas.filter { it.zonaId == zona.id }.forEach { mesa ->
                                         val color = when (mesa.estado) {
-                                            EstadoMesa.LIBRE -> Color(0xFF4CAF50)
-                                            EstadoMesa.OCUPADA -> Color(0xFFF44336)
-                                            EstadoMesa.RESERVADA -> Color(0xFFFF9800)
+                                            EstadoMesa.LIBRE -> MaterialTheme.colorScheme.primary
+                                            EstadoMesa.OCUPADA -> MaterialTheme.colorScheme.error
+                                            EstadoMesa.RESERVADA -> MaterialTheme.colorScheme.tertiary
                                             EstadoMesa.INACTIVA -> Color.Gray
                                         }
                                         Surface(color = color.copy(0.15f), shape = RoundedCornerShape(10.dp), modifier = Modifier.width(80.dp).padding(2.dp)) {
@@ -119,4 +119,5 @@ private fun DialogMesa(mesaInicial: Mesa, zonas: List<Zona>, onSave: (Mesa) -> U
         confirmButton = { Button(onClick = { onSave(Mesa(id = mesaInicial.id, numero = numero.toIntOrNull() ?: 0, capacidad = capacidad.toIntOrNull() ?: 4, zonaId = zonaId)); onDismiss() }, enabled = numero.isNotBlank()) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
 }
+
 

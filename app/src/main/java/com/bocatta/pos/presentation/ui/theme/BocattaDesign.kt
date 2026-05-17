@@ -10,12 +10,12 @@ object BocattaDesign {
      */
     fun getColorPorCategoria(categoria: String?): Color {
         return when (categoria?.lowercase()) {
-            "crepas", "crepa" -> CatCrepa
-            "snacks", "snack" -> CatSnack
-            "postres", "postre" -> CatPostre
-            "combos", "combo", "paquetes" -> CatCombo
-            "bebidas", "bebida", "frappes" -> CatBebida
-            else -> CatDefault
+            "crepas", "crepa" -> Color(0xFFFF2D55)
+            "snacks", "snack" -> Color(0xFFFF5E3A)
+            "postres", "postre" -> Color(0xFFBF5AF2)
+            "combos", "combo", "paquetes" -> Color(0xFF0A84FF)
+            "bebidas", "bebida", "frappes" -> Color(0xFF64D2FF)
+            else -> Color(0xFF8E8E93)
         }
     }
 
@@ -33,9 +33,9 @@ object BocattaDesign {
      */
     fun getStockColor(actual: Double, critico: Double): Color {
         return when {
-            actual <= 0 -> BocattaDanger
-            actual <= critico -> BocattaWarning
-            else -> BocattaSuccess
+            actual <= 0 -> Color(0xFFE53935)
+            actual <= critico -> Color(0xFFFB8C00)
+            else -> Color(0xFF43A047)
         }
     }
 }

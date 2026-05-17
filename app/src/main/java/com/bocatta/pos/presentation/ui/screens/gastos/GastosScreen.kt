@@ -257,10 +257,10 @@ fun GastosScreen(
 fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
     val (icono, color) = when (gasto.categoria) {
         "Insumo" -> Icons.Default.Inventory2 to MaterialTheme.colorScheme.primary
-        "Servicios" -> Icons.Default.ElectricalServices to Color(0xFF4FC3F7)
-        "Sueldos" -> Icons.Default.Person to Color(0xFF81C784)
-        "Renta" -> Icons.Default.Home to Color(0xFFBA68C8)
-        "Mantenimiento" -> Icons.Default.Build to Color(0xFFFFB74D)
+        "Servicios" -> Icons.Default.ElectricalServices to MaterialTheme.colorScheme.primary
+        "Sueldos" -> Icons.Default.Person to MaterialTheme.colorScheme.tertiary
+        "Renta" -> Icons.Default.Home to MaterialTheme.colorScheme.secondary
+        "Mantenimiento" -> Icons.Default.Build to MaterialTheme.colorScheme.error
         else -> Icons.Default.ShoppingBag to Color.White.copy(0.6f)
     }
 
@@ -292,4 +292,5 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
         }
     }
 }
+
 

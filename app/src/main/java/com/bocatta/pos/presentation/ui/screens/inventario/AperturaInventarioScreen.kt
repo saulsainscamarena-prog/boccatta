@@ -118,7 +118,7 @@ fun AperturaInventarioScreen(
         },
         bottomBar = {
             Surface(
-                color = Color(0xFF0F111A).copy(0.95f),
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 border = BorderStroke(1.dp, Color.White.copy(0.1f)),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
@@ -221,6 +221,7 @@ fun AperturaInventarioScreen(
         }
     }
 }
+
 
 
 

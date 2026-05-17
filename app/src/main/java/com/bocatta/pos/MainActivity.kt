@@ -36,7 +36,7 @@ import com.bocatta.pos.presentation.ui.screens.operacion.TurnosScreen
 import com.bocatta.pos.data.repository.RegistroJornadaRepository
 import com.bocatta.pos.domain.model.RegistroJornada
 import com.bocatta.pos.presentation.ui.theme.BocattaTheme
-import com.bocatta.pos.presentation.ui.theme.BocattaPrimary
+import com.bocatta.pos.presentation.ui.theme.BocattaLightColorScheme
 import com.bocatta.pos.presentation.viewmodel.*
 import com.bocatta.pos.navigation.Routes
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
@@ -129,31 +129,7 @@ class MainActivity : ComponentActivity() {
                         val aperturaIvm: com.bocatta.pos.presentation.viewmodel.InventoryViewModel = koinViewModel()
                         if (sessionVm.cargandoSesion) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = BocattaPrimary)
-                            }
-                            return@composable
-                        }
-                        LaunchedEffect(sessionVm.sucursalActual) {
-                            cajaVm.configurarSucursal(sessionVm.sucursalActual)
-                        }
-                        if (cajaVm.turnoActivo != null) {
-                            LaunchedEffect(Unit) {
-                                navController.navigate(Routes.Ventas) { popUpTo<Routes.Apertura> { inclusive = true } }
-                            }
-                        }
-                        AperturaDiaScreen(
-                            sessionVm = sessionVm,
-                            aperturaVmV2 = aperturaVmV2,
-                            cajaVm = cajaVm,
-                            vm = aperturaIvm,
-                            onAperturaCompleta = { navController.navigate(Routes.Ventas) { popUpTo<Routes.Apertura> { inclusive = true } } }
-                        )
-                    }
-
-                    composable<Routes.Ventas> {
-                        if (sessionVm.cargandoSesion) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = BocattaPrimary)
+                                CircularProgressIndicator(color = BocattaLightColorScheme.primary)
                             }
                             return@composable
                         }
