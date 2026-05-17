@@ -7,11 +7,11 @@ package com.bocatta.pos.domain.model
  */
 data class StockAdjustmentEntity(
     val id: Long? = null,
-    val branchId: String,
-    val productId: String,
-    val quantity: Double,
-    val unit: String,
-    val reason: String,
-    val timestamp: Long,
-    val status: Int = 0 // 0=PENDING, 1=IN_PROGRESS
+    val branchId: String = "",
+    val productId: String = "",
+    val quantity: Double = 0.0,
+    val unit: String = "pz",
+    val reason: String = "",
+    val timestamp: Long = 0L,
+    val status: Int = 0
 )

@@ -65,22 +65,22 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("CIERRE DE TURNO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("CIERRE DE TURNO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text("CONSOLIDACIÓN FINANCIERA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
-                        Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                        Surface(color = MaterialTheme.colorScheme.onSurface.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(10.dp)) 
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onSurface)
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surface)))) {
             Column(
                 modifier = Modifier
                     .padding(padding)
@@ -90,7 +90,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 // ── TARJETAS DE RESUMEN INDUSTRIAL ────────────────────────────────────────
-                Text("BALANCE OPERATIVO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp)
+                Text("BALANCE OPERATIVO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), letterSpacing = 1.sp)
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     BocattaMetricCardPremium(
@@ -108,7 +108,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 }
 
                 if (vm.turnoActivo == null) {
-                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
                         BocattaEmptyState(
                             icono = Icons.Default.LockOpen,
                             titulo = "TURNO INACTIVO",
@@ -121,14 +121,14 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     val esperado = turno.fondoInicial + vm.totalEfectivoSistema - vm.totalGastosSistema
 
                     // ── CONTEO INDUSTRIAL ────────────────────────────────────────────────
-                    Text("AUDITORÍA DE CAJA", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp)
+                    Text("AUDITORÍA DE CAJA", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), letterSpacing = 1.sp)
 
-                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                             BocattaFilaResumen("FONDO INICIAL", "$${"%.2f".format(turno.fondoInicial)}")
                             BocattaFilaResumen("ESPERADO EN CAJA", "$${"%.2f".format(esperado)}", negrita = true)
 
-                            HorizontalDivider(color = Color.White.copy(0.1f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
 
                             OutlinedTextField(
                                 value = vm.efectivoContado,
@@ -141,10 +141,10 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedTextColor = Color.White,
-                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     focusedLabelColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedLabelColor = Color.White.copy(0.4f)
+                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(0.4f)
                                 )
                             )
 
@@ -159,10 +159,10 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedTextColor = Color.White,
-                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     focusedLabelColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedLabelColor = Color.White.copy(0.4f)
+                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(0.4f)
                                 )
                             )
                         }
@@ -244,7 +244,6 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     }
 
                     // ── COMPRAS PENDIENTES ─────────────────────────────────────────────
-                    val adminVm: AdminViewModel = koinViewModel()
                     if (session.esAdmin && adminVm.comprasPendientes.isNotEmpty()) {
                         Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.tertiary.copy(0.1f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(0.3f))) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

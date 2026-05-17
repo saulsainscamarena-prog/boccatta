@@ -12,7 +12,7 @@ data class TransactionV2(
     val grandTotal: Double = 0.0,
     val paymentMethods: List<String> = listOf("EFECTIVO"),
     val items: List<TransactionItemV2> = emptyList(),
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = 0L
 )
 
 data class TransactionItemV2(

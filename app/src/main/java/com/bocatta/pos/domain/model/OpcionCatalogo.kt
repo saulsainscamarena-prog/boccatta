@@ -13,5 +13,5 @@ data class OpcionCatalogo(
     val activo: Boolean = true,
     val defecto: Boolean = false,
     val costoExtra: Double = 0.0,
-    val creadoEn: Long = System.currentTimeMillis()
+    val creadoEn: Long = 0L
 )

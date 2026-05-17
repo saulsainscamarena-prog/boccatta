@@ -33,7 +33,7 @@ data class ConsumibleV2(
 )
 
 data class ItemCarritoV2(
-    val cartId: String = java.util.UUID.randomUUID().toString(),
+    val cartId: String = "",
     val producto: SalesInventoryProductV2,
     val precioFinal: BigDecimal,
     val cantidad: Int = 1,

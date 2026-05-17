@@ -7,5 +7,5 @@ data class RegistroJornada(
     val accion: String = "",
     val rol: String = "",
     val sesionId: String = "",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = 0L
 )

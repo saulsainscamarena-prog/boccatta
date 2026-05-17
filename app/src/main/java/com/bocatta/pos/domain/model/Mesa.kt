@@ -41,5 +41,5 @@ data class TransferenciaMesa(
     val empleadoOrigenId: String = "",
     val empleadoDestinoId: String = "",
     val motivo: String = "",
-    val fecha: Long = System.currentTimeMillis()
+    val fecha: Long = 0L
 )

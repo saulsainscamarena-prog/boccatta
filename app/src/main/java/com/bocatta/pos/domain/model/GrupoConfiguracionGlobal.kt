@@ -20,8 +20,8 @@ data class GrupoConfiguracionGlobal(
     val max: Int = 0,
     val defaultValue: String? = null,
     val activo: Boolean = true,
-    val creadoEn: Long = System.currentTimeMillis(),
-    val actualizadoEn: Long = System.currentTimeMillis()
+    val creadoEn: Long = 0L,
+    val actualizadoEn: Long = 0L
 ) {
     fun aplicaA(productoId: String, categoriaProducto: String): Boolean {
         if (excluirProductos.contains(productoId)) return false
@@ -45,6 +45,6 @@ data class CambioGrupoConfig(
     val accion: String = "",
     val cambios: String = "",
     val usuario: String = "",
-    val fecha: Long = System.currentTimeMillis(),
+    val fecha: Long = 0L,
     val revertido: Boolean = false
 )

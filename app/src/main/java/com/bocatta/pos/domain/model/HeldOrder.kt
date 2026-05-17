@@ -8,7 +8,7 @@ data class HeldOrder(
     val carritoJson: String = "",
     val clienteJson: String? = null,
     val nota: String = "",
-    val fecha: Long = System.currentTimeMillis(),
+    val fecha: Long = 0L,
     val sucursal: String = "",
     val total: Double = 0.0
 )

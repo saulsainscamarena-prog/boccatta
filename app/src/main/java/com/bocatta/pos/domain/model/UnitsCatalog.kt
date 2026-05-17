@@ -5,8 +5,8 @@ data class UnitsCatalog(
 )
 
 data class UnitDefV2(
-    val code: String,
-    val dimension: String,
-    val factorToBase: Double,
-    val symbol: String
+    val code: String = "",
+    val dimension: String = "",
+    val factorToBase: Double = 1.0,
+    val symbol: String = ""
 )

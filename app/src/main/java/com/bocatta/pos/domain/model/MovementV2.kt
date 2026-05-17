@@ -9,6 +9,6 @@ data class MovementV2(
     val quantity: Double = 0.0,
     val unit: String = "pza",
     val userId: String = "",
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = 0L,
     val metadata: Map<String, Any> = emptyMap()
 )

@@ -422,7 +422,7 @@ fun BocattaSearchBar(
         },
         placeholder = {
             Text(placeholder.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                color = Color.White.copy(0.3f), letterSpacing = 1.sp)
+                color = MaterialTheme.colorScheme.onSurface.copy(0.3f), letterSpacing = 1.sp)
         },
         modifier = modifier.fillMaxWidth().height(56.dp),
         shape = RoundedCornerShape(28.dp),
@@ -437,18 +437,18 @@ fun BocattaSearchBar(
                     onQueryChange("")
                     onSearch?.invoke("")
                 }) {
-                    Icon(Icons.Default.Close, null, tint = Color.White.copy(0.5f), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.size(18.dp))
                 }
             }
         },
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color.White.copy(0.1f),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(0.3f),
             focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedContainerColor = Color.White.copy(0.05f),
-            focusedContainerColor = Color.White.copy(0.05f),
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+            focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
         )
     )
 }

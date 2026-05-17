@@ -293,7 +293,7 @@ fun SalesScreen(
                                         Text(SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(order.fecha)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                                         Text("$${"%.2f".format(order.total)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                                     }
-                                    Icon(Icons.Default.Restore, null, tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Default.Restore, "Restaurar", tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -345,44 +345,44 @@ fun SalesScreen(
                         navigationIcon = {
                             IconButton(onClick = onVerCaja) { 
                                 Surface(color = MaterialTheme.colorScheme.onBackground.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Menu, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
+                                    Icon(Icons.Default.Menu, "Menú", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                         },
                         actions = {
                             IconButton(onClick = { mostrarBuscarCliente = true }) {
                                 Surface(color = (if (vmV2.clienteSeleccionado != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground).copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.PersonAdd, null, tint = if (vmV2.clienteSeleccionado != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
+                                    Icon(Icons.Default.PersonAdd, "Cliente", tint = if (vmV2.clienteSeleccionado != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { mostrarRetiroAlimento = true }) {
                                 Surface(color = MaterialTheme.colorScheme.onBackground.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Restaurant, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
+                                    Icon(Icons.Default.Restaurant, "Retiro alimento", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { mostrarCompraRapida = true }) {
                                 Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.AddShoppingCart, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(10.dp))
+                                    Icon(Icons.Default.AddShoppingCart, "Compra rápida", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(10.dp))
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { mostrarCancelarVentaPin = true }) {
                                 Surface(color = MaterialTheme.colorScheme.error.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Block, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp))
+                                    Icon(Icons.Default.Block, "Cancelar venta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp))
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { heldOrderVm.loadOrders(); mostrarHeldOrders = true }) {
                                 Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(10.dp))
+                                    Icon(Icons.Default.Bookmark, "Ordenes apartadas", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(10.dp))
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
                             IconButton(onClick = onLogout) { 
                                 Surface(color = MaterialTheme.colorScheme.error.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp)) 
+                                    Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesión", tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(10.dp)) 
                                 }
                             }
                             Spacer(Modifier.width(16.dp))

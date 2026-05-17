@@ -34,6 +34,7 @@ class AdminViewModel(
     private var listenerProductos: ListenerRegistration? = null
     private var listenerUsuarios: ListenerRegistration? = null
     private var listenerCancelaciones: ListenerRegistration? = null
+    private var listenerComprasPendientes: ListenerRegistration? = null
     private var listenerConfigCaja: ListenerRegistration? = null
     private var listenerConfigSeguridad: ListenerRegistration? = null
     private var seederEjecutado = false
@@ -166,7 +167,8 @@ class AdminViewModel(
     }
 
     private fun escucharComprasPendientes() {
-        db.collection(FirestoreCollections.COMPRAS)
+        listenerComprasPendientes?.remove()
+        listenerComprasPendientes = db.collection(FirestoreCollections.COMPRAS)
             .whereEqualTo("auditada", false)
             .orderBy("fecha", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, _ ->
@@ -639,6 +641,7 @@ class AdminViewModel(
         listenerGastos?.remove(); listenerRecetas?.remove()
         listenerProductos?.remove(); listenerUsuarios?.remove()
         listenerCancelaciones?.remove()
+        listenerComprasPendientes?.remove()
         listenerConfigCaja?.remove(); listenerConfigSeguridad?.remove()
     }
 }

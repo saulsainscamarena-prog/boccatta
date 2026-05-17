@@ -66,7 +66,9 @@ class MainActivity : ComponentActivity() {
         }
 
         // Ejecutar el seeder para cargar documentos a Firestore (Se puede comentar despues de la primera ejecucion)
-        com.bocatta.pos.data.FirestoreSeeder.seedV2Collections()
+        if (BuildConfig.DEBUG) {
+            com.bocatta.pos.data.FirestoreSeeder.seedV2Collections()
+        }
 
         com.bocatta.pos.data.sync.SyncScheduler.schedule(this)
 

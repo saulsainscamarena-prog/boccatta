@@ -60,7 +60,7 @@ fun ProductCardPremium(
         onClick = onClick,
         enabled = !agotado,
         shape = RoundedCornerShape(28.dp),
-        color = if (agotado) Color.White.copy(0.05f) else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+        color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.05f) else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
         tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
@@ -101,7 +101,7 @@ fun ProductCardPremium(
                     maxLines = 2,
                     lineHeight = 18.sp,
                     fontSize = 14.sp,
-                    color = if (agotado) Color.White.copy(0.3f) else Color.White,
+                    color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.3f) else MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
@@ -110,14 +110,14 @@ fun ProductCardPremium(
                 
                 // Badge de Precio - Estilo Meridian Neon
                 Surface(
-                    color = if (agotado) Color.White.copy(0.1f) else colorCat.copy(0.2f),
+                    color = if (agotado) MaterialTheme.colorScheme.outlineVariant.copy(0.3f) else colorCat.copy(0.2f),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, if(agotado) Color.Transparent else colorCat.copy(0.5f))
                 ) {
                     Text(
                         text = "$${"%.0f".format(precio)}",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = if(agotado) Color.White.copy(0.3f) else colorCat,
+                        color = if(agotado) MaterialTheme.colorScheme.onSurface.copy(0.3f) else colorCat,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Black
                     )
@@ -163,7 +163,7 @@ fun PremiumGlassCard(
         enabled = onClick != null,
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)),
         tonalElevation = 2.dp,
         modifier = modifier
     ) {
@@ -215,7 +215,7 @@ fun BocattaMetricCardPremium(
             Text(
                 titulo.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(0.4f),
+                color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
@@ -251,16 +251,16 @@ fun GastoCard(
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-        border = BorderStroke(1.dp, Color.White.copy(0.05f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.05f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text(categoria.uppercase(), fontWeight = FontWeight.Black, color = color, fontSize = 14.sp, letterSpacing = 1.sp)
-                    Text(fecha, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+                    Text(fecha, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), fontWeight = FontWeight.Bold)
                 }
-                Text("$${"%.2f".format(monto)}", fontWeight = FontWeight.Black, color = Color.White, fontSize = 20.sp)
+                Text("$${"%.2f".format(monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp)
             }
             
             Text(descripcion.uppercase(), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(0.7f), lineHeight = 16.sp)
@@ -268,7 +268,7 @@ fun GastoCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(6.dp).background(color, CircleShape))
                 Spacer(Modifier.width(8.dp))
-                Text("REGISTRADO POR: $usuario", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+                Text("REGISTRADO POR: $usuario", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), fontWeight = FontWeight.Bold)
             }
         }
     }
