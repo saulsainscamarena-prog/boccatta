@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                     composable<Routes.Login> {
                         LoginScreen(vm = authVm, onLoginExitoso = { uid ->
                             sessionVm.cargarUsuario(uid)
-                            navController.navigate(Routes.Turnos) { popUpTo("login") { inclusive = true } }
+                            navController.navigate(Routes.Turnos) { popUpTo<Routes.Login> { inclusive = true } }
                         })
                     }
 
@@ -117,9 +117,9 @@ class MainActivity : ComponentActivity() {
                             inventarioVm = ivmLocal,
                             participantes = participList,
                             jornadaActiva = horarioVm.jornadaActiva != null,
-                            onIniciarTurno = { navController.navigate(Routes.Apertura) { popUpTo("turnos") { inclusive = true } } },
-                            onUnirseTurno = { navController.navigate(Routes.Ventas) { popUpTo("turnos") { inclusive = true } } },
-                            onAdministrarTienda = { if (sessionVm.esAdmin) navController.navigate(Routes.Admin) { popUpTo("turnos") { inclusive = true } } },
+                            onIniciarTurno = { navController.navigate(Routes.Apertura) { popUpTo<Routes.Turnos> { inclusive = true } } },
+                            onUnirseTurno = { navController.navigate(Routes.Ventas) { popUpTo<Routes.Turnos> { inclusive = true } } },
+                            onAdministrarTienda = { if (sessionVm.esAdmin) navController.navigate(Routes.Admin) { popUpTo<Routes.Turnos> { inclusive = true } } },
                             onLogout = { sessionVm.cerrarSesion(); authVm.logout() }
                         )
                     }
@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                         }
                         if (cajaVm.turnoActivo != null) {
                             LaunchedEffect(Unit) {
-                                navController.navigate(Routes.Ventas) { popUpTo("apertura") { inclusive = true } }
+                                navController.navigate(Routes.Ventas) { popUpTo<Routes.Apertura> { inclusive = true } }
                             }
                         }
                         AperturaDiaScreen(
@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
                             aperturaVmV2 = aperturaVmV2,
                             cajaVm = cajaVm,
                             vm = aperturaIvm,
-                            onAperturaCompleta = { navController.navigate(Routes.Ventas) { popUpTo("apertura") { inclusive = true } } }
+                            onAperturaCompleta = { navController.navigate(Routes.Ventas) { popUpTo<Routes.Apertura> { inclusive = true } } }
                         )
                     }
 

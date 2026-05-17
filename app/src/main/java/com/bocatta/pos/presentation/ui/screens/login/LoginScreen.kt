@@ -87,7 +87,7 @@ fun LoginScreen(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 border = BorderStroke(1.dp, Color.White.copy(0.1f))
             ) {
-                Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         if (isRegisterMode) "NUEVO ACCESO" else "BOCATTA", 
                         style = MaterialTheme.typography.headlineSmall, 
