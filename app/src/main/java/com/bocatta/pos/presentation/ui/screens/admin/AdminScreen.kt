@@ -415,31 +415,17 @@ private fun TabBodegaGeneral(
     onVerSyncInventario: () -> Unit
 ) {
     var insumoAjustar by remember { mutableStateOf<InsumoV2?>(null) }
-    var nuevoStock by remember { mutableStateOf("") }
     var showPurchaseDialog by remember { mutableStateOf(false) }
     var showNuevoInsumoDialog by remember { mutableStateOf(false) }
 
-    if (insumoAjustar != null) {
-        AlertDialog(
-            onDismissRequest = { insumoAjustar = null },
-            title = { Text("Ajustar stock: ${insumoAjustar!!.nombre}", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Ingresa el conteo físico real para sincronizar el sistema.", style = MaterialTheme.typography.bodySmall)
-                    OutlinedTextField(value = nuevoStock, onValueChange = { nuevoStock = it },
-                        label = { Text("Stock (${insumoAjustar!!.unidadBase})") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                }
+    insumoAjustar?.let { insumo ->
+        DialogEditarInsumo(
+            insumo = insumo,
+            onGuardar = { nuevoStockMinimo, conteoFisico, motivo ->
+                vm.ajustarConConteoFisico(insumo.id, nuevoStockMinimo, conteoFisico, motivo)
+                insumoAjustar = null
             },
-            confirmButton = {
-                Button(
-                    onClick = { vm.ajustarStock(insumoAjustar!!.id, nuevoStock.toDoubleOrNull() ?: 0.0); insumoAjustar = null; nuevoStock = "" },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) { Text("Guardar") }
-            },
-            dismissButton = { TextButton(onClick = { insumoAjustar = null }) { Text("Cancelar") } },
-            shape = RoundedCornerShape(20.dp)
+            onDismiss = { insumoAjustar = null }
         )
     }
 
@@ -537,7 +523,7 @@ private fun TabBodegaGeneral(
             val esProduccion = insumo.categoria == "Producción"
             val stockBajo = insumo.cantidadEnBase <= insumo.stockMinimo
             ElevatedCard(
-                onClick = { insumoAjustar = insumo; nuevoStock = insumo.cantidadEnBase.toString() },
+                onClick = { insumoAjustar = insumo },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.elevatedCardColors(
                     containerColor = when {

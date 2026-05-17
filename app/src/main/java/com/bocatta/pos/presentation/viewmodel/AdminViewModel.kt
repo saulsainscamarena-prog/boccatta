@@ -407,7 +407,33 @@ class AdminViewModel(
             batch.set(globalRef, mapOf("cantidadEnBase" to nuevoStock), com.google.firebase.firestore.SetOptions.merge())
             batch.update(globalRef, "ultimaActualizacion", System.currentTimeMillis())
             batch.commit().await()
-            mensajeExito = "Stock V2 ajustado ?"
+            mensajeExito = "Stock ajustado"
+        }
+    }
+
+    fun ajustarConConteoFisico(insumoId: String, nuevoStockMinimo: Double, conteoFisico: Double?, motivo: String) {
+        viewModelScope.launch(safeHandler) {
+            val batch = db.batch()
+            val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
+            val data = mutableMapOf<String, Any>("ultimaActualizacion" to System.currentTimeMillis())
+            data["stockMinimo"] = nuevoStockMinimo
+            if (conteoFisico != null) {
+                data["cantidadEnBase"] = conteoFisico
+            }
+            batch.set(stockRef, data, com.google.firebase.firestore.SetOptions.merge())
+            if (conteoFisico != null && motivo.isNotBlank()) {
+                val ajuste = GastoV2(
+                    id = UUID.randomUUID().toString(),
+                    descripcion = "Ajuste por conteo físico: $motivo",
+                    monto = 0.0,
+                    categoria = "AjusteInventario",
+                    fecha = System.currentTimeMillis(),
+                    sucursal = ""
+                )
+                batch.set(db.collection(FirestoreCollections.GASTOS).document(ajuste.id), ajuste)
+            }
+            batch.commit().await()
+            mensajeExito = if (conteoFisico != null) "Stock ajustado por conteo físico" else "Stock mínimo actualizado"
         }
     }
 
