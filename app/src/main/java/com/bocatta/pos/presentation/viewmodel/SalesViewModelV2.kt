@@ -27,6 +27,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.domain.engine.PricingEngine
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
+import com.bocatta.pos.domain.util.CarritoCalculator
 import com.bocatta.pos.domain.usecase.SaleItemInput
 import com.bocatta.pos.domain.usecase.GenerarTicketWhatsAppUseCase
 import com.bocatta.pos.domain.usecase.PromocionesEngine
@@ -147,11 +148,9 @@ class SalesViewModelV2(
     private var menuListener: ListenerRegistration? = null
    private var stockListener: ListenerRegistration? = null
 
-   val totalCarrito by derivedStateOf {
-      _carrito.fold(BigDecimal.ZERO) { acc, item ->
-         acc.add(item.precioFinal.multiply(BigDecimal(item.cantidad)))
-      }
-   }
+    val totalCarrito by derivedStateOf {
+        CarritoCalculator.calcularSubtotal(_carrito)
+    }
 
    fun configurar(sucursal: String, usuarioNombre: String, rol: Rol) {
       _rolUsuario = rol
@@ -527,12 +526,12 @@ class SalesViewModelV2(
    }
 
     private fun calcularTotalVenta(): Double {
-       val total = totalCarrito
-          .subtract(BigDecimal.valueOf(_descuentoLealtad))
-          .subtract(BigDecimal.valueOf(descuentoPromociones))
-          .subtract(BigDecimal.valueOf(_descuentoManual))
-          .toDouble()
-       return if (total < 0) 0.0 else total
+        return CarritoCalculator.calcularTotalVenta(
+            subtotal = CarritoCalculator.calcularSubtotal(_carrito),
+            descuentoLealtad = _descuentoLealtad,
+            descuentoPromociones = descuentoPromociones,
+            descuentoManual = _descuentoManual
+        )
     }
 
    private fun procesarVentaOffline(
