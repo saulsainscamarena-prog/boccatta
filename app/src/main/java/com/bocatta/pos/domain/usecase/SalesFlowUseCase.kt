@@ -64,10 +64,11 @@ class SalesFlowUseCase(
         val discountTotal = discountResults.sumOf { BigDecimal.valueOf(it.amount) }
         val netSubtotal = subtotalBD - discountTotal
         val netSubtotalD = netSubtotal.setScale(2, RoundingMode.HALF_UP).toDouble()
+        val discountTotalD = discountTotal.setScale(2, RoundingMode.HALF_UP).toDouble()
 
         val taxResult = TaxCalculator.calculatePerItem(
-            subtotal = netSubtotalD,
-            discountTotal = discountTotal.setScale(2, RoundingMode.HALF_UP).toDouble(),
+            subtotal = netSubtotalD + discountTotalD,
+            discountTotal = discountTotalD,
             items = transactionItems
         )
         val taxTotalBD = BigDecimal.valueOf(taxResult.taxTotal)
@@ -133,7 +134,7 @@ class SalesFlowUseCase(
             userId = userId,
             type = "SALE",
             status = "COMPLETED",
-            subtotal = netSubtotalD,
+            subtotal = subtotalBD.setScale(2, RoundingMode.HALF_UP).toDouble(),
             discountTotal = discountTotal.setScale(2, RoundingMode.HALF_UP).toDouble(),
             taxTotal = taxTotalBD.setScale(2, RoundingMode.HALF_UP).toDouble(),
             grandTotal = grandTotalBD.setScale(2, RoundingMode.HALF_UP).toDouble(),
