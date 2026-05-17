@@ -14,7 +14,14 @@ import com.bocatta.pos.core.constants.FirestoreCollections
 import java.math.BigDecimal
 import timber.log.Timber
 
-class InventoryRepository(private val offlineDb: OfflineDatabase? = null) {
+import com.bocatta.pos.domain.model.StockAdjustmentEntity
+import com.bocatta.pos.domain.repository.IStockAdjustmentQueue
+import com.bocatta.pos.data.queue.SQLiteStockAdjustmentQueue
+
+class InventoryRepository(
+    private val offlineDb: OfflineDatabase? = null,
+    private val adjustmentQueue: IStockAdjustmentQueue? = null
+) {
     private val firestore = FirebaseFirestoreProvider.db
 
     suspend fun registrarCompra(
