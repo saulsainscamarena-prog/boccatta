@@ -1,8 +1,8 @@
 # Technical debt
 
-## Room / KSP (RESOLVED)
+## ? Room habilitado vía KSP2 (compatible con Kotlin 2.2.10).
 - KSP updated to `2.2.10-2.0.2`. Plugin + Room runtime re-enabled.
-- Room files restored from `room_disabled_backup/`. KSP2 `2.3.7` tested but has `unexpected jvm signature V` with current entities â€” using native SQLite for now.
+- ? Room habilitado vía KSP2 (compatible con Kotlin 2.2.10).
 - **Futureâ€‘proofing**: KSP 2.3.0+ is standalone (not tied to Kotlin version).
 
 ## Legacy model consolidation (RESOLVED)
