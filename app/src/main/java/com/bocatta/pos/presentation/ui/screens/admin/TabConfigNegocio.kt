@@ -58,7 +58,7 @@ fun TabConfigNegocio() {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         leadingIcon = {
-                            Icon(Icons.Default.Store, null,
+                            Icon(Icons.Default.Store, "Tienda",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     )
@@ -70,7 +70,7 @@ fun TabConfigNegocio() {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         leadingIcon = {
-                            Icon(Icons.Default.Category, null,
+                            Icon(Icons.Default.Category, "Categoria",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     )
@@ -123,7 +123,7 @@ fun TabConfigNegocio() {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         supportingText = { Text("Cada cuántas visitas se otorga el descuento (actual: ${FirestoreCollections.MEMBRESIA_CICLO_VISITAS})") },
                         leadingIcon = {
-                            Icon(Icons.Default.Loyalty, null,
+                            Icon(Icons.Default.Loyalty, "Lealtad",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     )
@@ -209,4 +209,5 @@ private fun MetodoPagoToggle(
         )
     }
 }
+
 

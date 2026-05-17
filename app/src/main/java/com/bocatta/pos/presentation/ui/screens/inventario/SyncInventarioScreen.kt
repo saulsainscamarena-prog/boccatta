@@ -102,7 +102,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
                         Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
                         }
                     }
                 },
@@ -199,6 +199,7 @@ class SyncInventarioViewModel : ViewModel() {
         }
     }
 }
+
 
 
 

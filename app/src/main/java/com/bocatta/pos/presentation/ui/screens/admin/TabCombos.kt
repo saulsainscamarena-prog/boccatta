@@ -409,7 +409,7 @@ private fun DialogoCombo(
                                 onClick = { tipo = TipoCombo.FIJO },
                                 label = { Text("FIJO") },
                                 leadingIcon = {
-                                    if (tipo == TipoCombo.FIJO) Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                                    if (tipo == TipoCombo.FIJO) Icon(Icons.Default.Check, "Confirmar", Modifier.size(16.dp))
                                 }
                             )
                             FilterChip(
@@ -417,7 +417,7 @@ private fun DialogoCombo(
                                 onClick = { tipo = TipoCombo.CONFIGURABLE },
                                 label = { Text("CONFIGURABLE") },
                                 leadingIcon = {
-                                    if (tipo == TipoCombo.CONFIGURABLE) Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                                    if (tipo == TipoCombo.CONFIGURABLE) Icon(Icons.Default.Check, "Confirmar", Modifier.size(16.dp))
                                 }
                             )
                         }
@@ -475,4 +475,5 @@ private fun DialogoCombo(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
 

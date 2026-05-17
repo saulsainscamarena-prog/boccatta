@@ -28,7 +28,7 @@ fun TabEmpleados(vm: AdminViewModel) {
         OutlinedTextField(
             value = searchQuery, onValueChange = { searchQuery = it },
             placeholder = { Text("Buscar empleado...") },
-            leadingIcon = { Icon(Icons.Default.Search, null) },
+            leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp), singleLine = true
         )
@@ -37,7 +37,7 @@ fun TabEmpleados(vm: AdminViewModel) {
         if (empleados.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.People, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
+                    Icon(Icons.Default.People, "Personas", Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
                     Spacer(Modifier.height(8.dp))
                     Text("No hay empleados registrados", color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                 }
@@ -58,4 +58,5 @@ fun TabEmpleados(vm: AdminViewModel) {
         }
     }
 }
+
 

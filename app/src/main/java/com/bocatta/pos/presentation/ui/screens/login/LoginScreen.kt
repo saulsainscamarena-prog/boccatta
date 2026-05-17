@@ -113,7 +113,7 @@ fun LoginScreen(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.3f))
                         ) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Error, "Error", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text(errorMensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
@@ -128,7 +128,7 @@ fun LoginScreen(
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp), 
                             visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.VpnKey, null, tint = MaterialTheme.colorScheme.primary) },
+                            leadingIcon = { Icon(Icons.Default.VpnKey, "Llave", tint = MaterialTheme.colorScheme.primary) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedTextColor = Color.White,
@@ -144,7 +144,7 @@ fun LoginScreen(
                             label = { Text("NOMBRE DE OPERADOR", fontWeight = FontWeight.Bold) }, 
                             modifier = Modifier.fillMaxWidth(), 
                             shape = RoundedCornerShape(16.dp),
-                            leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary) },
+                            leadingIcon = { Icon(Icons.Default.Person, "Usuario", tint = MaterialTheme.colorScheme.primary) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedTextColor = Color.White,
@@ -162,7 +162,7 @@ fun LoginScreen(
                         label = { Text("ID DE USUARIO / EMAIL", fontWeight = FontWeight.Bold) }, 
                         modifier = Modifier.fillMaxWidth(), 
                         shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Email, null, tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Email, "Correo", tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedTextColor = Color.White,
@@ -187,7 +187,7 @@ fun LoginScreen(
                                 else onLoginClick(user, pass)
                             }
                         }),
-                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Lock, "Bloquear", tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedTextColor = Color.White,
@@ -239,4 +239,5 @@ fun LoginScreen(
         }
     }
 }
+
 

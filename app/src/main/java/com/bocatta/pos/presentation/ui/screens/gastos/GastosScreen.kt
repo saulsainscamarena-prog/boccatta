@@ -67,7 +67,7 @@ fun GastosScreen(
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
                         Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
                         }
                     }
                 },
@@ -138,7 +138,7 @@ fun GastosScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     shape = RoundedCornerShape(14.dp),
-                                    leadingIcon = { Icon(Icons.Default.Inventory2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
+                                    leadingIcon = { Icon(Icons.Default.Inventory2, "Inventario", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
                                 )
                             }
 
@@ -278,7 +278,7 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
                 modifier = Modifier.size(44.dp).background(color.copy(0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icono, null, tint = color, modifier = Modifier.size(20.dp))
+                Icon(icono, "Categoria gasto", tint = color, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -287,10 +287,11 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
             }
             Text("-$${"%.2f".format(gasto.monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp)
             IconButton(onClick = onEliminar) {
-                Icon(Icons.Default.Delete, null, tint = Color.White.copy(0.2f))
+                Icon(Icons.Default.Delete, "Eliminar", tint = Color.White.copy(0.2f))
             }
         }
     }
 }
+
 
 

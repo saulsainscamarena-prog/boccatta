@@ -64,7 +64,7 @@ fun <T> BuscadorSelector(
                         Text("${item.cantidad.toInt()} ${item.unidad}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                     }
                     IconButton(onClick = { onRemoveItem(item.data) }, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                     }
                 }
             }
@@ -75,10 +75,10 @@ fun <T> BuscadorSelector(
             OutlinedTextField(
                 value = query, onValueChange = { query = it; showDropdown = it.isNotEmpty() },
                 placeholder = { Text("Buscar $label...", fontSize = 13.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp)) },
+                leadingIcon = { Icon(Icons.Default.Search, "Buscar", modifier = Modifier.size(18.dp)) },
                 trailingIcon = {
                     if (query.isNotEmpty()) IconButton(onClick = { query = ""; showDropdown = false }) {
-                        Icon(Icons.Default.Clear, null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Clear, "Limpiar", modifier = Modifier.size(18.dp))
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -112,7 +112,7 @@ fun <T> BuscadorSelector(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Default.Add, "Agregar", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                         Spacer(Modifier.width(8.dp))
                                         Text("Crear nuevo \"$query\"...", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
                                     }
@@ -125,4 +125,5 @@ fun <T> BuscadorSelector(
         }
     }
 }
+
 

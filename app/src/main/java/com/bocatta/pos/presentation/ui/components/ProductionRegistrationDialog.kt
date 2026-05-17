@@ -87,7 +87,7 @@ fun ProductionRegistrationDialog(
                         modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.PrecisionManufacturing, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.PrecisionManufacturing, "Produccion", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     Spacer(Modifier.width(16.dp))
@@ -105,7 +105,7 @@ fun ProductionRegistrationDialog(
                         selected = modo == "producir",
                         onClick = { modo = "producir" },
                         label = { Text("PRODUCIR") },
-                        leadingIcon = { Icon(Icons.Default.Factory, null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(Icons.Default.Factory, "Fabrica", modifier = Modifier.size(16.dp)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -115,7 +115,7 @@ fun ProductionRegistrationDialog(
                         selected = modo == "peso",
                         onClick = { modo = "peso" },
                         label = { Text("COMPRAR POR PESO") },
-                        leadingIcon = { Icon(Icons.Default.MonitorWeight, null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(Icons.Default.MonitorWeight, "Peso", modifier = Modifier.size(16.dp)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.tertiary,
                             selectedLabelColor = MaterialTheme.colorScheme.onTertiary
@@ -125,7 +125,7 @@ fun ProductionRegistrationDialog(
                         selected = modo == "presentacion",
                         onClick = { modo = "presentacion" },
                         label = { Text("POR PRESENTACIÓN") },
-                        leadingIcon = { Icon(Icons.Default.Inventory2, null, modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(Icons.Default.Inventory2, "Inventario", modifier = Modifier.size(16.dp)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.secondary,
                             selectedLabelColor = MaterialTheme.colorScheme.onSecondary
@@ -243,7 +243,7 @@ fun ProductionRegistrationDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Calculate, null, tint = MaterialTheme.colorScheme.tertiary)
+                                Icon(Icons.Default.Calculate, "Calcular", tint = MaterialTheme.colorScheme.tertiary)
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text("Rendimiento estimado:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -342,4 +342,5 @@ fun ProductionRegistrationDialog(
         }
     }
 }
+
 

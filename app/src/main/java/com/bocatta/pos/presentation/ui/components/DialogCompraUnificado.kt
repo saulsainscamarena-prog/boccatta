@@ -65,7 +65,7 @@ fun DialogCompraUnificado(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Buscar insumo...") },
-                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
                             singleLine = true
@@ -91,7 +91,7 @@ fun DialogCompraUnificado(
                                                 else MaterialTheme.colorScheme.error
                                             )
                                         }
-                                        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
+                                        Icon(Icons.Default.ChevronRight, "Siguiente", tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
                                     }
                                 }
                             }
@@ -124,7 +124,7 @@ fun DialogCompraUnificado(
                                 ) {
                                     Text(selectedPresentacion?.nombre ?: "Seleccionar presentación", color = MaterialTheme.colorScheme.onSurface)
                                     Spacer(Modifier.weight(1f))
-                                    Icon(Icons.Default.ExpandMore, null)
+                                    Icon(Icons.Default.ExpandMore, "Expandir")
                                 }
                                 DropdownMenu(expanded = expandPres, onDismissRequest = { expandPres = false }) {
                                     presentaciones.forEach { pres ->
@@ -179,7 +179,7 @@ fun DialogCompraUnificado(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(10.dp),
                             singleLine = true,
-                            leadingIcon = { Icon(Icons.Default.AttachMoney, null) }
+                            leadingIcon = { Icon(Icons.Default.AttachMoney, "Monto") }
                         )
 
                         // Preview
@@ -259,4 +259,5 @@ fun DialogCompraUnificado(
         }
     )
 }
+
 

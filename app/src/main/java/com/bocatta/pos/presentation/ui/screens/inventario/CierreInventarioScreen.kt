@@ -86,7 +86,7 @@ fun CierreInventarioScreen(
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
                         Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
                         }
                     }
                 },
@@ -137,7 +137,7 @@ fun CierreInventarioScreen(
                     ) {
                         if (cargando) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                         else {
-                            Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory2, null)
+                            Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory2, "Inventario")
                             Spacer(Modifier.width(12.dp))
                             Text(if (guardado) "CIERRE REGISTRADO" else "CONSOLIDAR CIERRE INDUSTRIAL", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                         }
@@ -211,5 +211,6 @@ fun CierreInventarioScreen(
         }
     }
 }
+
 
 

@@ -76,7 +76,7 @@ private fun AdminDevolucionesContent(vm: DevolucionViewModel, padding: PaddingVa
     if (vm.solicitudes.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.DoneAll, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.3f))
+                Icon(Icons.Default.DoneAll, "Completado", modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.3f))
                 Text("Sin solicitudes pendientes", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -141,7 +141,7 @@ private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionV
     Column(modifier = Modifier.padding(padding).padding(16.dp)) {
         Text("VENTAS RECIENTES", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
         Spacer(Modifier.height(12.dp))
-        OutlinedTextField(value = filtroMonto, onValueChange = { filtroMonto = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Filtrar por monto...") }, leadingIcon = { Icon(Icons.Default.Search, null) }, shape = RoundedCornerShape(26.dp))
+        OutlinedTextField(value = filtroMonto, onValueChange = { filtroMonto = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Filtrar por monto...") }, leadingIcon = { Icon(Icons.Default.Search, "Buscar") }, shape = RoundedCornerShape(26.dp))
         Spacer(Modifier.height(16.dp))
         if (ventasFiltradas.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -165,5 +165,6 @@ private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionV
         }
     }
 }
+
 
 

@@ -288,7 +288,7 @@ private fun TabDashboard(vm: AdminViewModel) {
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Warning, "Advertencia", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Mantenimiento del sistema", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                     }
@@ -513,7 +513,7 @@ private fun TabBodegaGeneral(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, "Agregar", modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Nuevo insumo", fontWeight = FontWeight.Bold)
             }
@@ -821,6 +821,7 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
         }
     }
 }
+
 
 
 

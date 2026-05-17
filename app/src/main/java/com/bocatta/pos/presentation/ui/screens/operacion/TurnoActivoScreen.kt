@@ -54,7 +54,7 @@ fun TurnoActivoScreen(
                         Text(turno.sucursal.uppercase(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                            Icon(Icons.Default.Person, "Usuario", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                             Spacer(Modifier.width(6.dp))
                             Text("Abierto por: ${turno.usuarioResponsable}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
                         }
@@ -108,7 +108,7 @@ fun TurnoActivoScreen(
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.AdminPanelSettings, "Administrar", modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("ADMINISTRAR TIENDA", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
@@ -122,4 +122,5 @@ fun TurnoActivoScreen(
         }
     }
 }
+
 

@@ -55,7 +55,7 @@ fun CarritoPanelV2(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.ShoppingCart, "Carrito", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -79,7 +79,7 @@ fun CarritoPanelV2(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Person, "Usuario", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
                             clienteSeleccionado.nombre.uppercase(),
@@ -208,7 +208,7 @@ fun CarritoPanelV2(
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    Icon(Icons.Default.Bookmark, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Bookmark, "Marcador", modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("APARTAR ORDEN", fontWeight = FontWeight.Bold)
                 }
@@ -225,4 +225,5 @@ fun CarritoPanelV2(
         }
     }
 }
+
 

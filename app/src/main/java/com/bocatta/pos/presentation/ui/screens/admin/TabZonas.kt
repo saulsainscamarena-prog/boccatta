@@ -31,7 +31,7 @@ fun TabZonas(vm: MesaViewModel) {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("ZONAS", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
-            IconButton(onClick = { editingZona = null; showZonaDialog = true }) { Icon(Icons.Default.Add, null) }
+            IconButton(onClick = { editingZona = null; showZonaDialog = true }) { Icon(Icons.Default.Add, "Agregar") }
         }
         Spacer(Modifier.height(8.dp))
 
@@ -50,8 +50,8 @@ fun TabZonas(vm: MesaViewModel) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(zona.nombre, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                 Text("$count mesas", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
-                                IconButton(onClick = { editingZona = zona; showZonaDialog = true }) { Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp)) }
-                                IconButton(onClick = { vm.eliminarZona(zona.id) }) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                IconButton(onClick = { editingZona = zona; showZonaDialog = true }) { Icon(Icons.Default.Edit, "Editar", modifier = Modifier.size(18.dp)) }
+                                IconButton(onClick = { vm.eliminarZona(zona.id) }) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
                             }
                             if (selectedZonaId == zona.id) {
                                 Spacer(Modifier.height(8.dp))
@@ -71,7 +71,7 @@ fun TabZonas(vm: MesaViewModel) {
                                         }
                                     }
                                     IconButton(onClick = { editingMesa = Mesa(zonaId = zona.id); showMesaDialog = true }) {
-                                        Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.Add, "Agregar", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
@@ -119,5 +119,6 @@ private fun DialogMesa(mesaInicial: Mesa, zonas: List<Zona>, onSave: (Mesa) -> U
         confirmButton = { Button(onClick = { onSave(Mesa(id = mesaInicial.id, numero = numero.toIntOrNull() ?: 0, capacidad = capacidad.toIntOrNull() ?: 4, zonaId = zonaId)); onDismiss() }, enabled = numero.isNotBlank()) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
 }
+
 
 

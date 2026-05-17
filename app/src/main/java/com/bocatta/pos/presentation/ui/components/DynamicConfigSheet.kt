@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -75,7 +75,7 @@ fun DynamicConfigSheet(
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = accentColor)
                     ) {
-                        Icon(Icons.Default.AddShoppingCart, null, tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.Default.AddShoppingCart, "Comprar", tint = MaterialTheme.colorScheme.onPrimary)
                         Spacer(Modifier.width(8.dp))
                         Text("CONFIRMAR", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimary)
                     }
@@ -196,4 +196,5 @@ private fun ConfigGroupSection(
         }
     }
 }
+
 

@@ -143,7 +143,7 @@ fun DashboardBodegaScreen(
                             onClick = onSync,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Sync, null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Sync, "Sincronizar", modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Sync")
                         }
@@ -151,7 +151,7 @@ fun DashboardBodegaScreen(
                             onClick = onReportes,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.BarChart, null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.BarChart, "Grafico", modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Reportes")
                         }
@@ -161,5 +161,6 @@ fun DashboardBodegaScreen(
         }
     }
 }
+
 
 

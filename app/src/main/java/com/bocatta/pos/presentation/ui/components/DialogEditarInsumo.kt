@@ -70,7 +70,7 @@ fun DialogEditarInsumo(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.Warning, null, modifier = Modifier.size(20.dp)) }
+                    leadingIcon = { Icon(Icons.Default.Warning, "Advertencia", modifier = Modifier.size(20.dp)) }
                 )
 
                 // Conteo físico
@@ -91,7 +91,7 @@ fun DialogEditarInsumo(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Pin, null, modifier = Modifier.size(20.dp)) }
+                        leadingIcon = { Icon(Icons.Default.Pin, "PIN", modifier = Modifier.size(20.dp)) }
                     )
                     if (diferencia != null) {
                         val diffColor = when {
@@ -134,7 +134,7 @@ fun DialogEditarInsumo(
                     insumo.presentacionesCompra.forEach { p ->
                         Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(0.3f), modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Inventory, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Inventory, "Inventario", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(Modifier.width(8.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(p.nombre, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
@@ -168,4 +168,5 @@ fun DialogEditarInsumo(
         dismissButton = {}
     )
 }
+
 

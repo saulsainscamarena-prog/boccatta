@@ -72,7 +72,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
                         Surface(color = MaterialTheme.colorScheme.onSurface.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(10.dp)) 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(10.dp)) 
                         }
                     }
                 },
@@ -223,7 +223,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 modifier = Modifier.padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Warning, "Advertencia", tint = MaterialTheme.colorScheme.error)
                                 Spacer(Modifier.width(16.dp))
                                 Column {
                                     Text(
@@ -410,4 +410,5 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
         )
     }
 }
+
 

@@ -322,7 +322,7 @@ private fun DialogoGrupoConfig(
                             },
                             label = { Text(modo.name.replace("_", " "), fontSize = 11.sp) },
                             leadingIcon = {
-                                if (modoAsignacion == modo) Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                                if (modoAsignacion == modo) Icon(Icons.Default.Check, "Confirmar", Modifier.size(16.dp))
                             }
                         )
                     }
@@ -349,7 +349,7 @@ private fun DialogoGrupoConfig(
                         value = busquedaProducto, onValueChange = { busquedaProducto = it },
                         label = { Text("Buscar producto...") },
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
                         singleLine = true
                     )
                     val filtered = allProducts.filter {
@@ -434,7 +434,7 @@ private fun DialogoGrupoConfig(
                         value = busquedaExcluir, onValueChange = { busquedaExcluir = it },
                         label = { Text("Buscar producto para excluir...") },
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
                         singleLine = true
                     )
                     val excluirFiltered = allProducts.filter {
@@ -442,7 +442,7 @@ private fun DialogoGrupoConfig(
                     }
                     excluirFiltered.filter { it.id !in excluirProductos }.take(10).forEach { prod ->
                         TextButton(onClick = { excluirProductos = excluirProductos + prod.id }) {
-                            Icon(Icons.Default.Add, null, Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, "Agregar", Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("${prod.emoji} ${prod.nombre}", fontSize = 12.sp)
                         }
@@ -455,7 +455,7 @@ private fun DialogoGrupoConfig(
                                 modifier = Modifier.weight(1f), fontSize = 12.sp
                             )
                             IconButton(onClick = { excluirProductos = excluirProductos - prodId }) {
-                                Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -494,4 +494,5 @@ private fun DialogoGrupoConfig(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
 

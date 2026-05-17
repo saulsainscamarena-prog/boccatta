@@ -28,7 +28,7 @@ fun SeccionConfiguracion(
             Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             if (ayuda.isNotBlank()) {
                 IconButton(onClick = { mostrarAyuda = !mostrarAyuda }, modifier = Modifier.size(20.dp)) {
-                    Icon(icono, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(icono, "Ayuda", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }

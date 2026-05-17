@@ -63,7 +63,7 @@ fun InventoryScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) { 
                             Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                Icon(Icons.Default.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp))
+                                Icon(Icons.Default.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
                             }
                         }
                     },
@@ -71,7 +71,7 @@ fun InventoryScreen(
                         if (session.esAdmin) {
                             var mostrarPin by remember { mutableStateOf(false) }
                             IconButton(onClick = { mostrarPin = true }) { 
-                                Icon(Icons.Default.FlashOn, null, tint = MaterialTheme.colorScheme.tertiary) 
+                                Icon(Icons.Default.FlashOn, "Encender", tint = MaterialTheme.colorScheme.tertiary) 
                             }
                             if (mostrarPin) {
                                 com.bocatta.pos.presentation.ui.components.AdminPinDialog(
@@ -87,9 +87,9 @@ fun InventoryScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = onAperturaInventario) { Icon(Icons.Default.Login, null, tint = Color.White.copy(0.7f)) }
-                        IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, null, tint = Color.White.copy(0.7f)) }
-                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, null, tint = MaterialTheme.colorScheme.primary) }
+                        IconButton(onClick = onAperturaInventario) { Icon(Icons.Default.Login, "Iniciar sesion", tint = Color.White.copy(0.7f)) }
+                        IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, "Cerrar sesion", tint = Color.White.copy(0.7f)) }
+                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, "Actualizar", tint = MaterialTheme.colorScheme.primary) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
                 )
@@ -174,6 +174,7 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoS
         }
     }
 }
+
 
 
 

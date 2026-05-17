@@ -109,7 +109,7 @@ fun AperturaInventarioScreen(
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
                         Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
                         }
                     }
                 },
@@ -137,7 +137,7 @@ fun AperturaInventarioScreen(
                         enabled = !cargando && !guardado && contados == total && total > 0,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.background, disabledContainerColor = Color.White.copy(0.1f)),
                     ) {
-                        Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory, null)
+                        Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory, "Inventario")
                         Spacer(Modifier.width(12.dp))
                         Text(if (guardado) "CARGA FINALIZADA" else "CONFIRMAR CARGA ($contados/$total)", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
@@ -221,6 +221,7 @@ fun AperturaInventarioScreen(
         }
     }
 }
+
 
 
 

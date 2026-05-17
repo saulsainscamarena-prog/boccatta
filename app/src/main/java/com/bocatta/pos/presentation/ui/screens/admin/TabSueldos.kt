@@ -52,7 +52,7 @@ fun TabSueldos(salarioVm: SalarioViewModel, adminVm: AdminViewModel) {
                                     Text("Sin pagos registrados", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
                                 }
                             }
-                            IconButton(onClick = { salarioVm.cargarConfiguracion(user.uid); selectedEmpleadoId = user.uid }) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary) }
+                            IconButton(onClick = { salarioVm.cargarConfiguracion(user.uid); selectedEmpleadoId = user.uid }) { Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary) }
                         }
                     }
                 }
@@ -116,4 +116,5 @@ private fun DialogConfigSalario(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
 

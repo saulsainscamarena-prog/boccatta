@@ -36,7 +36,7 @@ fun TabCatalogos(vm: CatalogoViewModel) {
                 onClick = { editingItem = null; showDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                icon = { Icon(Icons.Default.Add, null) },
+                icon = { Icon(Icons.Default.Add, "Agregar") },
                 text = { Text("NUEVO") }
             )
         }
@@ -45,7 +45,7 @@ fun TabCatalogos(vm: CatalogoViewModel) {
             OutlinedTextField(
                 value = searchQuery, onValueChange = { searchQuery = it },
                 placeholder = { Text("Buscar en todos los catálogos...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
+                leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true
@@ -68,7 +68,7 @@ fun TabCatalogos(vm: CatalogoViewModel) {
                     item {
                         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.Inventory2, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
+                                Icon(Icons.Default.Inventory2, "Inventario", Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
                                 Spacer(Modifier.height(8.dp))
                                 Text("Sin registros", color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
                             }
@@ -124,8 +124,8 @@ private fun OpcionCard(
                 }
             }
             Switch(checked = item.activo, onCheckedChange = { onToggleActive() }, modifier = Modifier.padding(end = 4.dp))
-            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
-            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp)) }
+            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp)) }
         }
     }
 }
@@ -190,5 +190,6 @@ private fun DialogoOpcionCatalogo(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
 
 

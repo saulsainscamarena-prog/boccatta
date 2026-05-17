@@ -91,7 +91,7 @@ fun TurnosScreen(
                                 Text("• Tú (${sessionVm.rol.name})", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                             }
                         } else {
-                            Icon(Icons.Default.Schedule, null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
+                            Icon(Icons.Default.Schedule, "Horario", modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
                             Spacer(Modifier.height(8.dp))
                             Text("NO HAY TURNO ACTIVO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                             Text("Inicia la jornada para comenzar a operar.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
@@ -104,7 +104,7 @@ fun TurnosScreen(
                 if (jornadaActiva) {
                     Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.tertiary)
+                            Icon(Icons.Default.CheckCircle, "Verificado", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.tertiary)
                             Spacer(Modifier.width(8.dp))
                             Text("Jornada en curso", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.tertiary)
                         }
@@ -119,7 +119,7 @@ fun TurnosScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(if (hayTurno) Icons.Default.GroupAdd else Icons.Default.PlayArrow, null, modifier = Modifier.size(20.dp))
+                    Icon(if (hayTurno) Icons.Default.GroupAdd else Icons.Default.PlayArrow, if (hayTurno) "Unirse a turno" else "Iniciar turno", modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         if (hayTurno) "UNIRSE AL TURNO" else "INICIAR TURNO",
@@ -138,7 +138,7 @@ fun TurnosScreen(
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.AdminPanelSettings, "Administrar", modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("ADMINISTRAR TIENDA", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
@@ -152,4 +152,5 @@ fun TurnosScreen(
         }
     }
 }
+
 

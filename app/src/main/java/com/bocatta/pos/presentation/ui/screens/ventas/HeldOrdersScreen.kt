@@ -155,7 +155,7 @@ private fun HeldOrderCard(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Delete, "Eliminar", modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("Eliminar")
                 }
@@ -165,7 +165,7 @@ private fun HeldOrderCard(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(Icons.Default.Restore, null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Restore, "Restaurar", modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("RECUPERAR", fontWeight = FontWeight.Black)
                 }
@@ -173,5 +173,6 @@ private fun HeldOrderCard(
         }
     }
 }
+
 
 

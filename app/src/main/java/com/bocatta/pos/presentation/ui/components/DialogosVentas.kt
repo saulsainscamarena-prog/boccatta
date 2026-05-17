@@ -35,7 +35,7 @@ fun ConfirmacionVentaDialog(
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        icon = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) },
+        icon = { Icon(Icons.Default.CheckCircle, "Verificado", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) },
         title = { Text("¡VENTA EXITOSA!", fontWeight = FontWeight.Black, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = { 
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -63,7 +63,7 @@ fun ConfirmacionVentaDialog(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) { 
-                Icon(Icons.Default.Share, null)
+                Icon(Icons.Default.Share, "Compartir")
                 Spacer(Modifier.width(8.dp))
                 Text("WhatsApp") 
             }
@@ -101,7 +101,7 @@ fun BuscarClienteDialog(
                     onValueChange = { filtroInput = it }, 
                     label = { Text("Nombre o Teléfono") }, 
                     modifier = Modifier.fillMaxWidth(), 
-                    leadingIcon = { Icon(Icons.Default.Search, null) }, 
+                    leadingIcon = { Icon(Icons.Default.Search, "Buscar") }, 
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
@@ -124,7 +124,7 @@ fun BuscarClienteDialog(
                                     Text(c.telefono, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) 
                                 }
                                 Spacer(Modifier.height(12.dp))
-                                Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.outline)
+                                Icon(Icons.Default.ChevronRight, "Siguiente", tint = MaterialTheme.colorScheme.outline)
                             }
                         }
                     }
@@ -133,7 +133,7 @@ fun BuscarClienteDialog(
         },
         confirmButton = { 
             Button(onClick = { onDismiss(); onNavigateToRegistrar() }, shape = RoundedCornerShape(12.dp)) { 
-                Icon(Icons.Default.Add, null)
+                Icon(Icons.Default.Add, "Agregar")
                 Spacer(Modifier.width(8.dp))
                 Text("Nuevo Registro") 
             } 
@@ -545,4 +545,5 @@ fun EliminarItemDialog(
         }
     )
 }
+
 

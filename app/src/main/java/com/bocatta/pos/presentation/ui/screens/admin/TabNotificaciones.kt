@@ -30,7 +30,7 @@ fun TabNotificaciones(vm: SolicitudViewModel) {
         if (solicitudes.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.NotificationsNone, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
+                    Icon(Icons.Default.NotificationsNone, "Notificaciones", Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
                     Spacer(Modifier.height(8.dp))
                     Text("Sin notificaciones pendientes", color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                 }
@@ -43,7 +43,7 @@ fun TabNotificaciones(vm: SolicitudViewModel) {
                     )) {
                         Column(Modifier.padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Warning, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Warning, "Advertencia", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
                                 Spacer(Modifier.width(8.dp))
                                 Text(sol.empleadoNombre, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
                                 Text(sol.estado.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
@@ -67,4 +67,5 @@ fun TabNotificaciones(vm: SolicitudViewModel) {
         }
     }
 }
+
 

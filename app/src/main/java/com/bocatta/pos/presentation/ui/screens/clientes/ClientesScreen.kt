@@ -79,7 +79,7 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
                 value = busquedaLocal,
                 onValueChange = { busquedaLocal = it; if (it.length >= 3) vm.buscarPorTelefono(it) },
                 placeholder = { Text("Buscar por nombre o tel�fono...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
+                leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(26.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
@@ -153,8 +153,8 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                 if (esVIP) Text("�REGALO LISTO! ??", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
             }
             Row {
-                IconButton(onClick = onEditar) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary) }
-                IconButton(onClick = onEliminar) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
+                IconButton(onClick = onEditar) { Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary) }
+                IconButton(onClick = onEliminar) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -179,5 +179,6 @@ private fun DialogCliente(clienteInicial: ClienteV2?, onGuardar: (String, String
         dismissButton = { TextButton(onClick = onCancelar) { Text("CANCELAR") } }
     )
 }
+
 
 

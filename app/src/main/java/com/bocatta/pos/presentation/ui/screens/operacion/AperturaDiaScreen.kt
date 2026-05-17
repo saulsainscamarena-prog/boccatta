@@ -117,7 +117,7 @@ fun PasoItemPremium(num: String, label: String, completado: Boolean, activo: Boo
             modifier = Modifier.size(36.dp).background(color.copy(0.15f), CircleShape).border(1.dp, color, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            if (completado) Icon(Icons.Default.Check, null, tint = color, modifier = Modifier.size(20.dp))
+            if (completado) Icon(Icons.Default.Check, "Confirmar", tint = color, modifier = Modifier.size(20.dp))
             else Text(num, fontWeight = FontWeight.Black, color = color, fontSize = 16.sp)
         }
         Spacer(Modifier.height(8.dp))
@@ -154,7 +154,7 @@ fun SeleccionSucursalPremium(vm: SessionViewModel, onConfirm: () -> Unit) {
         ) {
             Text("INGRESAR A ESTACIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = MaterialTheme.colorScheme.background)
             Spacer(Modifier.width(12.dp))
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.background)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, "Siguiente", tint = MaterialTheme.colorScheme.background)
         }
     }
 }
@@ -175,21 +175,21 @@ fun SucursalCardPremium(nombre: String, seleccionada: Boolean, sugerida: Boolean
                 modifier = Modifier.size(56.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Storefront, null, tint = if (seleccionada) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.3f), modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.Storefront, "Tienda", tint = if (seleccionada) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.3f), modifier = Modifier.size(32.dp))
                 }
             }
             Spacer(Modifier.width(20.dp))
             Column {
                 Text(nombre.uppercase(), fontWeight = FontWeight.Black, fontSize = 24.sp, color = if(seleccionada) Color.White else Color.White.copy(0.4f), letterSpacing = 1.sp)
                 if (sugerida) Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Verified, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Verified, "Verificado", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("SUGERIDA POR SISTEMA", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp, letterSpacing = 0.5.sp)
                 }
             }
             Spacer(Modifier.weight(1f))
-            if (seleccionada) Icon(Icons.Default.RadioButtonChecked, null, tint = MaterialTheme.colorScheme.tertiary)
-            else Icon(Icons.Default.RadioButtonUnchecked, null, tint = Color.White.copy(0.1f))
+            if (seleccionada) Icon(Icons.Default.RadioButtonChecked, "Seleccionado", tint = MaterialTheme.colorScheme.tertiary)
+            else Icon(Icons.Default.RadioButtonUnchecked, "Sin seleccionar", tint = Color.White.copy(0.1f))
         }
     }
 }
@@ -215,7 +215,7 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(color = MaterialTheme.colorScheme.primary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Inventory2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Inventory2, "Inventario", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                         }
                         Spacer(Modifier.width(16.dp))
@@ -224,9 +224,9 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
                             Text("Disponibilidad: $disp", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(Color.White.copy(0.1f), RoundedCornerShape(12.dp)).padding(2.dp)) {
-                            IconButton(onClick = { if (cant > 0) transferencias[id] = cant - 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Remove, null, modifier = Modifier.size(18.dp), tint = Color.White) }
+                            IconButton(onClick = { if (cant > 0) transferencias[id] = cant - 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Remove, "Quitar", modifier = Modifier.size(18.dp), tint = Color.White) }
                             Text(cant.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp), color = Color.White)
-                            IconButton(onClick = { if (cant < disp) transferencias[id] = cant + 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+                            IconButton(onClick = { if (cant < disp) transferencias[id] = cant + 1 }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Add, "Agregar", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
                         }
                     }
                 }
@@ -241,7 +241,7 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
-            Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.background)
+            Icon(Icons.Default.CheckCircle, "Verificado", tint = MaterialTheme.colorScheme.background)
             Spacer(Modifier.width(12.dp))
             Text("CONFIRMAR Y CARGAR", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = MaterialTheme.colorScheme.background)
         }
@@ -259,7 +259,7 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
         
         Surface(color = Color.White.copy(0.05f), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth(), border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.08f))) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.AccountBalanceWallet, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(52.dp))
+                Icon(Icons.Default.AccountBalanceWallet, "Billetera", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(52.dp))
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = fondo, 
@@ -285,11 +285,12 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
-            Icon(Icons.Default.PowerSettingsNew, null, tint = Color.White)
+            Icon(Icons.Default.PowerSettingsNew, "Apagar", tint = Color.White)
             Spacer(Modifier.width(12.dp))
             Text("INICIAR OPERACIÓN", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.White)
         }
     }
 }
+
 
 

@@ -93,7 +93,7 @@ fun DialogProducto(
                                     HorizontalDivider()
                                     Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         OutlinedTextField(value = nuevaCat, onValueChange = { nuevaCat = it }, label = { Text("Nueva") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp))
-                                        IconButton(onClick = { if (nuevaCat.isNotBlank()) { vm.agregarCategoria(nuevaCat); nuevaCat = "" } }) { Icon(Icons.Default.Add, null) }
+                                        IconButton(onClick = { if (nuevaCat.isNotBlank()) { vm.agregarCategoria(nuevaCat); nuevaCat = "" } }) { Icon(Icons.Default.Add, "Agregar") }
                                     }
                                 }
                             }
@@ -117,7 +117,7 @@ fun DialogProducto(
                                 productosCombo.forEach { pid ->
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(productosDisponibles.find { it.id == pid }?.nombre ?: pid, modifier = Modifier.weight(1f))
-                                        IconButton(onClick = { productosCombo = productosCombo - pid }) { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp)) }
+                                        IconButton(onClick = { productosCombo = productosCombo - pid }) { Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp)) }
                                     }
                                 }
                                 var expandProd by remember { mutableStateOf(false) }
@@ -149,7 +149,7 @@ fun DialogProducto(
                                     Column(Modifier.padding(12.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(g.title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                            IconButton(onClick = { configSchema = configSchema.toMutableList().also { it.removeAt(idx) } }) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                            IconButton(onClick = { configSchema = configSchema.toMutableList().also { it.removeAt(idx) } }) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
                                         }
                                         Text("Tipo: ${g.type.name} | Opciones: ${g.options.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                                     }
@@ -237,7 +237,7 @@ fun DialogProducto(
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 Text(vm.insumosMaestros.find { it.id == ing.insumoId }?.nombre ?: ing.insumoId, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                                                 OutlinedTextField(value = ing.cantidad.toString(), onValueChange = { v -> ingredientes[i] = ing.copy(cantidad = v.toDoubleOrNull() ?: 0.0) }, modifier = Modifier.width(60.dp), shape = RoundedCornerShape(8.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
-                                                IconButton(onClick = { ingredientes.removeAt(i) }) { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                                                IconButton(onClick = { ingredientes.removeAt(i) }) { Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
                                             }
                                         }
                                         val insumosIngredientes = vm.insumosMaestros.filter { ins -> ingredientes.any { it.insumoId == ins.id } }
@@ -314,4 +314,5 @@ fun DialogProducto(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
 

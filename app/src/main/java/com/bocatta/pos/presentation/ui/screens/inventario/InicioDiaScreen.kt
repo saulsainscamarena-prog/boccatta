@@ -174,7 +174,7 @@ fun InicioDiaScreen(
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.AdminPanelSettings, "Administrar", modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("ADMINISTRAR TIENDA", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
@@ -183,4 +183,5 @@ fun InicioDiaScreen(
         }
     }
 }
+
 

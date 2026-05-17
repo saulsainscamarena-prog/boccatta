@@ -49,7 +49,7 @@ fun TabPromociones(
         if (promos.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.CardGiftcard, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
+                    Icon(Icons.Default.CardGiftcard, "Tarjeta", Modifier.size(80.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
                     Spacer(Modifier.height(16.dp))
                     Text("No hay promociones activas", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Toca + para crear tu primera promoción", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f))
@@ -117,8 +117,8 @@ private fun PromoCard(
                 Text("Válida hasta ${dateFormat.format(Date(promo.fechaFin))}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
             }
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
             }
         }
     }
@@ -190,7 +190,7 @@ private fun DialogoCrearPromocion(
                     productosSeleccionados.forEach { id ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(allProducts.find { it.id == id }?.nombre ?: id, modifier = Modifier.weight(1f), fontSize = 13.sp)
-                            IconButton(onClick = { productosSeleccionados = productosSeleccionados - id }) { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
+                            IconButton(onClick = { productosSeleccionados = productosSeleccionados - id }) { Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
                         }
                     }
                     if (productosSeleccionados.isNotEmpty()) {
@@ -231,5 +231,6 @@ private fun DialogoCrearPromocion(
         shape = RoundedCornerShape(20.dp)
     )
 }
+
 
 

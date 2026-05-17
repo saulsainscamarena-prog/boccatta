@@ -73,7 +73,7 @@ fun GestionarPromocionesScreen(
         if (promocionesActivas.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.CardGiftcard, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
+                    Icon(Icons.Default.CardGiftcard, "Tarjeta", Modifier.size(80.dp), tint = MaterialTheme.colorScheme.surfaceVariant)
                     Spacer(Modifier.height(16.dp))
                     Text("No hay promociones activas", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Toca el botón + para crear tu primera regla de descuento", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
@@ -222,4 +222,5 @@ fun DialogoCrearPromocion(onDismiss: () -> Unit, onSave: (PromocionUniversal) ->
         }
     )
 }
+
 

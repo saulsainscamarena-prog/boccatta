@@ -4,7 +4,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.*
-import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.Icons; import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -243,7 +243,7 @@ Text(topping, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
                         ) {
                             Text("SIGUIENTE ITEM", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.surface)
                             Spacer(Modifier.width(8.dp))
-                            Icon(Icons.Default.ArrowForward, null, tint = MaterialTheme.colorScheme.surface)
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, "Siguiente", tint = MaterialTheme.colorScheme.surface)
                         }
                     } else {
                         OutlinedButton(
@@ -277,7 +277,7 @@ Text(topping, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
                             shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = if(currentConfig.esSalada) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
                         ) {
-                            Icon(Icons.Default.AddShoppingCart, null, tint = MaterialTheme.colorScheme.surface)
+                            Icon(Icons.Default.AddShoppingCart, "Comprar", tint = MaterialTheme.colorScheme.surface)
                             Spacer(Modifier.width(8.dp))
                             Text("CONFIRMAR TODO", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.surface)
                         }
@@ -288,4 +288,5 @@ Text(topping, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
     }
 }
 }
+
 

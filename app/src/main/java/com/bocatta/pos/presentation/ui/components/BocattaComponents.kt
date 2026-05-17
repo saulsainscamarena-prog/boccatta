@@ -427,7 +427,7 @@ fun BocattaSearchBar(
         modifier = modifier.fillMaxWidth().height(56.dp),
         shape = RoundedCornerShape(28.dp),
         leadingIcon = {
-            Icon(Icons.Default.Search, null,
+            Icon(Icons.Default.Search, "Buscar",
                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         },
         trailingIcon = {
@@ -437,7 +437,7 @@ fun BocattaSearchBar(
                     onQueryChange("")
                     onSearch?.invoke("")
                 }) {
-                    Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.size(18.dp))
                 }
             }
         },
@@ -452,4 +452,5 @@ fun BocattaSearchBar(
         )
     )
 }
+
 
