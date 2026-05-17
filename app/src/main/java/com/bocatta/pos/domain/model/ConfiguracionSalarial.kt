@@ -1,7 +1,7 @@
 package com.bocatta.pos.domain.model
 
-enum class TipoPago { DIARIO, POR_HORA, POR_SEMANA, POR_QUINCENA, POR_MES }
-enum class FormaPago { EFECTIVO, TRANSFERENCIA, TARJETA, NOMINA }
+enum class TipoPago(val firestoreKey: String) { DIARIO("diario"), POR_HORA("por_hora"), POR_SEMANA("por_semana"), POR_QUINCENA("por_quincena"), POR_MES("por_mes") }
+enum class FormaPago(val firestoreKey: String) { EFECTIVO("efectivo"), TRANSFERENCIA("transferencia"), TARJETA("tarjeta"), NOMINA("nomina") }
 
 data class ConfiguracionSalarial(
     val empleadoId: String = "",
@@ -36,3 +36,4 @@ data class RegistroPago(
     val comprobanteUrl: String? = null,
     val notas: String = ""
 )
+

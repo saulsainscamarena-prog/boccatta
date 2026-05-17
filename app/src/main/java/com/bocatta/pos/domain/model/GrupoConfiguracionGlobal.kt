@@ -1,6 +1,6 @@
 package com.bocatta.pos.domain.model
 
-enum class ModoAsignacion { GENERAL, POR_CATEGORIA, PERSONALIZADO }
+enum class ModoAsignacion(val firestoreKey: String) { GENERAL("general"), POR_CATEGORIA("por_categoria"), PERSONALIZADO("personalizado") }
 
 data class GrupoConfiguracionGlobal(
     val id: String = "",
@@ -48,3 +48,4 @@ data class CambioGrupoConfig(
     val fecha: Long = 0L,
     val revertido: Boolean = false
 )
+

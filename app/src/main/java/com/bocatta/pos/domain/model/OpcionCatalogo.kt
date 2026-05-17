@@ -1,8 +1,8 @@
 package com.bocatta.pos.domain.model
 
-enum class TipoCatalogo {
-    ADEREZO, TOPPING, TOPPING_PREMIUM, BASE_UNTABLE,
-    SABOR_FRAPPE, ESPOLVOREADO, PRESENTACION, EXTRAS
+enum class TipoCatalogo(val firestoreKey: String) {
+    ADEREZO("aderezo"), TOPPING("topping"), TOPPING_PREMIUM("topping_premium"), BASE_UNTABLE("base_untable"),
+    SABOR_FRAPPE("sabor_frappe"), ESPOLVOREADO("espolvoreado"), PRESENTACION("presentacion"), EXTRAS("extras")
 }
 
 data class OpcionCatalogo(
@@ -15,3 +15,4 @@ data class OpcionCatalogo(
     val costoExtra: Double = 0.0,
     val creadoEn: Long = 0L
 )
+

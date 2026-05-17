@@ -1,9 +1,9 @@
 ﻿package com.bocatta.pos.domain.model
 
-enum class TipoInsumo {
-    PORCIONADO, // Se cuenta por unidad (Nuggets, Boneless, Papas)
-    PREPARADO,  // Requiere receta (Masa Crepas, Tiramisu)
-    GASTO       // Se registra pero no se descuenta rígidamente (Servilletas, Fresas)
+enum class TipoInsumo(val firestoreKey: String) {
+    PORCIONADO("porcionado"),
+    PREPARADO("preparado"),
+    GASTO("gasto")
 }
 
 data class PresentacionCompra(

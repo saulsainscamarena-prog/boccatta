@@ -1,6 +1,6 @@
 package com.bocatta.pos.domain.model
 
-enum class TipoDuracion { FIJA, ABIERTA }
+enum class TipoDuracion(val firestoreKey: String) { FIJA("fija"), ABIERTA("abierta") }
 
 data class HorarioEmpleado(
     val id: String = "",
@@ -12,7 +12,7 @@ data class HorarioEmpleado(
     val activo: Boolean = true
 )
 
-enum class EstadoJornada { ACTIVA, EN_PAUSA, CERRADA, INCOMPLETA, ANOMALA }
+enum class EstadoJornada(val firestoreKey: String) { ACTIVA("activa"), EN_PAUSA("en_pausa"), CERRADA("cerrada"), INCOMPLETA("incompleta"), ANOMALA("anomala") }
 
 data class PausaJornada(
     val inicio: Long = 0L,
@@ -36,3 +36,4 @@ data class JornadaLaboral(
     val dispositivo: String = "",
     val notas: String = ""
 )
+

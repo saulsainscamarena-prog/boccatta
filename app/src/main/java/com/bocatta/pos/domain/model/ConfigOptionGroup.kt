@@ -1,6 +1,6 @@
 package com.bocatta.pos.domain.model
 
-enum class ConfigFieldType { SINGLE_CHIP, MULTI_CHIP, MULTI_CHECKBOX, TEXT }
+enum class ConfigFieldType(val firestoreKey: String) { SINGLE_CHIP("single_chip"), MULTI_CHIP("multi_chip"), MULTI_CHECKBOX("multi_checkbox"), TEXT("text") }
 
 data class ConfigOptionGroup(
     val key: String = "",
@@ -14,3 +14,4 @@ data class ConfigOptionGroup(
 )
 
 typealias ConfigResult = Map<String, List<String>>
+

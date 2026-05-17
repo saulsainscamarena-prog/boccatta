@@ -257,18 +257,9 @@ enum class MetodoPago(val valor: String) {
     DIDI_FOOD("DiDi Food")
 }
 
-enum class TipoDescuentoPromo {
-    PORCENTAJE,
-    MONTO_FIJO_TICKET,
-    MONTO_FIJO_ITEM,
-    PRECIO_FIJO_ITEM
-}
+enum class TipoDescuentoPromo(val firestoreKey: String) { PORCENTAJE("porcentaje"), MONTO_FIJO_TICKET("monto_fijo_ticket"), MONTO_FIJO_ITEM("monto_fijo_item"), PRECIO_FIJO_ITEM("precio_fijo_item") }
 
-enum class AlcancePromo {
-    TICKET_COMPLETO,
-    CATEGORIAS_ESPECIFICAS,
-    PRODUCTOS_ESPECIFICOS
-}
+enum class AlcancePromo(val firestoreKey: String) { TICKET_COMPLETO("ticket_completo"), CATEGORIAS_ESPECIFICAS("categorias_especificas"), PRODUCTOS_ESPECIFICOS("productos_especificos") }
 
 data class PromocionUniversal(
     val id: String = "",

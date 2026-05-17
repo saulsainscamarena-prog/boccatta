@@ -1,6 +1,6 @@
 package com.bocatta.pos.domain.model
 
-enum class TipoCombo { FIJO, CONFIGURABLE }
+enum class TipoCombo(val firestoreKey: String) { FIJO("fijo"), CONFIGURABLE("configurable") }
 
 data class ComboProducto(
     val id: String = "",
@@ -20,3 +20,4 @@ data class ItemCombo(
     val cantidad: Int = 1,
     val fijo: Boolean = true
 )
+

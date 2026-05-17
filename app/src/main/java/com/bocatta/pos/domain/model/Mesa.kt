@@ -1,6 +1,6 @@
 package com.bocatta.pos.domain.model
 
-enum class EstadoMesa { LIBRE, OCUPADA, RESERVADA, INACTIVA }
+enum class EstadoMesa(val firestoreKey: String) { LIBRE("libre"), OCUPADA("ocupada"), RESERVADA("reservada"), INACTIVA("inactiva") }
 
 data class Zona(
     val id: String = "",
@@ -18,7 +18,7 @@ data class Mesa(
     val ordenActual: String? = null
 )
 
-enum class ModalidadOrden { LOCAL, PARA_LLEVAR, DELIVERY }
+enum class ModalidadOrden(val firestoreKey: String) { LOCAL("local"), PARA_LLEVAR("para_llevar"), DELIVERY("delivery") }
 
 data class OrdenMesa(
     val id: String = "",
@@ -43,3 +43,4 @@ data class TransferenciaMesa(
     val motivo: String = "",
     val fecha: Long = 0L
 )
+
