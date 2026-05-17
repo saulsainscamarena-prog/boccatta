@@ -1,4 +1,5 @@
 package com.bocatta.pos.presentation.viewmodel
+import com.bocatta.pos.domain.util.ProductoValidator
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewModelScope
@@ -249,11 +250,7 @@ class AdminViewModel(
     }
 
     fun validarProducto(producto: SalesInventoryProductV2): Boolean {
-        return producto.nombre.isNotBlank() &&
-                producto.precioVenta.values.any { it >= 0 } &&
-                producto.categoria.isNotBlank() &&
-                (!producto.esCombo || producto.productosCombo.isNotEmpty()) &&
-                producto.consumiblesAsociados.all { it.cantidad > 0 }
+        return ProductoValidator.esValido(producto)
     }
 
     private fun escucharGastosHoy() {
