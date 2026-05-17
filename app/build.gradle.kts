@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.serialization)
-    // alias(libs.plugins.ksp) // KSP aún no disponible para Kotlin 2.2.10 (pendiente)
+    alias(libs.plugins.ksp)
     // id("org.jetbrains.kotlin.kapt")
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
     id("jacoco")
@@ -113,10 +113,10 @@ dependencies {
     // Serialización JSON para guardar ventas offline
     implementation(libs.kotlinx.serialization.json)
 
-    // Room — Pendiente: KSP no disponible para Kotlin 2.2.10. Usar SQLite nativa.
-    // ksp(libs.room.compiler)
-    // implementation(libs.room.runtime)
-    // implementation(libs.room.ktx)
+    // Room — vía KSP2 (compatible con Kotlin 2.2.10)
+    ksp(libs.room.compiler)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
 }
 
 // Task to replace FirebaseFirestore.getInstance() with provider
