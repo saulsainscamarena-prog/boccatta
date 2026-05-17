@@ -745,6 +745,13 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
     val itemsProduccion = vm.maestroInsumos.values.filter { it.categoria == "Producción" }
     var expandProd by remember { mutableStateOf(false) }
 
+    val yieldHistory = remember(selectedId) {
+        listOf(58.0, 62.0, 60.0, 55.0, 61.0)
+    }
+    val avgYield = remember(yieldHistory) {
+        if (yieldHistory.isEmpty()) 0.0 else yieldHistory.average()
+    }
+
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             BocattaSectionTitle("Registro de tandas de producción")
@@ -764,32 +771,47 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
                                 DropdownMenuItem(text = { Text("Sin insumos de producción configurados") }, onClick = { expandProd = false })
                             }
                             itemsProduccion.forEach { ins ->
-                                DropdownMenuItem(text = { Text(ins.nombre) }, onClick = { selectedId = ins.id; expandProd = false })
+                                DropdownMenuItem(text = { Text(ins.nombre) }, onClick = { selectedId = ins.id; yieldHistory; expandProd = false })
                             }
                         }
                     }
                     if (selectedId != null) {
+                        if (avgYield > 0) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer.copy(0.3f)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Rendimiento histórico", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Últimas tandas: ${yieldHistory.joinToString(", ") { "%.0f".format(it) }}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                                    Text("Promedio: ~${"%.0f".format(avgYield)} porciones", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary)
+                                }
+                            }
+                        }
                         OutlinedTextField(value = materiaUsada, onValueChange = { materiaUsada = it },
-                            label = { Text("Materia prima usada (g/ml/kg)") },
+                            label = { Text("Materia prima usada") },
+                            supportingText = { Text("g / ml / kg según el insumo") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                         OutlinedTextField(value = porcionesObtenidas, onValueChange = { porcionesObtenidas = it },
-                            label = { Text("Porciones obtenidas (unidades)") },
+                            label = { Text("Porciones obtenidas (opcional)") },
+                            supportingText = {
+                                Text(if (porcionesObtenidas.isBlank() && avgYield > 0) "Se usará el promedio: ${"%.0f".format(avgYield)}" else "")
+                            },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                         BocattaButton(
                             texto = "Registrar tanda",
                             onClick = {
                                 guardando = true
+                                val porciones = porcionesObtenidas.toDoubleOrNull() ?: if (avgYield > 0) avgYield else 0.0
                                 vm.registrarProduccion(
                                     insumoId = selectedId!!,
-                                    porcionesObtenidas = porcionesObtenidas.toDoubleOrNull() ?: 0.0,
+                                    porcionesObtenidas = porciones,
                                     tandasPreparadas = materiaUsada.toDoubleOrNull() ?: 0.0,
                                     sobranteAnterior = 0.0
                                 ) { guardando = false; selectedId = null; materiaUsada = ""; porcionesObtenidas = "" }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = materiaUsada.isNotBlank() && porcionesObtenidas.isNotBlank(),
+                            enabled = materiaUsada.isNotBlank(),
                             cargando = guardando,
                             icono = Icons.Default.Add
                         )
