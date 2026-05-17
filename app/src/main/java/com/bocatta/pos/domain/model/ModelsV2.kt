@@ -9,6 +9,11 @@ data class ConsumibleRequerido(
     val unidad: String = "pz"
 )
 
+/**
+ * Receta de venta (deducción unitaria).
+ * Guardada en Firestore [FirestoreCollections.RECETAS] (`v2_recetas`).
+ * NO confundir con [RecipeV2] — esa es para producción batch y va en `v2_recetas_produccion`.
+ */
 data class RecetaV2(
     val id: String = "",
     val nombre: String = "",
