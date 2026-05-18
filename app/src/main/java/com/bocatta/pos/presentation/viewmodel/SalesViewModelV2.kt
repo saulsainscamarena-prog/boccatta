@@ -28,7 +28,6 @@ import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.domain.engine.PricingEngine
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
 import com.bocatta.pos.domain.util.CarritoCalculator
-import com.bocatta.pos.domain.usecase.SaleItemInput
 import com.bocatta.pos.domain.usecase.GenerarTicketWhatsAppUseCase
 import com.bocatta.pos.domain.usecase.PromocionesEngine
 import com.bocatta.pos.core.constants.SucursalConfig
@@ -152,12 +151,15 @@ class SalesViewModelV2(
         CarritoCalculator.calcularSubtotal(_carrito)
     }
 
-   fun configurar(sucursal: String, usuarioNombre: String, rol: Rol) {
-      _rolUsuario = rol
-      escucharMenu()
-      escucharStock()
-      obtenerPromociones()
-   }
+    private var sucursalActual: String = ""
+
+    fun configurar(sucursal: String, usuarioNombre: String, rol: Rol) {
+       _rolUsuario = rol
+       sucursalActual = sucursal.lowercase()
+       escucharMenu()
+       escucharStock()
+       obtenerPromociones()
+    }
 
    private fun obtenerPromociones() {
       viewModelScope.launch {
@@ -199,16 +201,18 @@ class SalesViewModelV2(
 
    private fun escucharStock() {
       stockListener?.remove()
-      stockListener = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).addSnapshotListener { snap, _ ->
-         if (snap != null) {
-            _alertasStock.clear()
-            snap.documents.forEach { doc ->
-               val cant = doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0
-               val id = doc.getString("insumoId") ?: SucursalConfig.extraerInsumoIdDeDocId(doc.id)
-               _alertasStock[id] = cant
+      stockListener = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
+         .whereEqualTo("sucursal", sucursalActual)
+         .addSnapshotListener { snap, _ ->
+            if (snap != null) {
+               _alertasStock.clear()
+               snap.documents.forEach { doc ->
+                  val cant = doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0
+                  val id = doc.getString("insumoId") ?: SucursalConfig.extraerInsumoIdDeDocId(doc.id)
+                  _alertasStock[id] = cant
+               }
             }
          }
-      }
    }
 
    override fun onCleared() {
@@ -454,45 +458,20 @@ class SalesViewModelV2(
             }
 
             // 2. Ejecutar Venta en la Nube
-            val saleItems = currentCarrito.map { item ->
-               SaleItemInput(
-                  productId = item.producto.id,
-                  name = item.nombre,
-                  quantity = item.cantidad.toDouble(),
-                  unit = "pza",
-                  unitPrice = item.precioFinal.toDouble(),
-                  taxRate = 0.0,
-                  category = item.producto.categoria,
-                  recipe = null,
-                  modifiers = emptyList()
-               )
-            }
-
-            val result = salesFlowUseCase.processSale(
-               branchId = sucursal.lowercase(),
-               userId = usuarioNombre,
-               items = saleItems,
-               discounts = emptyList(),
-               giro = "FOOD"
-            )
-
-             if (result.success) {
-                // 3. Éxito: Generar Ticket y Aplicar
-                val ticketNum = OfflineManager.obtenerUltimoTicketLocal(getApplication(), sucursal.lowercase()) + 1
-                val codigoTicket = TicketUtils.generarCodigoTicket(sucursal.lowercase(), ticketNum)
-                OfflineManager.guardarUltimoTicketLocal(getApplication(), sucursal.lowercase(), ticketNum)
-                
-                val resultado = com.bocatta.pos.domain.repository.ResultadoVenta(
-                   numeroTicket = ticketNum,
-                   codigoTicket = codigoTicket
+                val resultado = repository.finalizarVentaConInventario(
+                   carrito = currentCarrito,
+                   sucursal = sucursal,
+                   usuarioNombre = usuarioNombre,
+                   clienteSeleccionado = _clienteSeleccionado,
+                   descuentoLealtad = _descuentoLealtad,
+                   metodoPagoSeleccionado = metodoPago,
+                   esConsumoEmpleado = _esConsumoEmpleado,
+                   descuentoPromociones = descuentoPromociones,
+                   descuentoManual = _descuentoManual
                 )
                 aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
-                mensajeFeedback = "✅ Venta finalizada: TICKET #$ticketNum"
+                mensajeFeedback = "✅ Venta finalizada: TICKET #${resultado.codigoTicket}"
                 _uiState.update { it.copy(showSuccess = true) }
-             } else {
-
-               throw IllegalStateException(result.error ?: "No se pudo procesar la venta en el servidor")
-            }
 
           } catch (e: Exception) {
              mensajeError = e.message ?: "Error inesperado al procesar el cobro"

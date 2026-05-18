@@ -24,11 +24,13 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
         clienteSeleccionado: ClienteV2?,
         descuentoLealtad: Double,
         metodoPagoSeleccionado: String,
-        esConsumoEmpleado: Boolean
+        esConsumoEmpleado: Boolean,
+        descuentoPromociones: Double,
+        descuentoManual: Double
     ): ResultadoVenta {
         val sucursalId = sucursal.lowercase()
         val subtotal = carrito.sumOf { it.precioFinal.toDouble() * it.cantidad }
-        val totalFinal = if (esConsumoEmpleado) 0.0 else (subtotal - descuentoLealtad).coerceAtLeast(0.0)
+        val totalFinal = if (esConsumoEmpleado) 0.0 else (subtotal - descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
 
         return db.runTransaction { transaction ->
             val contadorRef = db.collection(FirestoreCollections.CONFIGURACION).document("contadores_$sucursalId")
@@ -102,6 +104,8 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                     "codigoTicket" to codigoTicket,
                     "total" to totalFinal,
                     "descuentoLealtad" to descuentoLealtad,
+                    "descuentoPromociones" to descuentoPromociones,
+                    "descuentoManual" to descuentoManual,
                     "fecha" to System.currentTimeMillis(),
                     "sucursal" to sucursalId,
                     "atendio" to usuarioNombre,

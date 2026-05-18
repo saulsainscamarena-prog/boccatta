@@ -61,7 +61,8 @@ class InventoryRepositoryImpl(
             val doc = inventoryCollection.document(docId).get().await()
             doc.getDouble("currentQty") ?: 0.0
         } catch (e: Exception) {
-            0.0
+            Timber.e(e, "Error reading stock for $productId in $branchId")
+            throw e
         }
     }
 

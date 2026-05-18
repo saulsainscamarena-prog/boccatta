@@ -7,6 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.bocatta.pos.data.local.OfflineDatabase
 import com.bocatta.pos.data.local.VentaOffline
+import com.bocatta.pos.data.local.OperacionOffline
 import com.bocatta.pos.domain.model.StockAdjustmentEntity
 import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.bocatta.pos.domain.repository.IStockAdjustmentQueue
@@ -107,6 +108,18 @@ class SyncWorker(
                 }
             }
             Timber.tag("SYNC_WORKER").i("SYNC_SUCCESS_COUNT=${processedIds.size}")
+        }
+
+        // -- Process pending offline operations (devoluciones, cancelaciones, mermas) -----
+        for (op in operacionesPendientes) {
+            if (op.intentos >= OperacionOffline.MAX_INTENTOS) continue
+            try {
+                sincronizarOperacion(op)
+                database.marcarOperacionSincronizada(op.id)
+            } catch (e: Exception) {
+                database.marcarOperacionFallida(op.id)
+                Timber.tag("SYNC_WORKER").e(e, "Error syncing operation ${op.id}")
+            }
         }
 
         val pendientesRestantes = database.contarPendientes() + database.obtenerOperacionesPendientes().size

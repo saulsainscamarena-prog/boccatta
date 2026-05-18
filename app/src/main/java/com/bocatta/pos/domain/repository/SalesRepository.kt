@@ -15,7 +15,9 @@ interface SalesRepository {
         clienteSeleccionado: com.bocatta.pos.domain.model.ClienteV2?,
         descuentoLealtad: Double,
         metodoPagoSeleccionado: String,
-        esConsumoEmpleado: Boolean
+        esConsumoEmpleado: Boolean,
+        descuentoPromociones: Double = 0.0,
+        descuentoManual: Double = 0.0
     ): ResultadoVenta
 
     suspend fun registrarGastoValidado(
