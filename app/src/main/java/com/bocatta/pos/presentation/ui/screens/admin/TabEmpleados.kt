@@ -46,7 +46,7 @@ fun TabEmpleados(vm: AdminViewModel) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(empleados, key = { it.uid }) { user ->
                     ElevatedCard(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(user.nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(user.rol?.name ?: "Sin rol", color = MaterialTheme.colorScheme.outline, fontSize = 12.sp)

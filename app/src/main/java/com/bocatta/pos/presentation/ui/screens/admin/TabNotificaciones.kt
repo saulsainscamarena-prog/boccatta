@@ -38,11 +38,11 @@ fun TabNotificaciones(vm: SolicitudViewModel) {
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(solicitudes.toList(), key = { it.id }) { sol ->
-                    ElevatedCard(shape = RoundedCornerShape(14.dp), colors = CardDefaults.elevatedCardColors(
+                    ElevatedCard(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(), colors = CardDefaults.elevatedCardColors(
                         containerColor = if (sol.estado == EstadoSolicitudTurno.PENDIENTE) MaterialTheme.colorScheme.errorContainer.copy(0.3f) else MaterialTheme.colorScheme.surface
                     )) {
                         Column(Modifier.padding(14.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Warning, "Advertencia", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
                                 Spacer(Modifier.width(8.dp))
                                 Text(sol.empleadoNombre, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))

@@ -41,7 +41,7 @@ fun TabSueldos(salarioVm: SalarioViewModel, adminVm: AdminViewModel) {
                 items(adminVm.usuarios.filter { it.uid.isNotBlank() }, key = { it.uid }) { user ->
                     val pago = pagos.find { it.empleadoId == user.uid }
                     ElevatedCard(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(user.nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(user.rol?.name ?: "Sin rol", color = MaterialTheme.colorScheme.outline, fontSize = 12.sp)
