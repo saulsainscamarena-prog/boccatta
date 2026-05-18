@@ -32,6 +32,7 @@ import com.bocatta.pos.presentation.viewmodel.DevolucionViewModel
 import com.bocatta.pos.presentation.viewmodel.EmployeeViewModelV2
 import com.bocatta.pos.presentation.viewmodel.ExpensesViewModelV2
 import com.bocatta.pos.presentation.viewmodel.GestionSucursalesViewModel
+import com.bocatta.pos.presentation.viewmodel.HorarioViewModel
 import com.bocatta.pos.presentation.viewmodel.InventarioAdminViewModel
 import com.bocatta.pos.presentation.viewmodel.InventoryAdjustmentViewModelV2
 import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
@@ -115,6 +116,7 @@ val appModule = module {
     viewModel { MenuViewModel() }
     viewModel { ConfigViewModel() }
     viewModel { AuditoriaViewModel() }
+    viewModel { HorarioViewModel() }
     viewModel { InventarioAdminViewModel(get()) }
     viewModel { ConfigNegocioViewModel(get()) }
     viewModel { GestionSucursalesViewModel(get(), get()) }  // seeder + productoRepo
