@@ -22,15 +22,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "DEMO_EMAIL", "\"demo@bocatta.com\"")
-        buildConfigField("String", "DEMO_PASSWORD", "\"demo123\"")
-        buildConfigField("boolean", "DEMO_MODE_ENABLED", "true")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            buildConfigField("String", "DEMO_EMAIL", "\"\"")
+            buildConfigField("String", "DEMO_PASSWORD", "\"\"")
+            buildConfigField("boolean", "DEMO_MODE_ENABLED", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -38,6 +38,9 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            buildConfigField("String", "DEMO_EMAIL", "\"demo@bocatta.com\"")
+            buildConfigField("String", "DEMO_PASSWORD", "\"demo123\"")
+            buildConfigField("boolean", "DEMO_MODE_ENABLED", "true")
         }
     }
     compileOptions {
@@ -53,21 +56,14 @@ kotlin {
     jvmToolchain(17)
 }
 
-    sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/java")
-        }
-        getByName("test") {
-            java.srcDirs("src/test/java")
-        }
-    }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -98,13 +94,13 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
 
     // Navegación
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
 
     // Inyección de dependencias - Koin
-    implementation("io.insert-koin:koin-android:4.0.0")
-    implementation("io.insert-koin:koin-androidx-compose:4.0.0")
-    implementation("io.insert-koin:koin-core:4.0.0")
-    testImplementation("io.insert-koin:koin-test:4.0.0")
+    implementation("io.insert-koin:koin-android:4.2.0")
+    implementation("io.insert-koin:koin-androidx-compose:4.2.0")
+    implementation("io.insert-koin:koin-core:4.2.0")
+    testImplementation("io.insert-koin:koin-test:4.2.0")
 
 
     // WorkManager (Sincronización en segundo plano)
@@ -113,24 +109,10 @@ dependencies {
     // Serialización JSON para guardar ventas offline
     implementation(libs.kotlinx.serialization.json)
 
-    // Room — vía KSP2 (compatible con Kotlin 2.2.10)
+    // Room — vía KSP2
     ksp(libs.room.compiler)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-}
-
-// Task to replace FirebaseFirestore.getInstance() with provider
-tasks.register<Exec>("replaceFirestore") {
-    group = "refactor"
-    description = "Reemplaza FirebaseFirestore.getInstance() por FirebaseFirestoreProvider.db en todos los .kt"
-    commandLine(
-        "bash",
-        "-c",
-        """
-    find . -name \"*.kt\" ! -path \"*/FirebaseFirestoreProvider.kt\" \
-      -exec sed -i 's/FirebaseFirestore\\.getInstance()/FirebaseFirestoreProvider.db/g' {} +
-        """.trimIndent()
-    )
 }
 
 // Configure detekt task

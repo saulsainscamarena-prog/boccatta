@@ -11,12 +11,10 @@ class ReportRepository {
         return try {
             val vSnap = db.collection(FirestoreCollections.VENTAS)
                 .whereEqualTo("sucursal", sucursal)
-                .whereGreaterThanOrEqualTo("fecha", fecha)
                 .get().await()
             
             val gSnap = db.collection(FirestoreCollections.GASTOS)
                 .whereEqualTo("sucursal", sucursal)
-                .whereGreaterThanOrEqualTo("fecha", fecha)
                 .get().await()
 
             // Cargar datos de costos (Productos e Insumos)
@@ -30,7 +28,7 @@ class ReportRepository {
             var tarj = 0.0
             var costoTotal = 0.0
 
-            vSnap.documents.forEach { doc ->
+            vSnap.documents.filter { (it.getLong("fecha") ?: 0L) >= fecha }.forEach { doc ->
                 if (doc.getString("estado") == "devuelta") return@forEach
                 val t = doc.getDouble("total") ?: 0.0
                 bruto += t
@@ -48,7 +46,9 @@ class ReportRepository {
                 }
             }
 
-            val totalGastos = gSnap.documents.sumOf { it.getDouble("monto") ?: 0.0 }
+            val totalGastos = gSnap.documents
+                .filter { (it.getLong("fecha") ?: 0L) >= fecha }
+                .sumOf { it.getDouble("monto") ?: 0.0 }
             
             ReporteDiarioResumen(
                 ventasBrutas = bruto,

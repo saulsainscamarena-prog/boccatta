@@ -59,12 +59,12 @@ fun ProductCardPremium(
     Surface(
         onClick = onClick,
         enabled = !agotado,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(20.dp),
         color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.05f) else MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
+            .aspectRatio(1.04f)
             .padding(4.dp)
             .border(
                 width = 1.dp,
@@ -72,25 +72,25 @@ fun ProductCardPremium(
                     colors = if (agotado) listOf(Color.Transparent, Color.Transparent) 
                              else listOf(colorCat.copy(0.4f), Color.Transparent)
                 ),
-                shape = RoundedCornerShape(28.dp)
+                shape = RoundedCornerShape(20.dp)
             )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(12.dp), // Meridian Spec: 12dp grid
+                    .padding(10.dp), // Meridian Spec: 8dp grid
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp) // Meridian Spec: 8dp grid
+                verticalArrangement = Arrangement.spacedBy(6.dp) // Meridian Spec: 8dp grid
             ) {
                 // Contenedor del Emoji
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) { // Larger for visibility
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
                     Surface(
                         color = colorCat.copy(0.1f),
                         shape = CircleShape,
                         modifier = Modifier.fillMaxSize()
                     ) { }
-                    Text(text = emoji, fontSize = 32.sp)
+                    Text(text = emoji, fontSize = 28.sp)
                 }
                 
                 Text(
@@ -99,8 +99,8 @@ fun ProductCardPremium(
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
-                    lineHeight = 18.sp,
-                    fontSize = 14.sp,
+                    lineHeight = 16.sp,
+                    fontSize = 13.sp,
                     color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.3f) else MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -111,14 +111,14 @@ fun ProductCardPremium(
                 // Badge de Precio - Estilo Meridian Neon
                 Surface(
                     color = if (agotado) MaterialTheme.colorScheme.outlineVariant.copy(0.3f) else colorCat.copy(0.2f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.dp, if(agotado) Color.Transparent else colorCat.copy(0.5f))
                 ) {
                     Text(
                         text = "$${"%.0f".format(precio)}",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         color = if(agotado) MaterialTheme.colorScheme.onSurface.copy(0.3f) else colorCat,
-                        fontSize = 22.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Black
                     )
                 }

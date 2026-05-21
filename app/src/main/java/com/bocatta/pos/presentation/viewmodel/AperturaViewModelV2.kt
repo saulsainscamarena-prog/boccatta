@@ -2,6 +2,8 @@ package com.bocatta.pos.presentation.viewmodel
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewModelScope
+import com.bocatta.pos.data.repository.StockAllocationItem
+import com.bocatta.pos.data.repository.StockAllocationRepository
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.FieldValue
@@ -10,9 +12,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
 import timber.log.Timber
+import java.util.Locale
 
 class AperturaViewModelV2 : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
+    private val allocationRepo = StockAllocationRepository()
+    private val itemsVendiblesApertura = listOf(
+        "masa_crepa",
+        "carlota_unidad",
+        "tiramisu_unidad",
+        "fresas_crema_unidad",
+        "duraznos_crema_unidad"
+    )
 
     // Estado del Checklist
     var conteoPostres = mutableStateMapOf<String, String>()
@@ -27,6 +38,10 @@ class AperturaViewModelV2 : BaseViewModel() {
     
     var globalStock = mutableStateMapOf<String, Int>()
         private set
+    var stockSucursal = mutableStateMapOf<String, Int>()
+        private set
+    var allocationPreview = mutableStateListOf<StockAllocationItem>()
+        private set
     
     var aperturaCompletada by mutableStateOf(false)
         private set
@@ -34,13 +49,12 @@ class AperturaViewModelV2 : BaseViewModel() {
         private set
 
     fun cargarGlobalStock() {
-        val itemsFiltrados = listOf("masa_crepa", "carlota", "tiramisu", "fresas_crema", "duraznos")
         viewModelScope.launch {
             try {
                 val snap = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).get().await()
                 globalStock.clear()
                 snap.documents.forEach { doc ->
-                    if (itemsFiltrados.contains(doc.id)) {
+                    if (itemsVendiblesApertura.contains(doc.id)) {
                         globalStock[doc.id] = (doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0).toInt()
                     }
                 }
@@ -50,34 +64,45 @@ class AperturaViewModelV2 : BaseViewModel() {
         }
     }
 
+    fun cargarStockApertura(sucursal: String) {
+        viewModelScope.launch {
+            cargando = true
+            mensajeError = null
+            try {
+                val preview = allocationRepo.previewApertura(sucursal)
+                allocationPreview.clear()
+                allocationPreview.addAll(preview)
+                globalStock.clear()
+                stockSucursal.clear()
+                preview.forEach { item ->
+                    globalStock[item.insumoId] = item.stockCentral
+                    stockSucursal[item.insumoId] = item.cuotaActualSucursal
+                }
+            } catch (e: Exception) {
+                mensajeError = "Error al cargar stock de apertura: ${e.message}"
+            } finally {
+                cargando = false
+            }
+        }
+    }
+
     private var transferenciaEnProceso by mutableStateOf(false)
 
-    fun confirmarTransferencia(sucursalId: String, items: Map<String, Int>, onComplete: () -> Unit) {
+    fun confirmarAsignacion(
+        sucursalId: String,
+        usuarioId: String,
+        conteosFisicos: Map<String, Int>,
+        motivosDiferencia: Map<String, String>,
+        onComplete: () -> Unit
+    ) {
         if (cargando || transferenciaEnProceso) return
         viewModelScope.launch {
             cargando = true
             transferenciaEnProceso = true
             try {
-                val batch = db.batch()
-                items.forEach { (id, cant) ->
-                    if (cant > 0) {
-                        // Descontar de global
-                        batch.update(db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(id),
-                            "cantidadEnBase", FieldValue.increment(-cant.toDouble()))
-                        
-                        // Sumar a sucursal (en porciones si es masa, o directo si es postre)
-                        val multiplier = if (id == "masa_crepa") 60.0 else 1.0
-                        val ref = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId.lowercase()}_${id}")
-                        batch.set(ref, mapOf(
-                            "id" to "${sucursalId.lowercase()}_${id}",
-                            "insumoId" to id,
-                            "sucursal" to sucursalId.lowercase(),
-                            "cantidadEnBase" to FieldValue.increment(cant * multiplier),
-                            "ultimaActualizacion" to System.currentTimeMillis()
-                        ), SetOptions.merge())
-                    }
-                }
-                batch.commit().await()
+                val preview = allocationRepo.confirmarApertura(sucursalId, usuarioId, conteosFisicos, motivosDiferencia)
+                allocationPreview.clear()
+                allocationPreview.addAll(preview)
                 onComplete()
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
@@ -89,8 +114,13 @@ class AperturaViewModelV2 : BaseViewModel() {
         }
     }
 
+    fun confirmarTransferencia(sucursalId: String, items: Map<String, Int>, onComplete: () -> Unit) {
+        val fisicos = items.filterKeys { allocationRepo.itemsFisicos.contains(it) }
+        confirmarAsignacion(sucursalId, "sistema", fisicos, emptyMap(), onComplete)
+    }
+
     fun verificarTurno(sucursal: String) {
-        val sucursalId = sucursal.lowercase()
+        val sucursalId = normalizarSucursal(sucursal)
         viewModelScope.launch {
             try {
                 // 1. Verificar si la sucursal existe, si no, crearla (Industrialización V2)
@@ -129,20 +159,22 @@ class AperturaViewModelV2 : BaseViewModel() {
                 // 1. Registrar Conteo de Producto Terminado en Stock de Venta (Unificado)
                 conteoPostres.forEach { (prodId, cant) ->
                     val cantidad = cant.toDoubleOrNull() ?: 0.0
+                    val sucursalId = normalizarSucursal(sucursal)
                     val stockRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
-                        .document("${sucursal.lowercase()}_${prodId}")
+                        .document("${sucursalId}_${prodId}")
                     
                     batch.set(stockRef, mapOf(
-                        "id" to "${sucursal.lowercase()}_${prodId}",
-                        "sucursal" to sucursal.lowercase(),
+                        "id" to "${sucursalId}_${prodId}",
+                        "sucursal" to sucursalId,
                         "insumoId" to prodId,
                         "cantidadEnBase" to cantidad,
                         "ultimaActualizacion" to System.currentTimeMillis()
                     ), SetOptions.merge())
                 }
 
-                // 2. Registrar Disponibilidad de Insumos CrÑticos
-                val configRef = db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(sucursal.lowercase())
+                // 2. Registrar Disponibilidad de Insumos Críticos
+                val sucursalId = normalizarSucursal(sucursal)
+                val configRef = db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(sucursalId)
                 batch.set(configRef, mapOf(
                     "hayHielo" to hayHielo,
                     "hayChantilly" to hayChantilly,
@@ -159,11 +191,11 @@ class AperturaViewModelV2 : BaseViewModel() {
                     batch.update(db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document("masa_crepa"), 
                         "cantidadEnBase", FieldValue.increment(-numTandas))
                     
-                    val stockVentaRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursal.lowercase()}_masa_crepa")
+                    val stockVentaRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_masa_crepa")
                     batch.set(stockVentaRef, mapOf(
-                        "id" to "${sucursal.lowercase()}_masa_crepa",
+                        "id" to "${sucursalId}_masa_crepa",
                         "insumoId" to "masa_crepa",
-                        "sucursal" to sucursal.lowercase(),
+                        "sucursal" to sucursalId,
                         "cantidadEnBase" to FieldValue.increment(numTandas * 60.0),
                         "ultimaActualizacion" to System.currentTimeMillis()
                     ), SetOptions.merge())
@@ -189,6 +221,9 @@ class AperturaViewModelV2 : BaseViewModel() {
             }
         }
     }
+
+    private fun normalizarSucursal(sucursal: String): String =
+        sucursal.trim().lowercase(Locale.ROOT).replace(" ", "_")
 }
 
 

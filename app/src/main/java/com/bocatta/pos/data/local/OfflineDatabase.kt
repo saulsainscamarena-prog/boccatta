@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.bocatta.pos.core.TicketUtils
 import com.bocatta.pos.domain.model.*
 import timber.log.Timber
 
@@ -62,9 +63,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 4
+        private const val DATABASE_VERSION = 5
 
         const val TABLE_VENTAS = "ventas_pendientes"
+        const val TABLE_FOLIOS = "folios_offline"
         const val TABLE_OPS = "operaciones_pendientes"
         const val TABLE_HELD_ORDERS = "held_orders"
         const val TABLE_JORNADAS = "registro_jornadas"
@@ -114,6 +116,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             )
         """)
 
+        createFolioTable(db)
         db.execSQL("""
             CREATE TABLE $TABLE_OPS (
                 id TEXT PRIMARY KEY,
@@ -231,6 +234,16 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         """)
     }
 
+    private fun createFolioTable(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS $TABLE_FOLIOS (
+                sucursal TEXT PRIMARY KEY,
+                ultimoTicket INTEGER NOT NULL DEFAULT 0,
+                updatedAt INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+    }
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             createNewTables(db)
@@ -261,37 +274,151 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 )
             """)
         }
+        if (oldVersion < 5) {
+            createFolioTable(db)
+        }
     }
 
     fun guardarVenta(venta: VentaOffline) {
-        writableDatabase.use { db ->
-            val values = ContentValues().apply {
-                put("id", venta.id)
-                put("ticket", venta.ticket)
-                put("codigoTicket", venta.codigoTicket)
-                put("total", venta.total)
-                put("descuentoLealtad", venta.descuentoLealtad)
-                put("fecha", venta.fecha)
-                put("sucursal", venta.sucursal)
-                put("atendio", venta.atendio)
-                put("metodoPago", venta.metodoPago)
-                put("esConsumoEmpleado", if (venta.esConsumoEmpleado) 1 else 0)
-                put("clienteId", venta.clienteId)
-                put("carritoJson", venta.carritoJson)
-                put("estado", venta.estado)
-                put("intentos", venta.intentos)
-                venta.ultimoIntento?.let { put("ultimoIntento", it) }
+        val db = writableDatabase
+        db.insertWithOnConflict(TABLE_VENTAS, null, venta.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    fun guardarVentaYDescontarStock(venta: VentaOffline, deducciones: Map<String, Double>) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            deducciones.forEach { (insumoId, requerido) ->
+                val actual = obtenerStockInsumo(db, insumoId)
+                if (actual < requerido) {
+                    throw IllegalStateException("Stock local insuficiente para $insumoId. Disponible: $actual, requerido: $requerido")
+                }
             }
-            db.insertWithOnConflict(TABLE_VENTAS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+
+            val insertResult = db.insertWithOnConflict(
+                TABLE_VENTAS,
+                null,
+                venta.toContentValues(),
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
+            if (insertResult == -1L) {
+                throw IllegalStateException("No se pudo guardar la venta offline")
+            }
+
+            deducciones.forEach { (insumoId, cantidad) ->
+                db.execSQL(
+                    "UPDATE $TABLE_INSUMOS SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
+                    arrayOf<Any>(cantidad, insumoId)
+                )
+            }
+
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun guardarVentaYDescontarStockReservandoFolio(
+        ventaBase: VentaOffline,
+        deducciones: Map<String, Double>,
+        legacyUltimoTicket: Long = 0L
+    ): VentaOffline {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val sucursalId = ventaBase.sucursal.lowercase()
+            val ultimoPersistido = obtenerUltimoTicket(db, sucursalId)
+            val ticket = maxOf(ultimoPersistido, legacyUltimoTicket) + 1L
+            val ventaConfirmada = ventaBase.copy(
+                id = if (ventaBase.id.isBlank()) {
+                    "offline_${System.currentTimeMillis()}_$ticket"
+                } else {
+                    "${ventaBase.id}_$ticket"
+                },
+                ticket = ticket,
+                codigoTicket = TicketUtils.generarCodigoTicket(sucursalId, ticket)
+            )
+
+            deducciones.forEach { (insumoId, requerido) ->
+                val actual = obtenerStockInsumo(db, insumoId)
+                if (actual < requerido) {
+                    throw IllegalStateException("Stock local insuficiente para $insumoId. Disponible: $actual, requerido: $requerido")
+                }
+            }
+
+            val insertResult = db.insertWithOnConflict(
+                TABLE_VENTAS,
+                null,
+                ventaConfirmada.toContentValues(),
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
+            if (insertResult == -1L) {
+                throw IllegalStateException("No se pudo guardar la venta offline")
+            }
+
+            deducciones.forEach { (insumoId, cantidad) ->
+                db.execSQL(
+                    "UPDATE $TABLE_INSUMOS SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
+                    arrayOf<Any>(cantidad, insumoId)
+                )
+            }
+
+            guardarUltimoTicket(db, sucursalId, ticket)
+            db.setTransactionSuccessful()
+            return ventaConfirmada
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private fun obtenerUltimoTicket(db: SQLiteDatabase, sucursalId: String): Long {
+        return db.query(
+            TABLE_FOLIOS,
+            arrayOf("ultimoTicket"),
+            "sucursal = ?",
+            arrayOf(sucursalId),
+            null,
+            null,
+            null
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) else 0L
+        }
+    }
+
+    private fun guardarUltimoTicket(db: SQLiteDatabase, sucursalId: String, ticket: Long) {
+        val values = ContentValues().apply {
+            put("sucursal", sucursalId)
+            put("ultimoTicket", ticket)
+            put("updatedAt", System.currentTimeMillis())
+        }
+        db.insertWithOnConflict(TABLE_FOLIOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    private fun VentaOffline.toContentValues(): ContentValues {
+        return ContentValues().apply {
+            put("id", id)
+            put("ticket", ticket)
+            put("codigoTicket", codigoTicket)
+            put("total", total)
+            put("descuentoLealtad", descuentoLealtad)
+            put("fecha", fecha)
+            put("sucursal", sucursal)
+            put("atendio", atendio)
+            put("metodoPago", metodoPago)
+            put("esConsumoEmpleado", if (esConsumoEmpleado) 1 else 0)
+            put("clienteId", clienteId)
+            put("carritoJson", carritoJson)
+            put("estado", estado)
+            put("intentos", intentos)
+            ultimoIntento?.let { put("ultimoIntento", it) }
         }
     }
 
     fun obtenerVentasPendientes(): List<VentaOffline> {
         val list = mutableListOf<VentaOffline>()
-        readableDatabase.use { db ->
-            db.query(TABLE_VENTAS, null, "estado = ?", arrayOf(VentaOffline.ESTADO_PENDIENTE), null, null, "fecha ASC")
-                .use { cursor -> list.addAll(cursor.toVentasList()) }
-        }
+        val db = readableDatabase
+        db.query(TABLE_VENTAS, null, "estado = ?", arrayOf(VentaOffline.ESTADO_PENDIENTE), null, null, "fecha ASC")
+            .use { cursor -> list.addAll(cursor.toVentasList()) }
         return list
     }
 
@@ -322,30 +449,35 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun marcarVentaSincronizada(id: String, timestamp: Long) {
-        writableDatabase.use { db ->
-            db.execSQL(
-                "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_SINCRONIZADA}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
-                arrayOf(timestamp, id)
-            )
-        }
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_SINCRONIZADA}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
+            arrayOf<Any>(timestamp, id)
+        )
     }
 
     fun marcarVentaFallida(id: String, timestamp: Long) {
-        writableDatabase.use { db ->
-            db.execSQL(
-                "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_FALLIDA}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
-                arrayOf(timestamp, id)
-            )
-        }
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_FALLIDA}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
+            arrayOf<Any>(timestamp, id)
+        )
+    }
+
+    fun registrarIntentoVentaFallido(id: String, timestamp: Long) {
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_PENDIENTE}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
+            arrayOf<Any>(timestamp, id)
+        )
     }
 
     fun marcarVentaFallidaCritica(id: String, timestamp: Long) {
-        writableDatabase.use { db ->
-            db.execSQL(
-                "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_FALLIDA_CRITICA}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
-                arrayOf(timestamp, id)
-            )
-        }
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_FALLIDA_CRITICA}', intentos = intentos + 1, ultimoIntento = ? WHERE id = ?",
+            arrayOf<Any>(timestamp, id)
+        )
     }
 
     fun limpiarSincronizadas() {
@@ -355,10 +487,9 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun contarPendientes(): Int {
-        return readableDatabase.use { db ->
-            db.rawQuery("SELECT COUNT(*) FROM $TABLE_VENTAS WHERE estado = ?", arrayOf(VentaOffline.ESTADO_PENDIENTE)).use { cursor ->
-                if (cursor.moveToFirst()) cursor.getInt(0) else 0
-            }
+        val db = readableDatabase
+        return db.rawQuery("SELECT COUNT(*) FROM $TABLE_VENTAS WHERE estado = ?", arrayOf(VentaOffline.ESTADO_PENDIENTE)).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else 0
         }
     }
 
@@ -474,17 +605,18 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun actualizarStockInsumo(insumoId: String, nuevaCantidadBase: Double) {
-        writableDatabase.use { db ->
-            db.execSQL("UPDATE $TABLE_INSUMOS SET cantidadEnBase = ? WHERE id = ?", arrayOf(nuevaCantidadBase, insumoId))
-        }
+        val db = writableDatabase
+        db.execSQL("UPDATE $TABLE_INSUMOS SET cantidadEnBase = ? WHERE id = ?", arrayOf<Any>(nuevaCantidadBase, insumoId))
     }
 
     fun obtenerStockInsumo(insumoId: String): Double {
-        readableDatabase.use { db ->
-            db.query(TABLE_INSUMOS, arrayOf("cantidadEnBase"), "id = ?", arrayOf(insumoId), null, null, null).use { cursor ->
-                if (cursor.moveToFirst()) {
-                    return@use cursor.getDouble(0)
-                }
+        return obtenerStockInsumo(readableDatabase, insumoId)
+    }
+
+    private fun obtenerStockInsumo(db: SQLiteDatabase, insumoId: String): Double {
+        db.query(TABLE_INSUMOS, arrayOf("cantidadEnBase"), "id = ?", arrayOf(insumoId), null, null, null).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return cursor.getDouble(0)
             }
         }
         return 0.0

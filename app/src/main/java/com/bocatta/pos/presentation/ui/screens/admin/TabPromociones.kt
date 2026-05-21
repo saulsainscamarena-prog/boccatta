@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bocatta.pos.domain.model.AlcancePromo
 import com.bocatta.pos.domain.model.PromocionUniversal
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
@@ -33,7 +34,7 @@ fun TabPromociones(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var editingPromo by remember { mutableStateOf<PromocionUniversal?>(null) }
-    val promos by vm.promociones.collectAsState()
+    val promos by vm.promociones.collectAsStateWithLifecycle()
 
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
         floatingActionButton = {
@@ -142,17 +143,9 @@ private fun DialogoCrearPromocion(
     var mostrarRentabilidad by remember { mutableStateOf(false) }
     var precioPromoInput by remember { mutableStateOf("") }
 
-    val costoCalculado = if (mostrarRentabilidad && productosSeleccionados.isNotEmpty()) {
-        val precio = precioPromoInput.toDoubleOrNull() ?: 0.0
-        val costoTotal = productosSeleccionados.sumOf { id ->
-            allProducts.find { it.id == id }?.precioVenta?.values?.firstOrNull() ?: 0.0
-        }
-        if (precio > 0) {
-            val margen = precio - costoTotal
-            val pct = if (precio > 0) (margen / precio * 100) else 0.0
-            Triple(costoTotal, margen, pct)
-        } else null
-    } else null
+    val mostrarAvisoCostoReal = mostrarRentabilidad &&
+        productosSeleccionados.isNotEmpty() &&
+        precioPromoInput.toDoubleOrNull() != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -180,7 +173,7 @@ private fun DialogoCrearPromocion(
                     var expandProd by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(expanded = expandProd, onExpandedChange = { expandProd = it }) {
                         OutlinedTextField(value = "", onValueChange = {}, readOnly = true, placeholder = { Text("Seleccionar producto...") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandProd) }, modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandProd) }, modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                         ExposedDropdownMenu(expanded = expandProd, onDismissRequest = { expandProd = false }) {
                             allProducts.filter { it.id !in productosSeleccionados }.forEach { prod ->
                                 DropdownMenuItem(text = { Text(prod.nombre) }, onClick = { productosSeleccionados = productosSeleccionados + prod.id; expandProd = false })
@@ -195,17 +188,27 @@ private fun DialogoCrearPromocion(
                     }
                     if (productosSeleccionados.isNotEmpty()) {
                         Spacer(Modifier.height(4.dp))
-                        Text("ANÁLISIS DE RENTABILIDAD", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                        Text("Analisis de rentabilidad", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                         OutlinedTextField(value = precioPromoInput, onValueChange = { precioPromoInput = it; mostrarRentabilidad = it.isNotBlank() },
                             label = { Text("Precio promocional") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = RoundedCornerShape(12.dp))
-                        if (costoCalculado != null) {
-                            val (costo, margen, pct) = costoCalculado
-                            val color = if (pct < 0) MaterialTheme.colorScheme.error else if (pct < 15) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
-                            Surface(color = color.copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        if (mostrarAvisoCostoReal) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 Column(Modifier.padding(12.dp)) {
-                                    Text("Costo total: \$${"%.2f".format(costo)}", fontSize = 12.sp)
-                                    Text("Margen: \$${"%.2f".format(margen)} (${"%.1f".format(pct)}%)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color)
-                                    if (pct < 0) Text("⚠️ Esta promoción genera pérdidas", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                                    Text(
+                                        "Costo real no disponible aqui",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Text(
+                                        "Se debe calcular desde recetas y movimientos de inventario. No se usa precio de venta como costo.",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
                                 }
                             }
                         }

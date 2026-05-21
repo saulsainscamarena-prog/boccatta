@@ -1,6 +1,7 @@
 package com.bocatta.pos.data.repository
 
 import android.util.Log
+import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.domain.model.PromocionUniversal
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.FirebaseFirestore
@@ -9,7 +10,7 @@ import kotlinx.coroutines.tasks.await
 class PromocionesRepository(
     private val db: FirebaseFirestore = FirebaseFirestoreProvider.db
 ) {
-    private val COLLECTION_NAME = "promociones"
+    private val COLLECTION_NAME = FirestoreCollections.PROMOCIONES
 
     suspend fun getPromocionesActivas(): List<PromocionUniversal> {
         return try {

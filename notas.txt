@@ -1,0 +1,527 @@
+Notas Bocatta POS - Workflow real guiado
+Fecha: 2026-05-21
+
+Objetivo del documento
+Este archivo organiza las notas de trabajo para no tocar temas en desorden.
+Las decisiones ya aprobadas viven en decisiones.txt. Este documento sirve como
+guia de analisis, contexto, pendientes y diseno de flujo.
+
+
+1. Principio de producto
+
+La app ya tiene muchas piezas valiosas: POS, inventario, produccion, caja,
+reportes, administracion, usuarios, zonas, nomina, diagnostico y modo offline.
+El problema principal no parece ser que la app sea mala, sino que todavia no
+tiene una columna vertebral clara de operacion humana.
+
+Prioridad:
+- Definir flujo real para personas reales.
+- Separar operacion diaria de gestion administrativa.
+- Evitar que una pantalla intente resolver todos los trabajos.
+- No agregar mas funciones antes de ordenar la intencion de uso.
+
+Principio:
+No necesitamos una app mas grande. Necesitamos una app mas decidida: cada
+pantalla debe tener una responsabilidad humana clara y cada rol debe saber que
+hacer sin entender la arquitectura tecnica.
+
+
+2. Separacion de problemas
+
+2.1. Problemas tecnicos reales
+
+- Venta offline bloqueada: el checkout valida stock contra Firestore antes de
+  decidir si esta offline. Si Firestore falla, el app puede tratarlo como stock
+  insuficiente.
+- Inventario con campos inconsistentes: algunas partes usan currentQty y otras
+  usan cantidadEnBase / cantidadDisponible.
+- Toppings premium no cobrados correctamente en algunos flujos.
+- Faltan indices compuestos de Firestore para reportes/listeners:
+  v2_ventas, v2_gastos y v2_merma_logs.
+- Compra por presentacion incompleta o confusa en UI.
+- Produccion sin feedback claro cuando termina correctamente.
+- Mantenimiento peligroso sin PIN para acciones destructivas.
+- Jank/rendimiento en navegaciones, dialogos y cargas iniciales.
+
+2.2. Problemas de uso/admin
+
+- No saber si combos estan mal o solo no estan configurados/sincronizados.
+- No saber donde se configuran toppings, catalogos, productos o precios.
+- No saber si inventario se carga por compra, produccion, ajuste o cierre.
+- No saber que pantalla usar en cada operacion real.
+- Usar Admin como pantalla de operacion diaria, cuando deberia ser
+  configuracion, auditoria y mantenimiento.
+
+2.3. Problemas de producto
+
+- La app quiere abarcar mucho.
+- Hay funciones administrativas mezcladas con operacion diaria.
+- No hay jerarquia clara entre vender, producir, contar, configurar y auditar.
+- El workflow parece tecnico, no humano.
+- La app necesita decidir mejor a donde debe ir cada usuario segun su rol,
+  permiso y momento de trabajo.
+
+
+3. Experiencias principales
+
+La app se separa en tres experiencias:
+
+1. Empleado.
+2. Admin en modo venta.
+3. Admin en modo gestion.
+
+Para esta conversacion, el flujo de empleado y admin en modo venta se llamara
+flujo general.
+
+3.1. Flujo Empleado
+
+Objetivo:
+Operar mostrador sin tocar configuracion ni decisiones administrativas.
+
+Pantallas principales:
+- Login.
+- Sucursal.
+- Jornada/turno.
+- Apertura operativa si aplica.
+- Ventas.
+- Caja operativa.
+- Inventario operativo limitado.
+
+Debe poder hacer:
+- Iniciar sesion.
+- Elegir sucursal si tiene mas de una autorizada.
+- Abrir turno si tiene permiso.
+- Unirse a turno.
+- Vender productos.
+- Configurar productos de venta.
+- Cobrar.
+- Emitir ticket.
+- Seguir vendiendo sin internet.
+- Registrar entradas/salidas simples de caja si aplica.
+- Consultar alertas basicas.
+
+No debe poder hacer:
+- Borrar datos.
+- Cambiar precios.
+- Cambiar productos.
+- Editar catalogos.
+- Ver reportes administrativos sensibles.
+- Modificar usuarios.
+- Ejecutar mantenimiento.
+- Hacer ajustes fuertes de inventario sin autorizacion.
+
+3.2. Admin en modo venta
+
+Objetivo:
+Vender o resolver bloqueos operativos sin entrar a gestion completa.
+
+Debe poder hacer todo lo del empleado, mas:
+- Autorizar descuentos o ajustes puntuales.
+- Resolver stock insuficiente con accion clara.
+- Ver ventas offline pendientes.
+- Forzar sincronizacion si aplica.
+- Abrir/cerrar caja de forma autorizada.
+- Revisar alertas criticas del dia.
+- Entrar a diagnostico rapido.
+- Autorizar acciones con PIN sin cambiar de flujo.
+
+No debe ser el lugar para:
+- Redisenar catalogos.
+- Cambiar estructura de productos.
+- Administrar empleados.
+- Ejecutar mantenimiento destructivo.
+- Hacer reportes profundos.
+
+3.3. Admin en modo gestion
+
+Objetivo:
+Configurar, revisar y auditar el negocio fuera del ritmo de venta.
+
+Aqui pertenecen:
+- Dashboard administrativo.
+- Productos.
+- Precios.
+- Catalogos.
+- Recetas.
+- Combos.
+- Promos.
+- Inventario completo.
+- Produccion/configuracion.
+- Compras.
+- Sucursales.
+- Usuarios.
+- Zonas/mesas.
+- Reportes.
+- Nomina/sueldos.
+- Apariencia.
+- Mantenimiento.
+- Diagnostico.
+
+
+4. Flujo general en orden
+
+El flujo general debe trabajarse en este orden. No saltar a pantallas futuras
+hasta dejar clara la intencion de la pantalla actual.
+
+4.1. Login
+
+Objetivo:
+Identificar quien usa la app.
+
+Forma aprobada:
+- Mantener email como base de identidad porque Firebase ya esta integrado y
+  sirve para respaldo y recuperacion.
+- Permitir registro autorizado con nombre de operador, email, clave/PIN inicial
+  y codigo de acceso.
+- El codigo de acceso define rol: codigo admin -> ADMIN, codigo empleado ->
+  VENDEDOR.
+- No mostrar "olvide mi contrasena" en login publico. El reset debe manejarlo
+  el admin desde dentro de la app.
+
+Notas futuras:
+- Inicio diario idealmente debe permitir email o nombre de usuario con
+  contrasena/PIN.
+- La pantalla actual ya sugiere "ID de usuario / email", pero el backend actual
+  usa principalmente Firebase email/password.
+- La pantalla de login debe mostrar el nombre del negocio configurado desde
+  Config/Admin.
+- Si no hay nombre de negocio configurado, debe mostrar solo "POS".
+- Debe existir una opcion de configuracion para elegir:
+  - Nombre del negocio + POS.
+  - Solo nombre del negocio.
+  - Solo POS cuando no haya nombre configurado.
+
+4.2. Seleccion de sucursal
+
+Objetivo:
+Confirmar donde se va a operar.
+
+Reglas acordadas:
+- La seleccion de sucursal se queda como paso porque es intuitiva y da visoria.
+- Si el usuario tiene una sola sucursal autorizada, la app puede recomendarla o
+  mostrarla como seleccion natural.
+- Si el usuario tiene varias sucursales autorizadas, debe poder elegir.
+- Si es admin/dueno, puede cambiar sucursal desde gestion o desde un selector
+  controlado.
+- Si no hay sucursal asignada, bloquear con mensaje claro y mandar a
+  Admin/Configuracion.
+
+Pendiente:
+- Definir como se visualiza la recomendacion de sucursal.
+- Definir como se restringe la lista segun permisos.
+
+4.3. Jornada / turno
+
+Objetivo:
+Abrir o unirse a la operacion del dia.
+
+Reglas acordadas:
+- Iniciar turno no debe ser exclusivo de admin.
+- La apertura de turno depende de permisos configurables por empleado o rol.
+- Un empleado autorizado puede abrir turno aunque no haya admin presente.
+- Si un empleado sin permiso entra y no hay turno, la app debe mostrar:
+  "No hay turno abierto. Pide a un encargado que abra turno."
+- Acciones sensibles pueden requerir PIN/admin, pero abrir la operacion diaria
+  debe poder delegarse de forma configurada.
+
+Debe mostrar:
+- Sucursal.
+- Usuario.
+- Rol/permiso relevante.
+- Estado online/offline.
+- Si hay turno activo.
+- Fondo de caja si aplica.
+- Participantes sin duplicados.
+
+Problema visto en captura:
+- Un mismo participante aparece duplicado como ADMIN. Parece bug o falta de
+  deduplicacion en registro de jornada/participantes.
+
+4.4. Apertura operativa / inventario de apertura
+
+Objetivo:
+Preparar la operacion sin convertir el inicio del dia en inventario completo.
+
+Nombre mental:
+- Preparar operacion.
+- Apertura operativa.
+
+Regla:
+No se cuenta todo. Se confirma solo lo relevante para poder vender.
+
+Debe depender de configuracion:
+- Hay negocios que no requieren inventario inicial.
+- Hay negocios que solo requieren caja.
+- Hay negocios que requieren produccion disponible.
+- Hay negocios que requieren insumos criticos.
+
+Pantalla sugerida:
+1. Sucursal.
+2. Caja/fondo inicial si aplica.
+3. Produccion disponible.
+4. Insumos/consumibles criticos.
+5. Listo para vender.
+
+Estados humanos necesarios:
+- Todo listo para vender.
+- Faltan confirmaciones.
+- Puedes vender con alertas.
+- No puedes vender: falta un insumo/preparado critico.
+- Inventario local no sincronizado.
+
+Acciones para no hacer lento el arranque:
+- Usar cantidades del sistema.
+- Confirmar todo.
+- Corregir solo alertas.
+- Omitir por ahora si el permiso/configuracion lo permite.
+
+4.5. Ventas / mostrador
+
+Objetivo:
+Completar ventas sin salir del flujo general.
+
+Debe permitir:
+- Buscar/elegir producto.
+- Configurar producto si aplica.
+- Agregar al carrito.
+- Revisar carrito.
+- Cobrar.
+- Generar ticket.
+- Empezar nueva venta.
+
+Debe mostrar siempre sin estorbar:
+- Turno activo.
+- Usuario actual.
+- Sucursal.
+- Online/offline.
+- Ventas pendientes de sincronizar.
+- Caja abierta.
+- Alertas criticas de stock.
+
+No debe meter gestion profunda:
+- Editar productos.
+- Cambiar precios.
+- Crear catalogos.
+- Configurar empleados.
+- Apariencia.
+- Sueldos.
+- Mantenimiento.
+
+4.6. Caja / cierre
+
+Objetivo:
+Controlar dinero del turno.
+
+Debe incluir:
+- Entradas.
+- Salidas.
+- Ventas cobradas.
+- Metodo de pago.
+- Corte esperado.
+- Efectivo real.
+- Diferencia.
+- Cierre de turno.
+
+Regla:
+Caja no debe depender de entender Firestore, reportes o inventario.
+
+
+5. Inventario de apertura: configuracion
+
+La configuracion no debe ser una lista enorme de excepciones. Debe ser facil y
+basada en relevancia operativa.
+
+Se configura desde:
+Admin en modo gestion -> Inventario -> Configuracion de apertura.
+
+Configurar por categorias/relevancias:
+- Preparado operativo.
+- Producto terminado listo para venta.
+- Insumo critico de apertura.
+- Consumible critico.
+
+Excluir por defecto:
+- Materia prima general.
+- Consumible general.
+- Productos ocultos/no operativos.
+- Elementos que no afectan apertura.
+
+Configuracion por item:
+- Mostrar en apertura: si/no.
+- Tipo: materia prima, preparado, producto terminado, consumible.
+- Unidad visible: tanda, pieza, g, kg, ml, porcion.
+- Forma de captura: botones rapidos, contador, campo numerico.
+- Valor sugerido: stock del sistema, ultimo cierre o cero.
+- Permite vender sin confirmar: si/no.
+- Bloquea venta si esta en cero: si/no.
+- Requiere permiso: empleado, encargado, admin.
+- Frecuencia: diario, semanal, solo si stock bajo, manual.
+
+Datos a guardar por apertura:
+- Sucursal.
+- Usuario.
+- Fecha/hora.
+- Items confirmados.
+- Valor del sistema.
+- Valor confirmado.
+- Diferencias.
+- Si se uso "igual que sistema".
+- Alertas.
+- Si se permitio vender con faltantes.
+
+
+6. Preparados y produccion dinamica
+
+Nota de alcance:
+- La configuracion completa de preparados, recetas, rendimientos y produccion
+  dinamica se gestionara despues.
+- Ahora el foco es disenar como debe verse y funcionar la pantalla de
+  inventario/apertura operativa.
+- La pantalla de apertura debe apoyarse en ese modelo futuro, pero no resolver
+  toda la configuracion avanzada.
+
+Modelo aprobado:
+- Produccion debe tener un solo flujo mental: Registrar produccion.
+- La masa de crepa no debe ser una funcion especial hardcodeada.
+- Debe tratarse como preparado configurable con receta, rendimiento y unidad
+  operativa.
+- Al registrar preparado se descuenta materia prima.
+- En venta se descuenta el preparado por piezas/porciones/unidad operativa.
+- No se debe descontar de nuevo la materia prima interna del preparado al
+  vender.
+
+Ejemplo Bocatta:
+- 1 tanda de masa = 60 porciones.
+- 1/2 tanda = 30 porciones.
+- 1/4 tanda = 15 porciones.
+- Muy poca = valor configurable.
+- Postres listos se capturan por tipo y cantidad.
+
+
+7. Reclasificacion general
+
+Necesitamos una reclasificacion general para evitar programacion redundante en
+cada pantalla.
+
+Objetivo:
+Que ventas, inventario, produccion, apertura, cierre, reportes y sync usen las
+mismas categorias/relevancias en vez de reglas duplicadas.
+
+Categorias/relevancias propuestas:
+- Materia prima general.
+- Insumo critico de apertura.
+- Preparado operativo.
+- Producto terminado listo para venta.
+- Consumible critico.
+- Consumible general.
+- Producto vendible.
+- Producto oculto/no operativo.
+
+Regla:
+La pantalla de apertura debe excluir cosas generales y mostrar solo lo relevante
+segun categoria/configuracion.
+
+
+8. Admin en modo gestion: notas futuras
+
+8.1. Empleados y seguridad
+
+- El admin debe poder resetear acceso de empleados si olvidan contrasena/PIN.
+- Accion propuesta: resetear PIN/clave operativa a 0000.
+- El reset no debe ser silencioso:
+  - Mostrar que el PIN temporal queda en 0000.
+  - Marcar al empleado con requiereCambioClave = true.
+  - Forzar cambio de clave/PIN en el siguiente inicio de sesion.
+  - Registrar auditoria: quien reseteo, a quien, fecha, sucursal.
+- El admin debe poder modificar codigo maestro y codigo empleado desde una
+  seccion de seguridad.
+- Cambiar codigos maestros debe pedir PIN/admin y guardar auditoria.
+- Evitar una UX sorda: cada bloqueo debe ofrecer una salida clara, por ejemplo
+  pedir admin, resetear usuario o revisar conexion.
+
+8.2. Reorganizacion de AdminScreen
+
+AdminScreen hoy esta agrupado por estructura tecnica. Apariencia esta dentro de
+Logistica, junto a catalogo, recetas, costos, combos, empleados, zonas, sueldos
+y notificaciones. Para un admin real eso se siente como "todo esta en todas
+partes".
+
+Reorganizacion futura sugerida:
+- Negocio: productos, precios, catalogos, combos, promos.
+- Inventario: stock, compras, produccion, mermas, cierres, sync.
+- Personas: empleados, sueldos, permisos, zonas/mesas.
+- Reportes: ventas, caja, inventario.
+- Sistema: apariencia, mantenimiento, diagnostico, sucursales.
+
+8.3. Apariencia
+
+- La personalizacion de tema puede afectar legibilidad.
+- Se observaron headers muy claros, contraste debil y colores que confunden
+  jerarquia.
+- La personalizacion visual necesita limites o presets seguros.
+
+
+9. Comparacion con codigo actual
+
+Estado observado:
+- Routes tiene una lista plana de pantallas: Login, Turnos, Apertura, Ventas,
+  Inventario, Reportes, Gastos, Admin, Devoluciones, Caja, Clientes, Compras,
+  CierreInventario, AperturaInventario, DashboardBodega, ReportesInventario,
+  SyncInventario y GestionarSucursales.
+- MainActivity decide la navegacion directamente. Login va a Turnos. Turnos
+  puede ir a Ventas o Admin. Ventas puede abrir Inventario, Reportes, Gastos,
+  Admin, Caja y Devoluciones.
+- SessionViewModel ya distingue rol: VENDEDOR, ADMIN y DUENO. Tambien tiene
+  esAdmin, esDueno, estado online y validarPinAdmin.
+- Existe PermisoEmpleado con permisos finos, pero no parece estar conectado al
+  flujo principal de navegacion.
+- SalesScreen tiene drawer con grupos Venta, Operacion, Inventario y Admin.
+  Para admin muestra Control central y Reportes dentro del mismo modo venta.
+- AdminScreen concentra demasiadas funciones en tres pestañas: Dashboard,
+  Logistica e Inventario.
+
+Conclusion:
+El codigo ya tiene suficientes piezas para separar los modos sin reescribir la
+app. Falta una capa de decision de modo y una reorganizacion de entrada/
+navegacion.
+
+
+10. Prioridad tecnica detectada
+
+1. Corregir venta offline bloqueada por validacion Firestore.
+2. Unificar o compatibilizar campos de inventario.
+3. Corregir cobro de toppings premium.
+4. Agregar PIN a mantenimiento critico.
+5. Completar compra por presentacion y feedback de produccion.
+6. Resolver indices Firestore para reportes.
+7. Mejorar UX de empleados, zonas, sueldos y notificaciones.
+8. Atacar rendimiento despues de estabilizar el workflow critico.
+
+
+11. Mapa de revision
+
+Escenarios reales a recorrer:
+
+1. Usuario entra.
+2. Selecciona o confirma sucursal.
+3. Abre turno o se une a turno.
+4. Confirma apertura operativa si aplica.
+5. Vende una crepa normal.
+6. Vende una crepa con topping premium.
+7. Se va internet y sigue vendiendo.
+8. Registra produccion.
+9. Registra compra de insumos.
+10. Registra merma.
+11. Hace corte de caja.
+12. Dueno revisa reporte.
+13. Dueno cambia precio/producto.
+14. Dueno agrega o modifica catalogos.
+15. Admin ejecuta mantenimiento critico con PIN.
+
+Para cada paso marcar:
+- Funciona bien.
+- Funciona pero confunde.
+- Esta roto tecnicamente.
+- Sobra en mostrador.
+- Debe moverse a Admin.
+- Requiere permiso/PIN.

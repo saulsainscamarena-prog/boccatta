@@ -97,7 +97,7 @@ fun ProductionRegistrationDialog(
                     }
                 }
 
-                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
 
                 // Toggle modo
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -146,7 +146,7 @@ fun ProductionRegistrationDialog(
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMenu) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
                     ExposedDropdownMenu(
@@ -163,7 +163,14 @@ fun ProductionRegistrationDialog(
                 }
 
                 if (modo == "producir") {
-                    // Campos de producción por tanda
+                    val porcionesPreview = porcionesText.toIntOrNull()
+                    val tandasPreview = tandasText.toIntOrNull()
+                    val rendimiento = if (porcionesPreview != null && tandasPreview != null && tandasPreview > 0) {
+                        porcionesPreview.toDouble() / tandasPreview.toDouble()
+                    } else {
+                        null
+                    }
+
                     OutlinedTextField(
                         value = porcionesText,
                         onValueChange = { porcionesText = it.filter { c -> c.isDigit() } },
@@ -182,6 +189,7 @@ fun ProductionRegistrationDialog(
                         onValueChange = { tandasText = it.filter { c -> c.isDigit() } },
                         label = { Text("Tandas preparadas") },
                         placeholder = { Text("Ej: 1") },
+                        supportingText = { Text("1 tanda utiliza la receta estándar configurada") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         shape = RoundedCornerShape(12.dp),
@@ -190,6 +198,21 @@ fun ProductionRegistrationDialog(
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
+                    if (rendimiento != null) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Rendimiento estimado: ${"%.1f".format(rendimiento)} porciones por tanda",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                     OutlinedTextField(
                         value = sobranteText,
                         onValueChange = { sobranteText = it.filter { c -> c.isDigit() || c == '.' } },
@@ -262,7 +285,7 @@ fun ProductionRegistrationDialog(
                         onClick = {
                             if (insumoSeleccionado.isBlank()) return@Button
                             val porciones = porcionesText.toIntOrNull() ?: 0
-                            val tandas = tandasText.toIntOrNull() ?: 1
+                            val tandas = (tandasText.toIntOrNull() ?: 1).coerceAtLeast(1)
                             val sobrante = sobranteText.toDoubleOrNull() ?: 0.0
 
                             if (modo == "producir" && porciones > 0) {

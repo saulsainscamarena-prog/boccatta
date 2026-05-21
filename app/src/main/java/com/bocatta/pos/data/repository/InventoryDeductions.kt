@@ -32,6 +32,13 @@ object InventoryDeductions {
             mapearToppingOAderezoAInsumo(aderezo)?.let { (id, cantidad) -> deducciones.add(id, cantidad * qty) }
         }
 
+        item.componentesCombo.forEach { componente ->
+            calcularParaItem(
+                componente.copy(cantidad = componente.cantidad * item.cantidad),
+                emptyList()
+            ).forEach { (id, cantidad) -> deducciones.add(id, cantidad) }
+        }
+
         if (item.esSeparado && item.producto.esCombo) {
             deducciones.add("charola", qty)
             deducciones.add("papel_hamburguesero", qty)
@@ -41,8 +48,13 @@ object InventoryDeductions {
     }
 
     fun calcularPrecioCrepa(precioBase: Double, base: String?, toppings: List<String>, extra: Double = 10.0): Double {
+        val basesNormales = base
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.count { it.isNotBlank() }
+            ?: 0
         val normales = toppings.count { !esPremium(it) }
-        val ingredientesNormales = normales + if (base.isNullOrBlank()) 0 else 1
+        val ingredientesNormales = normales + basesNormales
         val cargoNormal = if (ingredientesNormales >= 3) extra else 0.0
         val cargoPremium = if (toppings.any { esPremium(it) }) extra else 0.0
         return precioBase + cargoNormal + cargoPremium

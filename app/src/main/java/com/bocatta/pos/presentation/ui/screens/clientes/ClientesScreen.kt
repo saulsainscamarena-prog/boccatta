@@ -60,8 +60,8 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
             TopAppBar(
                 title = { 
                     Column {
-                        Text("GESTI�N DE CLIENTES", color = MaterialTheme.colorScheme.onSecondary, fontWeight = FontWeight.Black, fontSize = 16.sp)
-                        Text("Fidelizaci�n Industrial V2", color = MaterialTheme.colorScheme.onSecondary.copy(0.7f), fontSize = 10.sp)
+                        Text("GESTION DE CLIENTES", color = MaterialTheme.colorScheme.onSecondary, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                        Text("Fidelizacion Industrial V2", color = MaterialTheme.colorScheme.onSecondary.copy(0.7f), fontSize = 10.sp)
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = MaterialTheme.colorScheme.onSecondary) } },
@@ -78,7 +78,7 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
             OutlinedTextField(
                 value = busquedaLocal,
                 onValueChange = { busquedaLocal = it; if (it.length >= 3) vm.buscarPorTelefono(it) },
-                placeholder = { Text("Buscar por nombre o tel�fono...") },
+                placeholder = { Text("Buscar por nombre o telefono...") },
                 leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(26.dp),
@@ -100,7 +100,7 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
 
             if (clientesMostrados.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("Inicia una b�squeda o registra uno nuevo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text("Inicia una busqueda o registra uno nuevo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -150,7 +150,7 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                         Box(Modifier.height(4.dp).weight(1f).background(colorStep, CircleShape))
                     }
                 }
-                if (esVIP) Text("�REGALO LISTO! ??", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
+                if (esVIP) Text("REGALO LISTO", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
             }
             Row {
                 IconButton(onClick = onEditar) { Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary) }
@@ -170,7 +170,7 @@ private fun DialogCliente(clienteInicial: ClienteV2?, onGuardar: (String, String
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre Completo") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                OutlinedTextField(value = telefono, onValueChange = { telefono = it }, label = { Text("Tel�fono") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), readOnly = clienteInicial != null)
+                OutlinedTextField(value = telefono, onValueChange = { telefono = it }, label = { Text("Telefono") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), readOnly = clienteInicial != null)
             }
         },
         confirmButton = {

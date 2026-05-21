@@ -20,20 +20,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
-import com.google.firebase.firestore.FieldValue
 import com.bocatta.pos.presentation.ui.components.*
 import com.bocatta.pos.presentation.ui.theme.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import com.bocatta.pos.core.constants.FirestoreCollections
+import com.bocatta.pos.presentation.viewmodel.SyncInventarioViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SyncInventarioScreen(onBack: () -> Unit) {
-    val vm = remember { SyncInventarioViewModel() }
+fun SyncInventarioScreen(
+    onBack: () -> Unit,
+    vm: SyncInventarioViewModel = koinViewModel()
+) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedInsumo by remember { mutableStateOf<String?>(null) }
     var selectedSucursal by remember { mutableStateOf<String?>(null) }
@@ -95,7 +92,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("LOGÍSTICA GLOBAL", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("LOGISTICA GLOBAL", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
                         Text("CONTROL DE STOCK Y TRANSFERENCIAS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
@@ -119,7 +116,7 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
                 item { 
                     Text("INVENTARIO CENTRALIZADO - SELECCIONA PARA TRANSFERIR", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp) 
                 }
-                items(vm.insumosGlobal) { insumo ->
+                items(vm.insumosGlobal, key = { it }) { insumo ->
                     val stock = vm.stockGlobal[insumo] ?: 0.0
                     Surface(
                         onClick = { selectedInsumo = insumo; showDialog = true },
@@ -145,61 +142,3 @@ fun SyncInventarioScreen(onBack: () -> Unit) {
         }
     }
 }
-
-class SyncInventarioViewModel : ViewModel() {
-    private val db = FirebaseFirestoreProvider.db
-    var insumosGlobal = mutableStateListOf<String>()
-    var sucursales = mutableStateListOf<String>()
-    var stockGlobal = mutableStateMapOf<String, Double>()
-    var cargando by mutableStateOf(true)
-
-    init { cargarGlobal() }
-
-    private fun cargarGlobal() {
-        viewModelScope.launch {
-            try {
-                cargando = true
-                val snap = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).get().await()
-                val branchSnap = db.collection(FirestoreCollections.SUCURSALES).get().await()
-                
-                insumosGlobal.clear()
-                stockGlobal.clear()
-                sucursales.clear()
-                
-                snap.documents.forEach { doc ->
-                    insumosGlobal.add(doc.id)
-                    stockGlobal[doc.id] = doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0
-                }
-                
-                branchSnap.documents.forEach { doc ->
-                    sucursales.add(doc.getString("nombre") ?: doc.id)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("SyncInvScreen", "Error cargando inventario global", e)
-            }
-            finally { cargando = false }
-        }
-    }
-
-    fun syncToBranch(insumoId: String, sucursalId: String, cantidad: Double) {
-        viewModelScope.launch {
-            try {
-                val batch = db.batch()
-                val branchRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId.lowercase()}_$insumoId")
-                batch.set(branchRef, mapOf("cantidadEnBase" to FieldValue.increment(cantidad)), com.google.firebase.firestore.SetOptions.merge())
-                
-                // Tambi�n descontar de global
-                val globalRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
-                batch.set(globalRef, mapOf("cantidadEnBase" to FieldValue.increment(-cantidad)), com.google.firebase.firestore.SetOptions.merge())
-                
-                batch.commit().await()
-            } catch (e: Exception) {
-                android.util.Log.e("SyncInvScreen", "Error sincronizando a sucursal", e)
-            }
-        }
-    }
-}
-
-
-
-

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bocatta.pos.domain.model.ComboProducto
 import com.bocatta.pos.domain.model.ItemCombo
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
@@ -32,8 +33,8 @@ fun TabCombos(
     allProducts: List<SalesInventoryProductV2>,
     onBack: () -> Unit
 ) {
-    val combos by vm.combos.collectAsState()
-    val feedback by vm.mensajeFeedback.collectAsState()
+    val combos by vm.combos.collectAsStateWithLifecycle()
+    val feedback by vm.mensajeFeedback.collectAsStateWithLifecycle()
     val snackbarHost = remember { SnackbarHostState() }
 
     var showDialog by remember { mutableStateOf(false) }

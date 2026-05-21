@@ -6,6 +6,7 @@ import com.bocatta.pos.domain.repository.IRegistroJornadaRepository
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import java.util.Locale
 
 class RegistroJornadaRepository(
     private val dbHelper: OfflineDatabase = OfflineDatabase.getInstance(FirebaseFirestoreProvider.db.app.applicationContext)
@@ -16,28 +17,35 @@ class RegistroJornadaRepository(
     override suspend fun guardar(registro: RegistroJornada): Boolean {
         return try {
             val doc = if (registro.id.isBlank()) firestore.document() else firestore.document(registro.id)
-            val final = registro.copy(id = doc.id)
+            val final = registro.copy(id = doc.id, sucursal = normalizarSucursal(registro.sucursal))
             doc.set(final).await()
             guardarLocal(final)
             true
         } catch (e: Exception) {
             Timber.e(e, "Error guardando registro jornada, guardando offline")
-            guardarLocal(registro.copy(id = registro.id.ifBlank { "offline_${System.currentTimeMillis()}" }))
+            guardarLocal(
+                registro.copy(
+                    id = registro.id.ifBlank { "offline_${System.currentTimeMillis()}" },
+                    sucursal = normalizarSucursal(registro.sucursal)
+                )
+            )
             false
         }
     }
 
     override suspend fun getParticipantes(sucursal: String): List<RegistroJornada> {
+        val sucursalId = normalizarSucursal(sucursal)
         return try {
             val snap = firestore
-                .whereEqualTo("sucursal", sucursal)
-                .whereIn("accion", listOf("inicio_turno", "unirse_turno"))
-                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .whereEqualTo("sucursal", sucursalId)
                 .get().await()
-            snap.documents.mapNotNull { it.toObject(RegistroJornada::class.java)?.copy(id = it.id) }
+            snap.documents
+                .mapNotNull { it.toObject(RegistroJornada::class.java)?.copy(id = it.id) }
+                .filter { it.accion == "inicio_turno" || it.accion == "unirse_turno" }
+                .sortedByDescending { it.timestamp }
         } catch (e: Exception) {
             Timber.e(e, "Error obteniendo participantes")
-            getParticipantesLocal(sucursal)
+            getParticipantesLocal(sucursalId)
         }
     }
 
@@ -73,12 +81,13 @@ class RegistroJornadaRepository(
     }
 
     private fun getParticipantesLocal(sucursal: String): List<RegistroJornada> {
+        val sucursalId = normalizarSucursal(sucursal)
         val list = mutableListOf<RegistroJornada>()
         try {
             val db = dbHelper.readableDatabase
             val cursor = db.rawQuery(
                 "SELECT * FROM registro_jornadas WHERE sucursal = ? AND accion IN ('inicio_turno','unirse_turno') ORDER BY timestamp DESC",
-                arrayOf(sucursal)
+                arrayOf(sucursalId)
             )
             cursor.use { c ->
                 while (c.moveToNext()) {
@@ -98,5 +107,8 @@ class RegistroJornadaRepository(
         }
         return list
     }
+
+    private fun normalizarSucursal(sucursal: String): String =
+        sucursal.trim().lowercase(Locale.ROOT).replace(" ", "_")
 }
 

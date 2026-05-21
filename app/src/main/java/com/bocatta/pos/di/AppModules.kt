@@ -9,6 +9,7 @@ import com.bocatta.pos.data.repository.InventoryRepository
 import com.bocatta.pos.data.repository.MaintenanceRepository
 import com.bocatta.pos.data.repository.PromocionesRepository
 import com.bocatta.pos.data.repository.ReportRepository
+import com.bocatta.pos.data.repository.ThemeRepository
 import com.bocatta.pos.data.repository.ProductRepositoryImpl
 import com.bocatta.pos.data.repository.InventoryRepositoryImpl
 import com.bocatta.pos.domain.repository.IInventoryRepository
@@ -25,6 +26,7 @@ import com.bocatta.pos.presentation.viewmodel.AuditoriaViewModel
 import com.bocatta.pos.presentation.viewmodel.AuthViewModelV2
 import com.bocatta.pos.presentation.viewmodel.CajaViewModel
 import com.bocatta.pos.presentation.viewmodel.ClienteViewModel
+import com.bocatta.pos.presentation.viewmodel.ComprasViewModel
 import com.bocatta.pos.presentation.viewmodel.ConfigNegocioViewModel
 import com.bocatta.pos.presentation.viewmodel.ConfigViewModel
 import com.bocatta.pos.presentation.viewmodel.DashboardBodegaViewModel
@@ -37,11 +39,12 @@ import com.bocatta.pos.presentation.viewmodel.InventarioAdminViewModel
 import com.bocatta.pos.presentation.viewmodel.InventoryAdjustmentViewModelV2
 import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
 import com.bocatta.pos.presentation.viewmodel.MenuViewModel
-import com.bocatta.pos.presentation.viewmodel.PurchasesViewModel
 import com.bocatta.pos.presentation.viewmodel.ReportViewModelV2
 import com.bocatta.pos.presentation.viewmodel.ReportesInventarioViewModel
 import com.bocatta.pos.presentation.viewmodel.SalesViewModelV2
 import com.bocatta.pos.presentation.viewmodel.SessionViewModel
+import com.bocatta.pos.presentation.viewmodel.SyncInventarioViewModel
+import com.bocatta.pos.presentation.viewmodel.ThemeViewModel
 import com.bocatta.pos.data.queue.SQLiteStockAdjustmentQueue
 import com.bocatta.pos.domain.repository.IStockAdjustmentQueue
 import com.bocatta.pos.domain.repository.ISyncErrorRepository
@@ -61,6 +64,7 @@ val appModule = module {
     single { MaintenanceRepository() }
     single { ReportRepository() }
     single { PromocionesRepository() }
+    single { ThemeRepository() }
     single { ProductoRepository() }
     single { DataSeederV2(get()) }       // recibe ProductoRepository inyectado
     single { ConfiguracionRepository() }
@@ -112,7 +116,8 @@ val appModule = module {
     viewModel { ReportesInventarioViewModel() }
     viewModel { InventoryAdjustmentViewModelV2() }
     viewModel { EmployeeViewModelV2(get()) }
-    viewModel { PurchasesViewModel(get()) }
+    viewModel { ComprasViewModel() }
+    viewModel { SyncInventarioViewModel() }
     viewModel { MenuViewModel() }
     viewModel { ConfigViewModel() }
     viewModel { AuditoriaViewModel() }
@@ -120,5 +125,6 @@ val appModule = module {
     viewModel { InventarioAdminViewModel(get()) }
     viewModel { ConfigNegocioViewModel(get()) }
     viewModel { GestionSucursalesViewModel(get(), get()) }  // seeder + productoRepo
+    viewModel { ThemeViewModel(get()) }
 }
 

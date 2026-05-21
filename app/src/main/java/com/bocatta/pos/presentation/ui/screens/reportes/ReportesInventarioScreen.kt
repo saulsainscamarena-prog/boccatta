@@ -41,7 +41,7 @@ fun ReportesInventarioScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item { Text("Consumo �ltimos 7 d�as", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
+                item { Text("Consumo ultimos 7 dias", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
                 
                 item { 
                     Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
@@ -58,11 +58,11 @@ fun ReportesInventarioScreen(onBack: () -> Unit) {
                 
                 item { Spacer(Modifier.height(8.dp)); Text("Alertas de Stock", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
                 
-                items(vm.alertas) { alerta ->
+                items(vm.alertas, key = { it.insumo }) { alerta ->
                     Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Column { Text(alerta.insumo, fontWeight = FontWeight.Bold); Text("Quedan ${alerta.diasRestantes} d�as", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            Surface(color = if (alerta.esCritico) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error, shape = MaterialTheme.shapes.small) { Text("CR�TICO", Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                            Column { Text(alerta.insumo, fontWeight = FontWeight.Bold); Text("Quedan ${alerta.diasRestantes} dias", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            Surface(color = if (alerta.esCritico) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error, shape = MaterialTheme.shapes.small) { Text("CRITICO", Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
                         }
                     }
                 }

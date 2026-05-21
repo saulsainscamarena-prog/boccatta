@@ -56,11 +56,25 @@ class DataSeederV2(
      */
     suspend fun inicializarSucursal(sucursalId: String): Result<Unit> {
         return try {
-            Timber.tag("SEEDER").i("Inicializando sucursal: $sucursalId")
+            val branchId = sucursalId.trim().lowercase().replace(" ", "_")
+            Timber.tag("SEEDER").i("Inicializando sucursal: $branchId")
             val insumos = db.collection(FirestoreCollections.INSUMOS).get().await()
             if (insumos.isEmpty) {
                 return Result.failure(Exception("No hay insumos maestros. Ejecuta inicializarTodoV2 primero."))
             }
+            db.collection(FirestoreCollections.SUCURSALES).document(branchId)
+                .set(mapOf(
+                    "id" to branchId,
+                    "nombre" to branchId.replaceFirstChar { it.uppercase() },
+                    "activa" to true,
+                    "creadaEn" to System.currentTimeMillis()
+                ), SetOptions.merge()).await()
+            db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(branchId)
+                .set(mapOf(
+                    "abierta" to false,
+                    "turnoActivoId" to "",
+                    "ultimaActualizacion" to System.currentTimeMillis()
+                ), SetOptions.merge()).await()
             // Batches de máximo 500 operaciones por límite de Firestore
             val chunks = insumos.documents.chunked(400)
             chunks.forEach { chunk ->
@@ -68,12 +82,12 @@ class DataSeederV2(
                 chunk.forEach { doc ->
                     val insumoId = doc.id
                     val ref = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
-                        .document("${sucursalId}_$insumoId")
+                        .document("${branchId}_$insumoId")
                     // SetOptions.merge() — no sobreescribe si ya tiene stock real
                     batch.set(ref, mapOf(
-                        "id" to "${sucursalId}_$insumoId",
+                        "id" to "${branchId}_$insumoId",
                         "insumoId" to insumoId,
-                        "sucursal" to sucursalId,
+                        "sucursal" to branchId,
                         "cantidadEnBase" to 0.0,
                         "cantidadDisponible" to 0.0,
                         "ultimaActualizacion" to System.currentTimeMillis()
@@ -83,14 +97,14 @@ class DataSeederV2(
             }
             // Crear contador de tickets para la sucursal
             db.collection(FirestoreCollections.CONFIGURACION)
-                .document("contadores_$sucursalId")
+                .document("contadores_$branchId")
                 .set(mapOf(
                     "ultimo_ticket" to 0L,
-                    "sucursal" to sucursalId,
+                    "sucursal" to branchId,
                     "creado" to System.currentTimeMillis()
                 ), SetOptions.merge()).await()
 
-            Timber.tag("SEEDER").i("Sucursal $sucursalId inicializada con ${insumos.size()} insumos")
+            Timber.tag("SEEDER").i("Sucursal $branchId inicializada con ${insumos.size()} insumos")
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.tag("SEEDER").e(e, "Error inicializando sucursal $sucursalId")
@@ -110,7 +124,11 @@ class DataSeederV2(
             Timber.tag("SEEDER").i("Iniciando inicialización completa V2...")
             inicializarInsumos()
             inicializarProductosYRecetasVenta()
+            inicializarCategorias()
+            inicializarCatalogoOpciones()
             inicializarRecetasProduccion()
+            inicializarSucursal("atlixco").getOrThrow()
+            inicializarSucursal("metepec").getOrThrow()
             Timber.tag("SEEDER").i("Inicialización completa V2 finalizada ✓")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -168,6 +186,86 @@ class DataSeederV2(
         Timber.tag("SEEDER").i("${recetas.size} recetas de producción inicializadas")
     }
 
+    private suspend fun inicializarCategorias() {
+        val categorias = listOf("CREPAS_DULCES", "CREPAS_SALADAS", "COMBOS", "POSTRES", "SNACKS", "BEBIDAS")
+        val batch = db.batch()
+        categorias.forEach { categoria ->
+            batch.set(
+                db.collection(FirestoreCollections.CATEGORIAS).document(categoria),
+                mapOf(
+                    "id" to categoria,
+                    "nombre" to categoria,
+                    "activa" to true,
+                    "ultimaActualizacion" to System.currentTimeMillis()
+                ),
+                SetOptions.merge()
+            )
+        }
+        batch.commit().await()
+        Timber.tag("SEEDER").i("${categorias.size} categorias inicializadas")
+    }
+
+    private fun buildCatalogoOpciones(): List<OpcionCatalogo> {
+        fun op(
+            id: String,
+            nombre: String,
+            tipo: TipoCatalogo,
+            premium: Boolean = false,
+            extra: Double = 0.0
+        ) = OpcionCatalogo(
+            id = id,
+            nombre = nombre,
+            tipo = tipo,
+            esPremium = premium,
+            costoExtra = extra,
+            activo = true,
+            defecto = true,
+            creadoEn = System.currentTimeMillis()
+        )
+
+        return listOf(
+            op("base_nutella", "Nutella", TipoCatalogo.BASE_UNTABLE),
+            op("base_lechera", "Lechera", TipoCatalogo.BASE_UNTABLE),
+            op("base_zarzamora", "Zarzamora", TipoCatalogo.BASE_UNTABLE),
+            op("base_mermelada_fresa", "Mermelada de Fresa", TipoCatalogo.BASE_UNTABLE),
+            op("base_philadelphia", "Philadelphia", TipoCatalogo.BASE_UNTABLE),
+            op("top_durazno", "Durazno", TipoCatalogo.TOPPING),
+            op("top_fresa", "Fresa Natural", TipoCatalogo.TOPPING),
+            op("top_coco", "Coco Rayado", TipoCatalogo.TOPPING),
+            op("top_granillo_chocolate", "Granillo Chocolate", TipoCatalogo.TOPPING),
+            op("top_granillo_colores", "Granillo Colores", TipoCatalogo.TOPPING),
+            op("premium_oreo", "Oreo", TipoCatalogo.TOPPING_PREMIUM, premium = true, extra = 10.0),
+            op("premium_bombon", "Bombon", TipoCatalogo.TOPPING_PREMIUM, premium = true, extra = 10.0),
+            op("premium_nuez", "Nuez", TipoCatalogo.TOPPING_PREMIUM, premium = true, extra = 10.0),
+            op("aderezo_bbq", "BBQ", TipoCatalogo.ADEREZO),
+            op("aderezo_buffalo", "Buffalo", TipoCatalogo.ADEREZO),
+            op("aderezo_blue_cheese", "Blue Cheese", TipoCatalogo.ADEREZO),
+            op("aderezo_valentina", "Valentina", TipoCatalogo.ADEREZO),
+            op("aderezo_queso_amarillo", "Queso Amarillo", TipoCatalogo.ADEREZO),
+            op("aderezo_catsup", "Catsup", TipoCatalogo.ADEREZO),
+            op("aderezo_mayonesa", "Mayonesa", TipoCatalogo.ADEREZO),
+            op("frappe_cocoa", "Cocoa", TipoCatalogo.SABOR_FRAPPE),
+            op("frappe_fresa", "Fresa", TipoCatalogo.SABOR_FRAPPE),
+            op("frappe_fresa_cocoa", "Fresa con Cocoa", TipoCatalogo.SABOR_FRAPPE),
+            op("frappe_oreo", "Oreo", TipoCatalogo.SABOR_FRAPPE),
+            op("pres_juntas", "Juntas", TipoCatalogo.PRESENTACION),
+            op("pres_separadas", "Separadas", TipoCatalogo.PRESENTACION)
+        )
+    }
+
+    private suspend fun inicializarCatalogoOpciones() {
+        val opciones = buildCatalogoOpciones()
+        val batch = db.batch()
+        opciones.forEach { opcion ->
+            batch.set(
+                db.collection(FirestoreCollections.CATALOGO_OPCIONES).document(opcion.id),
+                opcion,
+                SetOptions.merge()
+            )
+        }
+        batch.commit().await()
+        Timber.tag("SEEDER").i("${opciones.size} opciones de catalogo inicializadas")
+    }
     // ── RESET DE INVENTARIO ───────────────────────────────────────────────────
 
     /**
@@ -278,6 +376,16 @@ class DataSeederV2(
         InsumoV2("hielo", "Hielo", "Bases", "g", 0.010, 5000.0, 500.0,
             presentacionesCompra = listOf(
                 pres("Bolsa 2 kg", "2 kg", 2000.0, 500.0, 5000.0, 20.0, 10.0, 40.0)
+            )),
+        InsumoV2("agua", "Agua", "Materia Prima", "ml", 0.002, 10000.0, 1000.0,
+            presentacionesCompra = listOf(
+                pres("Litro", "1 L", 1000.0, 500.0, 5000.0, 2.0, 1.0, 10.0),
+                pres("Garrafon 20 L", "20 L", 20000.0, 5000.0, 40000.0, 40.0, 20.0, 80.0)
+            )),
+        InsumoV2("vainilla", "Vainilla", "Materia Prima", "ml", 0.080, 500.0, 50.0,
+            presentacionesCompra = listOf(
+                pres("Botella 120 ml", "120 ml", 120.0, 40.0, 500.0, 10.0, 5.0, 30.0),
+                pres("Botella 500 ml", "500 ml", 500.0, 100.0, 1000.0, 40.0, 20.0, 80.0)
             )),
         // Bases
         InsumoV2("nutella_kg", "Nutella", "Bases", "g", 0.190, 1000.0, 100.0,
@@ -542,7 +650,7 @@ class DataSeederV2(
                 consumiblesAsociados = consumiblesCrepa) to
             RecetaV2("receta_cr_dulce", "Crepa Dulce Individual", "cr_dulce", listOf(
                 ing("masa_crepa", "Masa de Crepa", 1.0, "pz"),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 1.0, "pz"),
                 ing("servilletas", "Servilletas", 1.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
@@ -553,7 +661,7 @@ class DataSeederV2(
                 consumiblesAsociados = consumiblesCrepa) to
             RecetaV2("receta_cr_salada", "Crepa Salada Individual", "cr_salada", listOf(
                 ing("masa_crepa", "Masa de Crepa", 1.0, "pz"),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 1.0, "pz"),
                 ing("servilletas", "Servilletas", 1.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
@@ -561,33 +669,33 @@ class DataSeederV2(
 
             // ── COMBOS ──────────────────────────────────────────────────────
             SalesInventoryProductV2("combo_2d", "Combo 2 Crepas Dulces", "🥞🥞", "Combos",
-                mapOf("atlixco" to 50.0, "metepec" to 40.0), esCombo = true,
+                mapOf("atlixco" to 50.0, "metepec" to 50.0), esCombo = true,
                 recetaId = "receta_combo_2d", consumiblesAsociados = listOf(
                     consumible("charola"), consumible("tenedor", 2.0),
                     consumible("servilletas", 2.0), consumible("papel_hamburguesero"))) to
             RecetaV2("receta_combo_2d", "Combo 2 Dulces", "combo_2d", listOf(
                 ing("masa_crepa", "Masa de Crepa", 2.0, "pz"),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 2.0, "pz"),
                 ing("servilletas", "Servilletas", 2.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
             )),
 
             SalesInventoryProductV2("combo_2s", "Combo 2 Crepas Saladas", "🥪🥪", "Combos",
-                mapOf("atlixco" to 70.0, "metepec" to 60.0), esCombo = true,
+                mapOf("atlixco" to 70.0, "metepec" to 70.0), esCombo = true,
                 recetaId = "receta_combo_2s", consumiblesAsociados = listOf(
                     consumible("charola"), consumible("tenedor", 2.0),
                     consumible("servilletas", 2.0), consumible("papel_hamburguesero"))) to
             RecetaV2("receta_combo_2s", "Combo 2 Saladas", "combo_2s", listOf(
                 ing("masa_crepa", "Masa de Crepa", 2.0, "pz"),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 2.0, "pz"),
                 ing("servilletas", "Servilletas", 2.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
             )),
 
             SalesInventoryProductV2("combo_duo", "Combo Dulce y Salada", "🥞🥪", "Combos",
-                mapOf("atlixco" to 65.0, "metepec" to 55.0), esCombo = true,
+                mapOf("atlixco" to 65.0, "metepec" to 65.0), esCombo = true,
                 recetaId = "receta_combo_duo", consumiblesAsociados = listOf(
                     consumible("charola"), consumible("tenedor", 2.0),
                     consumible("servilletas", 2.0), consumible("papel_hamburguesero")),
@@ -603,7 +711,7 @@ class DataSeederV2(
                 )) to
             RecetaV2("receta_combo_duo", "Combo Dulce y Salada", "combo_duo", listOf(
                 ing("masa_crepa", "Masa de Crepa", 2.0, "pz"),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 2.0, "pz"),
                 ing("servilletas", "Servilletas", 2.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
@@ -660,7 +768,7 @@ class DataSeederV2(
                 consumiblesAsociados = listOf(consumible("charola"), consumible("tenedor"), consumible("servilletas"))) to
             RecetaV2("receta_papas_sencillas", "Papas Sencillas", "s_papas_senc", listOf(
                 ing("papas", "Papas", 200.0),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 1.0, "pz"),
                 ing("servilletas", "Servilletas", 1.0, "pz")
             )),
@@ -671,7 +779,7 @@ class DataSeederV2(
             RecetaV2("receta_papas_chorizo", "Papas con Chorizo", "s_papas_chor", listOf(
                 ing("papas", "Papas", 200.0),
                 ing("chorizo_kg", "Chorizo", 125.0),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 1.0, "pz"),
                 ing("servilletas", "Servilletas", 1.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
@@ -683,19 +791,19 @@ class DataSeederV2(
             RecetaV2("receta_s_boneless", "Boneless Porción", "s_boneless", listOf(
                 ing("boneless", "Boneless", 250.0),
                 ing("papas", "Papas", 200.0),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 1.0, "pz"),
                 ing("servilletas", "Servilletas", 1.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
             )),
 
             SalesInventoryProductV2("s_nuggets", "Nuggets", "🍗", "SNACKS",
-                mapOf("atlixco" to 80.0, "metepec" to 70.0), recetaId = "receta_s_nuggets",
+                mapOf("atlixco" to 80.0, "metepec" to 80.0), recetaId = "receta_s_nuggets",
                 consumiblesAsociados = consumiblesSnack) to
             RecetaV2("receta_s_nuggets", "Nuggets Porción", "s_nuggets", listOf(
                 ing("nuggets", "Nuggets", 200.0),
                 ing("papas", "Papas", 200.0),
-                ing("charola", "Charola", 1.0, "pz"),
+                ing("charola", "Charola Unicel", 1.0, "pz"),
                 ing("tenedor", "Tenedor", 1.0, "pz"),
                 ing("servilletas", "Servilletas", 1.0, "pz"),
                 ing("papel_hamburguesero", "Papel", 1.0, "pz")
@@ -755,10 +863,12 @@ class DataSeederV2(
             ingredientes = listOf(
                 ing("harina_kg", "Harina de Trigo", 2000.0),
                 ing("leche_lt", "Leche Entera", 3000.0, "ml"),
+                ing("agua", "Agua", 1000.0, "ml"),
                 ing("mantequilla_kg", "Mantequilla", 125.0),
                 ing("huevo_pz", "Huevo", 14.0, "pz"),
                 ing("polvora_hornear", "Polvo de Hornear", 5.0),
-                ing("bicarbonato", "Bicarbonato", 5.0)
+                ing("bicarbonato", "Bicarbonato", 5.0),
+                ing("vainilla", "Vainilla", 40.0, "ml")
             )),
         RecetaV2("receta_carlota", "Carlota de Limón (4 porciones)", rendimientoPorcion = 4.0,
             ingredientes = listOf(

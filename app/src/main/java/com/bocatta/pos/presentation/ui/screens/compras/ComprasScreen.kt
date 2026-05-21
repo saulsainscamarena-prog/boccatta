@@ -1,4 +1,4 @@
-package com.bocatta.pos.presentation.ui.screens.compras
+﻿package com.bocatta.pos.presentation.ui.screens.compras
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,24 +17,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
-import com.bocatta.pos.core.constants.FirestoreCollections
-import com.google.firebase.firestore.Query
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+import com.bocatta.pos.domain.model.RegistroCompraV2
+import com.bocatta.pos.presentation.viewmodel.ComprasViewModel
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,10 +32,9 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComprasScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    vm: ComprasViewModel = koinViewModel()
 ) {
-    val vm = remember { ComprasViewModel() }
-    
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
@@ -70,7 +59,7 @@ fun ComprasScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Sin compras registradas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
-                    Text("Las compras aparecer�n aqu�", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), fontSize = 14.sp)
+                    Text("Las compras apareceran aqui", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), fontSize = 14.sp)
                 }
             }
         } else {
@@ -78,7 +67,7 @@ fun ComprasScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(vm.compras) { compra ->
+                items(vm.compras, key = { it.id }) { compra ->
                     ComprasCard(compra)
                 }
             }
@@ -87,7 +76,7 @@ fun ComprasScreen(
 }
 
 @Composable
-private fun ComprasCard(compra: CompraRegistro) {
+private fun ComprasCard(compra: RegistroCompraV2) {
     val fechaFmt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("es-MX")).format(Date(compra.fecha))
     
     ElevatedCard(
@@ -121,50 +110,4 @@ private fun ComprasCard(compra: CompraRegistro) {
         }
     }
 }
-
-data class CompraRegistro(
-    val id: String = "",
-    val insumoId: String = "",
-    val cantidadComprada: Double = 0.0,
-    val precioUnitarioCompra: Double = 0.0,
-    val precioTotal: Double = 0.0,
-    val proveedorId: String = "",
-    val fecha: Long = 0L,
-    val sucursalRecibe: String = ""
-)
-
-class ComprasViewModel : ViewModel() {
-    private val db = FirebaseFirestoreProvider.db
-    var compras = mutableStateListOf<CompraRegistro>()
-    var cargando: Boolean by mutableStateOf(true)
-    
-    init { cargarHistorial() }
-    
-    private fun cargarHistorial() {
-        viewModelScope.launch {
-            try {
-                cargando = true
-                val snap = db.collection(FirestoreCollections.COMPRAS)
-                    .orderBy("fecha", Query.Direction.DESCENDING)
-                    .limit(50).get().await()
-                compras.clear()
-                snap.documents.forEach { doc ->
-                    compras.add(CompraRegistro(
-                        id = doc.id,
-                        insumoId = doc.getString("insumoId") ?: "",
-                        cantidadComprada = doc.getDouble("cantidadComprada") ?: 0.0,
-                        precioUnitarioCompra = doc.getDouble("precioUnitarioCompra") ?: 0.0,
-                        precioTotal = doc.getDouble("precioTotal") ?: 0.0,
-                        proveedorId = doc.getString("proveedorId") ?: "",
-                        fecha = doc.getLong("fecha") ?: 0L,
-                        sucursalRecibe = doc.getString("sucursalRecibe") ?: ""
-                    ))
-                }
-            } catch (e: Exception) { /* handle error */ }
-            finally { cargando = false }
-        }
-    }
-}
-
-
 

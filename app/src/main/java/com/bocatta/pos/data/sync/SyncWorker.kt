@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import com.bocatta.pos.data.local.OfflineDatabase
 import com.bocatta.pos.data.local.VentaOffline
 import com.bocatta.pos.data.local.OperacionOffline
+import com.bocatta.pos.data.repository.StockAllocationRepository
 import com.bocatta.pos.domain.model.StockAdjustmentEntity
 import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.bocatta.pos.domain.repository.IStockAdjustmentQueue
@@ -17,12 +18,17 @@ import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.domain.model.MovementV2
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONException
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
+import java.io.IOException
 
 class SyncWorker(
     context: Context,
@@ -32,11 +38,12 @@ class SyncWorker(
     private val adjustmentQueue: IStockAdjustmentQueue by inject()
     private val inventoryRepo: IInventoryRepository by inject()
     private val syncErrorRepo: ISyncErrorRepository by inject()
+    private val allocationRepo = StockAllocationRepository()
 
 
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         if (!isNetworkAvailable()) {
-            return Result.retry()
+            return@withContext Result.retry()
         }
 
         // Check max retries from input data
@@ -55,7 +62,7 @@ class SyncWorker(
                     stackTrace = "WorkManager runAttemptCount: $runAttemptCount"
                 )
             )
-            return Result.failure()
+            return@withContext Result.failure()
         }
 
         val database = OfflineDatabase.getInstance(applicationContext)
@@ -65,7 +72,7 @@ class SyncWorker(
         if (ventasPendientes.isEmpty() && operacionesPendientes.isEmpty()) {
             // Still check if there are stock adjustments
             val pendingAdjustments = adjustmentQueue.getAllPending()
-            if (pendingAdjustments.isEmpty()) return Result.success()
+            if (pendingAdjustments.isEmpty()) return@withContext Result.success()
         }
 
         var ventasSincronizadas = 0
@@ -74,6 +81,11 @@ class SyncWorker(
         for (venta in ventasPendientes) {
             if (venta.intentos >= VentaOffline.MAX_INTENTOS) {
                 database.marcarVentaFallidaCritica(venta.id, ahora)
+                reportCriticalSaleSyncError(
+                    venta = venta,
+                    error = null,
+                    reason = "Max sale sync attempts exceeded before retry"
+                )
                 continue
             }
 
@@ -82,7 +94,35 @@ class SyncWorker(
                 database.marcarVentaSincronizada(venta.id, ahora)
                 ventasSincronizadas++
             } catch (e: Exception) {
-                database.marcarVentaFallida(venta.id, ahora)
+                if (e is kotlinx.coroutines.CancellationException) throw e
+
+                when (classifySaleSyncFailure(e)) {
+                    SaleSyncFailure.CRITICAL -> {
+                        database.marcarVentaFallidaCritica(venta.id, ahora)
+                        reportCriticalSaleSyncError(
+                            venta = venta,
+                            error = e,
+                            reason = "Critical sale sync failure"
+                        )
+                    }
+                    SaleSyncFailure.TRANSIENT -> {
+                        val nextAttempt = venta.intentos + 1
+                        if (nextAttempt >= VentaOffline.MAX_INTENTOS) {
+                            database.marcarVentaFallidaCritica(venta.id, ahora)
+                            reportCriticalSaleSyncError(
+                                venta = venta,
+                                error = e,
+                                reason = "Transient sale sync failure reached max attempts"
+                            )
+                        } else {
+                            database.registrarIntentoVentaFallido(venta.id, ahora)
+                            Timber.tag("SYNC_WORKER").w(
+                                e,
+                                "Transient sale sync failure for ${venta.id}. Attempt $nextAttempt/${VentaOffline.MAX_INTENTOS}"
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -124,7 +164,7 @@ class SyncWorker(
 
         val pendientesRestantes = database.contarPendientes() + database.obtenerOperacionesPendientes().size
         val queuePending = adjustmentQueue.getAllPending().size
-        return if (pendientesRestantes == 0 && queuePending == 0) Result.success() else Result.retry()
+        if (pendientesRestantes == 0 && queuePending == 0) Result.success() else Result.retry()
     }
 
     private suspend fun sincronizarVenta(venta: VentaOffline) {
@@ -152,9 +192,15 @@ class SyncWorker(
         db.runTransaction { transaction ->
             val recetas = mutableMapOf<Int, List<Map<String, Any?>>>()
             val deducciones = linkedMapOf<String, Double>()
+            val deduccionesPorLinea = mutableMapOf<Int, Map<String, Double>>()
 
             for (i in 0 until items.length()) {
                 val item = items.getJSONObject(i)
+                val linea = linkedMapOf<String, Double>()
+                fun addDeduccion(insumoId: String, cantidad: Double) {
+                    linea[insumoId] = (linea[insumoId] ?: 0.0) + cantidad
+                    deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad
+                }
                 val recetaId = item.optString("recetaId").takeIf { it.isNotBlank() }
                 val ingredientes = recetaId?.let {
                     val recetaSnap = transaction.get(db.collection(FirestoreCollections.RECETAS).document(it))
@@ -166,35 +212,86 @@ class SyncWorker(
                 ingredientes.forEach { ing ->
                     val insumoId = ing["insumoId"] as? String ?: return@forEach
                     val cantidad = (ing["cantidad"] as? Number)?.toDouble() ?: 0.0
-                    deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad * qty
+                    addDeduccion(insumoId, cantidad * qty)
                 }
                 item.optString("base").takeIf { it.isNotBlank() && it != "null" }?.let { base ->
-                    com.bocatta.pos.data.repository.InventoryDeductions.mapearBaseAInsumo(base)?.let { (id, cant) ->
-                        deducciones[id] = (deducciones[id] ?: 0.0) + cant * qty
+                    base.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { baseIndividual ->
+                        com.bocatta.pos.data.repository.InventoryDeductions.mapearBaseAInsumo(baseIndividual)?.let { (id, cant) ->
+                            addDeduccion(id, cant * qty)
+                        }
                     }
                 }
                 val toppings = item.optJSONArray("toppings")
                 if (toppings != null) {
                     for (t in 0 until toppings.length()) {
                         com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(toppings.optString(t))?.let { (id, cant) ->
-                            deducciones[id] = (deducciones[id] ?: 0.0) + cant * qty
+                            addDeduccion(id, cant * qty)
+                        }
+                    }
+                }
+                val aderezos = item.optJSONArray("aderezos")
+                if (aderezos != null) {
+                    for (a in 0 until aderezos.length()) {
+                        com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(aderezos.optString(a))?.let { (id, cant) ->
+                            addDeduccion(id, cant * qty)
                         }
                     }
                 }
                 item.optString("aderezo").takeIf { it.isNotBlank() && it != "null" }?.let { aderezo ->
-                    com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(aderezo)?.let { (id, cant) ->
-                        deducciones[id] = (deducciones[id] ?: 0.0) + cant * qty
+                    com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(aderezo)?.let { (id, cant) -> addDeduccion(id, cant * qty) }
+                }
+                val componentes = item.optJSONArray("componentesCombo")
+                if (componentes != null) {
+                    for (c in 0 until componentes.length()) {
+                        val componente = componentes.getJSONObject(c)
+                        val compQty = componente.optDouble("cantidad", 1.0) * qty
+                        componente.optString("base").takeIf { it.isNotBlank() && it != "null" }?.let { base ->
+                            base.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { baseIndividual ->
+                                com.bocatta.pos.data.repository.InventoryDeductions.mapearBaseAInsumo(baseIndividual)?.let { (id, cant) -> addDeduccion(id, cant * compQty) }
+                            }
+                        }
+                        val compToppings = componente.optJSONArray("toppings")
+                        if (compToppings != null) {
+                            for (t in 0 until compToppings.length()) {
+                                com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(compToppings.optString(t))?.let { (id, cant) -> addDeduccion(id, cant * compQty) }
+                            }
+                        }
+                        val compAderezos = componente.optJSONArray("aderezos")
+                        if (compAderezos != null) {
+                            for (a in 0 until compAderezos.length()) {
+                                com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(compAderezos.optString(a))?.let { (id, cant) -> addDeduccion(id, cant * compQty) }
+                            }
+                        }
                     }
                 }
+                deduccionesPorLinea[i] = linea
             }
 
-            val stockDocs = deducciones.keys.associateWith { insumoId ->
-                transaction.get(db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"))
-            }
+            val idsConCuotaSucursal = allocationRepo.itemsVendibles.toSet()
+            val idsFisicosSucursal = allocationRepo.itemsFisicos.toSet()
+            val branchDocs = deducciones
+                .filterKeys { it in idsConCuotaSucursal }
+                .keys
+                .associateWith { insumoId ->
+                    transaction.get(db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"))
+                }
+            val globalDocs = deducciones
+                .filterKeys { it !in idsFisicosSucursal }
+                .keys
+                .associateWith { insumoId ->
+                    transaction.get(db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId))
+                }
             deducciones.forEach { (insumoId, requerido) ->
-                val snap = stockDocs[insumoId]
-                val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
-                if (actual < requerido) throw IllegalStateException("Stock insuficiente para $insumoId")
+                if (insumoId in idsConCuotaSucursal) {
+                    val snap = branchDocs[insumoId]
+                    val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
+                    if (actual < requerido) throw IllegalStateException("Stock insuficiente para $insumoId en sucursal")
+                }
+                if (insumoId !in idsFisicosSucursal) {
+                    val snap = globalDocs[insumoId]
+                    val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
+                    if (actual < requerido) throw IllegalStateException("Stock insuficiente para $insumoId en bodega central")
+                }
             }
 
             val productos = mutableListOf<Map<String, Any?>>()
@@ -211,21 +308,41 @@ class SyncWorker(
                         "cantidad" to cantidad,
                         "precioUnitario" to item.optDouble("precio", 0.0),
                         "base" to item.optString("base").takeIf { it.isNotBlank() && it != "null" },
-                        "aderezo" to item.optString("aderezo").takeIf { it.isNotBlank() && it != "null" },
+                        "aderezos" to (0 until (item.optJSONArray("aderezos")?.length() ?: 0)).map { idx -> item.optJSONArray("aderezos")?.optString(idx).orEmpty() },
                         "separadas" to item.optBoolean("esSeparado", false),
                         "recetaId" to item.optString("recetaId").takeIf { it.isNotBlank() },
-                        "deducciones" to deducciones
+                        "deducciones" to (deduccionesPorLinea[i] ?: emptyMap<String, Double>())
                     )
                 )
             }
 
             transaction.set(db.collection(FirestoreCollections.VENTAS).document(venta.id), ventaData + mapOf("productos" to productos, "productosIds" to productosIds))
             deducciones.forEach { (insumoId, cantidad) ->
-                transaction.set(
-                    db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"),
-                    mapOf("cantidadEnBase" to com.google.firebase.firestore.FieldValue.increment(-cantidad), "ultimaActualizacion" to System.currentTimeMillis()),
-                    SetOptions.merge()
-                )
+                if (insumoId in idsConCuotaSucursal) {
+                    transaction.set(
+                        db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"),
+                        mapOf(
+                            "id" to "${sucursalId}_$insumoId",
+                            "insumoId" to insumoId,
+                            "sucursal" to sucursalId,
+                            "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "ultimaActualizacion" to System.currentTimeMillis()
+                        ),
+                        SetOptions.merge()
+                    )
+                }
+                if (insumoId !in idsFisicosSucursal) {
+                    transaction.set(
+                        db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId),
+                        mapOf(
+                            "id" to insumoId,
+                            "insumoId" to insumoId,
+                            "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "ultimaActualizacion" to System.currentTimeMillis()
+                        ),
+                        SetOptions.merge()
+                    )
+                }
             }
         }.await()
     }
@@ -260,6 +377,72 @@ class SyncWorker(
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    private enum class SaleSyncFailure {
+        TRANSIENT,
+        CRITICAL
+    }
+
+    private fun classifySaleSyncFailure(error: Exception): SaleSyncFailure {
+        if (error is JSONException) return SaleSyncFailure.CRITICAL
+        if (error is IllegalArgumentException) return SaleSyncFailure.CRITICAL
+        if (error is IOException) return SaleSyncFailure.TRANSIENT
+
+        var current: Throwable? = error
+        var firestoreError: FirebaseFirestoreException? = null
+        while (current != null && firestoreError == null) {
+            if (current is FirebaseFirestoreException) {
+                firestoreError = current
+            }
+            current = current.cause
+        }
+
+        return when (firestoreError?.code) {
+            FirebaseFirestoreException.Code.UNAVAILABLE,
+            FirebaseFirestoreException.Code.DEADLINE_EXCEEDED,
+            FirebaseFirestoreException.Code.ABORTED,
+            FirebaseFirestoreException.Code.CANCELLED,
+            FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED -> SaleSyncFailure.TRANSIENT
+
+            FirebaseFirestoreException.Code.PERMISSION_DENIED,
+            FirebaseFirestoreException.Code.UNAUTHENTICATED,
+            FirebaseFirestoreException.Code.INVALID_ARGUMENT,
+            FirebaseFirestoreException.Code.FAILED_PRECONDITION -> SaleSyncFailure.CRITICAL
+
+            else -> SaleSyncFailure.TRANSIENT
+        }
+    }
+
+    private suspend fun reportCriticalSaleSyncError(
+        venta: VentaOffline,
+        error: Exception?,
+        reason: String
+    ) {
+        val message = buildString {
+            append(reason)
+            append(" for sale ")
+            append(venta.id)
+            error?.message?.takeIf { it.isNotBlank() }?.let {
+                append(": ")
+                append(it)
+            }
+        }
+
+        val reported = syncErrorRepo.reportError(
+            SyncError(
+                deviceId = android.os.Build.ID,
+                timestamp = System.currentTimeMillis(),
+                errorMessage = message,
+                failedSaleIds = listOf(venta.id),
+                appVersion = android.os.Build.VERSION.SDK_INT.toString(),
+                stackTrace = error?.stackTraceToString()
+            )
+        )
+
+        if (!reported) {
+            Timber.tag("SYNC_WORKER").e(error, "Failed to report critical sale sync error for ${venta.id}")
+        }
     }
 }
 

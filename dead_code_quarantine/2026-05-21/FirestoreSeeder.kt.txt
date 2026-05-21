@@ -1,0 +1,14 @@
+package com.bocatta.pos.data
+
+import android.util.Log
+
+/**
+ * Seeder legacy desactivado.
+ * Mantener este stub evita que una llamada vieja vuelva a cargar productos obsoletos
+ * en colecciones V2.
+ */
+object FirestoreSeeder {
+    fun seedV2Collections() {
+        Log.w("FirestoreSeeder", "Seeder legacy desactivado. Usar DataSeederV2.")
+    }
+}

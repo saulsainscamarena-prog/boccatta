@@ -11,8 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bocatta.pos.domain.model.OpcionCatalogo
 import com.bocatta.pos.domain.model.TipoCatalogo
 import com.bocatta.pos.presentation.viewmodel.CatalogoViewModel
@@ -21,11 +23,11 @@ import com.bocatta.pos.presentation.viewmodel.CatalogoViewModel
 @Composable
 fun TabCatalogos(vm: CatalogoViewModel) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabTitles = TipoCatalogo.entries.map { it.name }
+    val tabTitles = TipoCatalogo.entries
     var showDialog by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<OpcionCatalogo?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-    val opciones by vm.opciones.collectAsState()
+    val opciones by vm.opciones.collectAsStateWithLifecycle()
 
     val filtered = if (searchQuery.isBlank()) opciones
     else opciones.filter { it.nombre.lowercase().contains(searchQuery.lowercase()) }
@@ -50,10 +52,18 @@ fun TabCatalogos(vm: CatalogoViewModel) {
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true
             )
-            ScrollableTabRow(selectedTabIndex = selectedTab, edgePadding = 16.dp) {
-                tabTitles.forEachIndexed { i, title ->
+            PrimaryScrollableTabRow(selectedTabIndex = selectedTab, edgePadding = 16.dp) {
+                tabTitles.forEachIndexed { i, tipo ->
                     Tab(selected = selectedTab == i, onClick = { selectedTab = i },
-                        text = { Text(title.replace("_", " "), fontSize = 11.sp, fontWeight = FontWeight.Bold) })
+                        text = {
+                            Text(
+                                labelTipoCatalogo(tipo),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        })
                 }
             }
             val tipoActual = TipoCatalogo.entries[selectedTab]
@@ -152,12 +162,12 @@ private fun DialogoOpcionCatalogo(
                     label = { Text("Nombre*") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
 
                 ExposedDropdownMenuBox(expanded = expandedTipo, onExpandedChange = { expandedTipo = it }) {
-                    OutlinedTextField(value = tipo.name, onValueChange = {}, readOnly = true,
+                    OutlinedTextField(value = labelTipoCatalogo(tipo), onValueChange = {}, readOnly = true,
                         label = { Text("Tipo") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedTipo) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                     ExposedDropdownMenu(expanded = expandedTipo, onDismissRequest = { expandedTipo = false }) {
                         TipoCatalogo.entries.forEach { t ->
-                            DropdownMenuItem(text = { Text(t.name.replace("_", " ")) }, onClick = { tipo = t; expandedTipo = false })
+                            DropdownMenuItem(text = { Text(labelTipoCatalogo(t)) }, onClick = { tipo = t; expandedTipo = false })
                         }
                     }
                 }
@@ -189,6 +199,17 @@ private fun DialogoOpcionCatalogo(
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
         shape = RoundedCornerShape(20.dp)
     )
+}
+
+private fun labelTipoCatalogo(tipo: TipoCatalogo): String = when (tipo) {
+    TipoCatalogo.ADEREZO -> "Aderezos"
+    TipoCatalogo.TOPPING -> "Toppings"
+    TipoCatalogo.TOPPING_PREMIUM -> "Premium"
+    TipoCatalogo.BASE_UNTABLE -> "Bases"
+    TipoCatalogo.SABOR_FRAPPE -> "Frappes"
+    TipoCatalogo.ESPOLVOREADO -> "Espolvoreado"
+    TipoCatalogo.PRESENTACION -> "Presentaciones"
+    TipoCatalogo.EXTRAS -> "Extras"
 }
 
 

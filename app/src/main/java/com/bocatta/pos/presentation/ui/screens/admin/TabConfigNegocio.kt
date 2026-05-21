@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -148,7 +149,7 @@ fun TabConfigNegocio() {
                     MetodoPagoToggle("Transferencia", vm.pagoTransferencia, Icons.Default.AccountBalance) { vm.pagoTransferencia = it }
                     MetodoPagoToggle("Rappi", vm.pagoRappi, Icons.Default.DeliveryDining) { vm.pagoRappi = it }
                     MetodoPagoToggle("Uber Eats", vm.pagoUber, Icons.Default.TwoWheeler) { vm.pagoUber = it }
-                    MetodoPagoToggle("DiDi Food", vm.pagoDidi, Icons.Default.DirectionsBike) { vm.pagoDidi = it }
+                    MetodoPagoToggle("DiDi Food", vm.pagoDidi, Icons.AutoMirrored.Filled.DirectionsBike) { vm.pagoDidi = it }
                 }
             }
 

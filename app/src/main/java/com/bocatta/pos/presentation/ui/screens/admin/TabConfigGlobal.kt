@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.presentation.ui.components.BocattaEmptyState
 import com.bocatta.pos.presentation.viewmodel.ConfigGlobalViewModel
@@ -28,8 +29,8 @@ fun TabConfigGlobal(
     allProducts: List<SalesInventoryProductV2>,
     allCategories: List<CategoriaProducto>
 ) {
-    val grupos by vm.grupos.collectAsState()
-    val feedback by vm.mensajeFeedback.collectAsState()
+    val grupos by vm.grupos.collectAsStateWithLifecycle()
+    val feedback by vm.mensajeFeedback.collectAsStateWithLifecycle()
     val snackbarHost = remember { SnackbarHostState() }
 
     var showDialog by remember { mutableStateOf(false) }
@@ -183,7 +184,7 @@ private fun GrupoConfigCard(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        grupo.type.name.replace("_", " "),
+                        labelConfigType(grupo.type),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -195,7 +196,7 @@ private fun GrupoConfigCard(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        grupo.modoAsignacion.name.replace("_", " "),
+                        labelModoAsignacion(grupo.modoAsignacion),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -240,6 +241,42 @@ private fun contarProductosAfectados(
     return base.count { it.id !in excluidos }
 }
 
+private fun labelConfigType(type: ConfigFieldType): String = when (type) {
+    ConfigFieldType.SINGLE_CHIP -> "Una opcion"
+    ConfigFieldType.MULTI_CHIP -> "Varias opciones rapidas"
+    ConfigFieldType.MULTI_CHECKBOX -> "Varias opciones con casillas"
+    ConfigFieldType.TEXT -> "Texto libre"
+}
+
+private fun ayudaConfigType(type: ConfigFieldType): String = when (type) {
+    ConfigFieldType.SINGLE_CHIP -> "Para elegir una sola base, sabor o presentacion."
+    ConfigFieldType.MULTI_CHIP -> "Para toppings o extras rapidos."
+    ConfigFieldType.MULTI_CHECKBOX -> "Para listas largas donde pueden marcar varias opciones."
+    ConfigFieldType.TEXT -> "Para pedir una nota corta al vender."
+}
+
+private fun labelModoAsignacion(modo: ModoAsignacion): String = when (modo) {
+    ModoAsignacion.GENERAL -> "Todos los productos"
+    ModoAsignacion.POR_CATEGORIA -> "Por categoria"
+    ModoAsignacion.PERSONALIZADO -> "Productos especificos"
+}
+
+private fun labelSource(source: String): String = when (source) {
+    "CATALOGO" -> "Catalogo"
+    else -> "Lista manual"
+}
+
+private fun labelCatalogo(tipo: TipoCatalogo): String = when (tipo) {
+    TipoCatalogo.ADEREZO -> "Aderezos"
+    TipoCatalogo.TOPPING -> "Toppings"
+    TipoCatalogo.TOPPING_PREMIUM -> "Toppings premium"
+    TipoCatalogo.BASE_UNTABLE -> "Bases untables"
+    TipoCatalogo.SABOR_FRAPPE -> "Sabores de frappe"
+    TipoCatalogo.ESPOLVOREADO -> "Espolvoreados"
+    TipoCatalogo.PRESENTACION -> "Presentaciones"
+    TipoCatalogo.EXTRAS -> "Extras"
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun DialogoGrupoConfig(
@@ -267,6 +304,23 @@ private fun DialogoGrupoConfig(
     var busquedaExcluir by remember { mutableStateOf("") }
 
     val isEditing = grupoInicial != null
+    val catalogoSeleccionado = TipoCatalogo.entries.find { it.name == catalogo }
+    val previewGrupo = GrupoConfiguracionGlobal(
+        id = grupoInicial?.id ?: "",
+        key = key.ifBlank { "sin_key" },
+        title = title.ifBlank { "Nuevo grupo" },
+        type = type,
+        modoAsignacion = modoAsignacion,
+        categorias = if (modoAsignacion == ModoAsignacion.POR_CATEGORIA) categorias else emptyList(),
+        productos = if (modoAsignacion == ModoAsignacion.PERSONALIZADO) productos else emptyList(),
+        excluirProductos = excluirProductos,
+        opciones = if (source == "MANUAL") optionsText.split(",").map { it.trim() }.filter { it.isNotBlank() } else emptyList(),
+        source = source,
+        catalogo = catalogoSeleccionado?.name,
+        required = required,
+        multiMax = multiMax.toIntOrNull()
+    )
+    val productosAfectados = contarProductosAfectados(previewGrupo, allProducts)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -284,26 +338,37 @@ private fun DialogoGrupoConfig(
                 OutlinedTextField(
                     value = key, onValueChange = { key = it },
                     label = { Text("Identificador (key)*") },
+                    placeholder = { Text("ej: base, toppings, aderezo") },
                     modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
                 )
 
                 OutlinedTextField(
                     value = title, onValueChange = { title = it },
                     label = { Text("Título visible*") },
+                    placeholder = { Text("ej: Base para crepa") },
                     modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
                 )
 
                 ExposedDropdownMenuBox(expanded = expandedType, onExpandedChange = { expandedType = it }) {
                     OutlinedTextField(
-                        value = type.name.replace("_", " "), onValueChange = {}, readOnly = true,
+                        value = labelConfigType(type), onValueChange = {}, readOnly = true,
                         label = { Text("Tipo de campo") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedType) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(), shape = RoundedCornerShape(12.dp)
                     )
                     ExposedDropdownMenu(expanded = expandedType, onDismissRequest = { expandedType = false }) {
                         ConfigFieldType.entries.forEach { t ->
                             DropdownMenuItem(
-                                text = { Text(t.name.replace("_", " ")) },
+                                text = {
+                                    Column {
+                                        Text(labelConfigType(t), fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            ayudaConfigType(t),
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
                                 onClick = { type = t; expandedType = false }
                             )
                         }
@@ -320,7 +385,7 @@ private fun DialogoGrupoConfig(
                                 if (modo != ModoAsignacion.POR_CATEGORIA) categorias = emptyList()
                                 if (modo != ModoAsignacion.PERSONALIZADO) productos = emptyList()
                             },
-                            label = { Text(modo.name.replace("_", " "), fontSize = 11.sp) },
+                            label = { Text(labelModoAsignacion(modo), fontSize = 11.sp) },
                             leadingIcon = {
                                 if (modoAsignacion == modo) Icon(Icons.Default.Check, "Confirmar", Modifier.size(16.dp))
                             }
@@ -380,12 +445,12 @@ private fun DialogoGrupoConfig(
                     FilterChip(
                         selected = source == "MANUAL",
                         onClick = { source = "MANUAL" },
-                        label = { Text("MANUAL", fontSize = 11.sp) }
+                        label = { Text("Lista manual", fontSize = 11.sp) }
                     )
                     FilterChip(
                         selected = source == "CATALOGO",
                         onClick = { source = "CATALOGO" },
-                        label = { Text("CATÁLOGO", fontSize = 11.sp) }
+                        label = { Text("Catalogo", fontSize = 11.sp) }
                     )
                 }
 
@@ -399,15 +464,15 @@ private fun DialogoGrupoConfig(
                 } else {
                     ExposedDropdownMenuBox(expanded = expandedCatalogo, onExpandedChange = { expandedCatalogo = it }) {
                         OutlinedTextField(
-                            value = catalogo, onValueChange = {}, readOnly = true,
+                            value = catalogoSeleccionado?.let { labelCatalogo(it) } ?: "", onValueChange = {}, readOnly = true,
                             label = { Text("Tipo de catálogo") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedCatalogo) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(), shape = RoundedCornerShape(12.dp)
                         )
                         ExposedDropdownMenu(expanded = expandedCatalogo, onDismissRequest = { expandedCatalogo = false }) {
                             TipoCatalogo.entries.forEach { t ->
                                 DropdownMenuItem(
-                                    text = { Text(t.name.replace("_", " ")) },
+                                    text = { Text(labelCatalogo(t)) },
                                     onClick = { catalogo = t.name; expandedCatalogo = false }
                                 )
                             }
@@ -422,10 +487,30 @@ private fun DialogoGrupoConfig(
 
                 OutlinedTextField(
                     value = multiMax, onValueChange = { multiMax = it.filter { c -> c.isDigit() } },
-                    label = { Text("MultiMax (máximo selecciones)") },
+                    label = { Text("Maximo de selecciones") },
                     modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Vista previa", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(
+                            "${labelConfigType(type)} · ${labelModoAsignacion(modoAsignacion)} · ${labelSource(source)}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text(
+                            "$productosAfectados producto${if (productosAfectados != 1) "s" else ""} afectado${if (productosAfectados != 1) "s" else ""}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
 
                 if (isEditing) {
                     HorizontalDivider()

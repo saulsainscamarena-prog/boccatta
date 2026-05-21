@@ -54,7 +54,7 @@ fun AperturaInventarioScreen(
     LaunchedEffect(Unit) {
         cargando = true
         try {
-            // Intentar cargar con un l�mite de tiempo l�gico (simulado con await)
+            // Intentar cargar con un limite de tiempo logico (simulado con await)
             val configSnap = db.collection(FirestoreCollections.CONFIGURACION).document("apertura_insumos")
                 .collection("items").orderBy("orden").get().await()
 
@@ -81,7 +81,7 @@ fun AperturaInventarioScreen(
                 }
             }
         } catch (e: Exception) {
-            snackbarHost.showSnackbar("Usando configuraci�n de respaldo...")
+            snackbarHost.showSnackbar("Usando configuracion de respaldo...")
             itemsConteo.clear()
             insumosFallback.forEach { (id, nombre) ->
                 itemsConteo.add(ItemConteo(id = id, nombre = nombre, stockSistema = 0.0))
@@ -103,7 +103,7 @@ fun AperturaInventarioScreen(
                 title = { 
                     Column {
                         Text("CARGA DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("AUDITORÍA DE STOCK INICIAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("AUDITORIA DE STOCK INICIAL - ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -200,7 +200,7 @@ fun AperturaInventarioScreen(
                                         val idx = itemsConteo.indexOf(item)
                                         if (idx >= 0) itemsConteo[idx] = item.copy(conteoFisico = nuevo)
                                     },
-                                    label = { Text("CONTEO FÍSICO ACTUAL", fontWeight = FontWeight.Bold) },
+                                    label = { Text("CONTEO FISICO ACTUAL", fontWeight = FontWeight.Bold) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),

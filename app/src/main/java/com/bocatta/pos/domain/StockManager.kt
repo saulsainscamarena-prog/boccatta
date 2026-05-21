@@ -25,7 +25,7 @@ object StockManager {
             if (stockDisponible < cantidadRequerida) {
                 return StockResult.Insuficiente(
                     faltante = cantidadRequerida - stockDisponible,
-                    insumo = ingrediente.nombreInsumo ?: ingrediente.insumoId
+                    insumo = ingrediente.nombreInsumo.ifBlank { ingrediente.insumoId }
                 )
             }
         }

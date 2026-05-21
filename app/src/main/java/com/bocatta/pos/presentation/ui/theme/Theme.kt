@@ -10,16 +10,19 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
+import com.bocatta.pos.domain.model.ThemeConfigV2
 
 @Composable
 fun M3Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    themeConfig: ThemeConfigV2? = null,
     content: @Composable () -> Unit
 ) {
     val colorScheme = getColorScheme(
         darkTheme = darkTheme,
-        dynamicColor = dynamicColor
+        dynamicColor = dynamicColor,
+        themeConfig = themeConfig
     )
 
     val view = androidx.compose.ui.platform.LocalView.current
@@ -44,11 +47,13 @@ fun M3Theme(
 fun BocattaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    themeConfig: ThemeConfigV2? = null,
     content: @Composable () -> Unit
 ) {
     M3Theme(
         darkTheme = darkTheme,
         dynamicColor = dynamicColor,
+        themeConfig = themeConfig,
         content = content
     )
 }

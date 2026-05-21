@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -63,7 +66,7 @@ fun InventoryScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) { 
                             Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                Icon(Icons.Default.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
                             }
                         }
                     },
@@ -87,8 +90,8 @@ fun InventoryScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = onAperturaInventario) { Icon(Icons.Default.Login, "Iniciar sesion", tint = Color.White.copy(0.7f)) }
-                        IconButton(onClick = onCierreInventario) { Icon(Icons.Default.Logout, "Cerrar sesion", tint = Color.White.copy(0.7f)) }
+                        IconButton(onClick = onAperturaInventario) { Icon(Icons.AutoMirrored.Filled.Login, "Iniciar sesion", tint = Color.White.copy(0.7f)) }
+                        IconButton(onClick = onCierreInventario) { Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesion", tint = Color.White.copy(0.7f)) }
                         IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, "Actualizar", tint = MaterialTheme.colorScheme.primary) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
@@ -116,7 +119,7 @@ fun InventoryScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(vm.stockInsumos.keys.toList()) { id ->
+                        items(vm.stockInsumos.keys.toList(), key = { it }) { id ->
                             val cant = vm.stockInsumos[id] ?: 0.0
                             InventoryCardPremium(
                                 nombre = id.replace("_", " ").uppercase(),

@@ -20,6 +20,8 @@ class MaintenanceRepository {
         "auditoria_cancelaciones",
         "mermas",
         "recetas_produccion",
+        "v2_registro_jornadas",
+        "v2_jornadas",
         FirestoreCollections.PRODUCTOS,
         FirestoreCollections.CLIENTES,
         FirestoreCollections.VENTAS,
@@ -28,13 +30,26 @@ class MaintenanceRepository {
         FirestoreCollections.INSUMOS,
         FirestoreCollections.INVENTARIO_GLOBAL,
         FirestoreCollections.INVENTARIO_SUCURSAL,
-        "FirestoreCollections.RECETAS_produccion",
+        FirestoreCollections.MOVIMIENTOS_INVENTARIO,
+        FirestoreCollections.RECETAS_PRODUCCION,
         FirestoreCollections.RECETAS,
         FirestoreCollections.CONFIGURACION,
         FirestoreCollections.CANCELACIONES,
         FirestoreCollections.MERMA_LOGS,
+        FirestoreCollections.COMPRAS,
         FirestoreCollections.PROVEEDORES,
-        FirestoreCollections.COMPRAS_OLD
+        FirestoreCollections.COMPRAS_OLD,
+        FirestoreCollections.CATEGORIAS,
+        FirestoreCollections.CATALOGO_OPCIONES,
+        FirestoreCollections.PRESENTACIONES,
+        FirestoreCollections.PROMOCIONES,
+        FirestoreCollections.DISCOUNTS,
+        FirestoreCollections.TURNOS_CAJA,
+        FirestoreCollections.DEVOLUCIONES,
+        FirestoreCollections.SUCURSAL_CONFIG,
+        FirestoreCollections.APERTURAS,
+        FirestoreCollections.INVENTORY_OPENINGS,
+        FirestoreCollections.INVENTORY_CLOSURES
     )
 
     suspend fun purgaTotal(): Result<Unit> {
@@ -54,7 +69,7 @@ class MaintenanceRepository {
         
         if (snapshot.isEmpty) return
 
-        // Firestore permite batches de m·ximo 500 documentos
+        // Firestore permite batches de m√°ximo 500 documentos
         val chunks = snapshot.documents.chunked(500)
         for (chunk in chunks) {
             val batch = db.batch()
@@ -66,7 +81,7 @@ class MaintenanceRepository {
     }
 
     /**
-     * Prepara la estructura base para la V2 creando documentos semilla vacÌos
+     * Prepara la estructura base para la V2 creando documentos semilla vac√≠os
      * si fuera necesario, o simplemente asegurando que las colecciones existan.
      */
     suspend fun inicializarEstructuraV2() {

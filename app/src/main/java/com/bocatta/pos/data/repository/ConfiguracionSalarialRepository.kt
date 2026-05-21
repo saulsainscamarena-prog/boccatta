@@ -12,13 +12,17 @@ class ConfiguracionSalarialRepository : ISalarioRepository {
     private val pagosCol = FirebaseFirestoreProvider.db.collection("v2_pagos")
 
     override suspend fun getConfiguracion(empleadoId: String): ConfiguracionSalarial? = try {
-        val snap = configCol.whereEqualTo("empleadoId", empleadoId).limit(1).get().await()
-        snap.documents.firstOrNull()?.toObject(ConfiguracionSalarial::class.java)
+        val directSnap = configCol.document(empleadoId).get().await()
+        if (directSnap.exists()) {
+            directSnap.toObject(ConfiguracionSalarial::class.java)
+        } else {
+            val snap = configCol.whereEqualTo("empleadoId", empleadoId).limit(1).get().await()
+            snap.documents.firstOrNull()?.toObject(ConfiguracionSalarial::class.java)
+        }
     } catch (e: Exception) { Timber.e(e, "Error getConfiguracion"); null }
 
     override suspend fun guardarConfiguracion(config: ConfiguracionSalarial): Boolean = try {
-        val doc = configCol.document()
-        doc.set(config).await(); true
+        configCol.document(config.empleadoId).set(config).await(); true
     } catch (e: Exception) { Timber.e(e, "Error guardarConfiguracion"); false }
 
     override suspend fun getPagos(empleadoId: String): List<RegistroPago> = try {

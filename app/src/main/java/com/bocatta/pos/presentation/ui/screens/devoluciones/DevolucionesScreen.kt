@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +56,7 @@ fun DevolucionesScreen(
                 title = { 
                     Column {
                         Text("DEVOLUCIONES Y CANCELACIONES", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Black, fontSize = 16.sp)
-                        Text(if (esAdmin) "GESTI�N DE AUDITOR�A" else "SOLICITAR REEMBOLSO", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                        Text(if (esAdmin) "GESTION DE AUDITORIA" else "SOLICITAR REEMBOLSO", color = Color.White.copy(0.7f), fontSize = 10.sp)
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White) } },
@@ -91,7 +92,8 @@ private fun AdminDevolucionesContent(vm: DevolucionViewModel, padding: PaddingVa
 
 @Composable
 private fun SolicitudCard(solicitud: SolicitudDevolucion, onAprobar: () -> Unit, onRechazar: () -> Unit) {
-    val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
+    val locale = LocalLocale.current.platformLocale
+    val sdf = remember(locale) { SimpleDateFormat("dd/MM HH:mm", locale) }
     ElevatedCard(shape = RoundedCornerShape(20.dp), colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -115,6 +117,7 @@ private fun SolicitudCard(solicitud: SolicitudDevolucion, onAprobar: () -> Unit,
 
 @Composable
 private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionViewModel, padding: PaddingValues) {
+    val locale = LocalLocale.current.platformLocale
     var ventaSeleccionada by remember { mutableStateOf<VentaV2?>(null) }
     var motivoInput by remember { mutableStateOf("") }
     var mostrarDialog by remember { mutableStateOf(false) }
@@ -126,14 +129,14 @@ private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionV
     if (mostrarDialog) {
         AlertDialog(
             onDismissRequest = { mostrarDialog = false },
-            title = { Text("Solicitar Devoluci�n", fontWeight = FontWeight.Black) },
+            title = { Text("Solicitar Devolucion", fontWeight = FontWeight.Black) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Monto: $${"%.2f".format(venta.total)}", fontWeight = FontWeight.Bold)
-                    OutlinedTextField(value = motivoInput, onValueChange = { motivoInput = it }, label = { Text("Justificaci�n obligatoria") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = motivoInput, onValueChange = { motivoInput = it }, label = { Text("Justificacion obligatoria") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                 }
             },
-            confirmButton = { Button(onClick = { vm.solicitarDevolucion(venta, motivoInput, session.nombreUsuario); mostrarDialog = false; motivoInput = ""; ventaSeleccionada = null }, enabled = motivoInput.isNotBlank()) { Text("Enviar para Revisi�n") } },
+            confirmButton = { Button(onClick = { vm.solicitarDevolucion(venta, motivoInput, session.nombreUsuario); mostrarDialog = false; motivoInput = ""; ventaSeleccionada = null }, enabled = motivoInput.isNotBlank()) { Text("Enviar para Revision") } },
             dismissButton = { TextButton(onClick = { mostrarDialog = false }) { Text("Cancelar") } }
         )
     }
@@ -150,7 +153,7 @@ private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionV
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(ventasFiltradas, key = { it.id }) { venta ->
-                    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    val sdf = remember(locale) { SimpleDateFormat("HH:mm", locale) }
                     ElevatedCard(shape = RoundedCornerShape(16.dp), onClick = { ventaSeleccionada = venta; mostrarDialog = true }, colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {

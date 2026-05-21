@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,8 +41,13 @@ fun GastosScreen(
     var monto by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("Insumo") }
     var cantidadSurtida by remember { mutableStateOf("1") }
+    var cantidadComprada by remember { mutableStateOf("1") }
+    var contenidoPorUnidad by remember { mutableStateOf("") }
+    var presentacionSeleccionada by remember { mutableStateOf<String?>(null) }
+    var expandedPresentacion by remember { mutableStateOf(false) }
     var insumoSeleccionado by remember { mutableStateOf<InsumoV2?>(null) }
     var expandedCat by remember { mutableStateOf(false) }
+    var expandedInsumo by remember { mutableStateOf(false) }
 
     val categoriasGasto = listOf("Insumo", "Servicios", "Sueldos", "Renta", "Mantenimiento", "Otros")
     val snackbarHost = remember { SnackbarHostState() }
@@ -95,10 +101,17 @@ fun GastosScreen(
                                             insumoSeleccionado = null
                                             concepto = ""
                                             categoria = "Insumo"
+                                            presentacionSeleccionada = null
+                                            cantidadComprada = "1"
+                                            contenidoPorUnidad = ""
                                         } else {
                                             insumoSeleccionado = insumo
                                             concepto = "Compra de ${insumo.nombre}"
                                             categoria = "Insumo"
+                                            val primera = insumo.presentacionesCompra.firstOrNull()
+                                            presentacionSeleccionada = primera?.nombre
+                                            cantidadComprada = "1"
+                                            contenidoPorUnidad = primera?.contenidoSugerido?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: ""
                                         }
                                     },
                                     label = { Text(insumo.nombre.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black) },
@@ -130,16 +143,89 @@ fun GastosScreen(
                         border = BorderStroke(1.dp, Color.White.copy(0.1f))
                     ) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            if (categoria == "Insumo") {
+                                ExposedDropdownMenuBox(expanded = expandedInsumo, onExpandedChange = { expandedInsumo = it }) {
+                                    OutlinedTextField(
+                                        value = insumoSeleccionado?.nombre ?: "Selecciona insumo",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Insumo comprado") },
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedInsumo) },
+                                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp)
+                                    )
+                                    ExposedDropdownMenu(expanded = expandedInsumo, onDismissRequest = { expandedInsumo = false }) {
+                                        vm.insumosDisponibles.forEach { insumo ->
+                                            DropdownMenuItem(
+                                                text = { Text("${insumo.nombre} (${insumo.unidadBase})") },
+                                                onClick = {
+                                                    insumoSeleccionado = insumo
+                                                    concepto = "Compra de ${insumo.nombre}"
+                                                    val primera = insumo.presentacionesCompra.firstOrNull()
+                                                    presentacionSeleccionada = primera?.nombre
+                                                    cantidadComprada = "1"
+                                                    contenidoPorUnidad = primera?.contenidoSugerido?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: ""
+                                                    expandedInsumo = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
                             if (insumoSeleccionado != null) {
-                                OutlinedTextField(
-                                    value = cantidadSurtida,
-                                    onValueChange = { cantidadSurtida = it },
-                                    label = { Text("Cantidad surtida (${insumoSeleccionado!!.unidadBase})") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                    shape = RoundedCornerShape(14.dp),
-                                    leadingIcon = { Icon(Icons.Default.Inventory2, "Inventario", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
-                                )
+                                val insumo = insumoSeleccionado!!
+                                val presentaciones = insumo.presentacionesCompra
+                                if (presentaciones.isNotEmpty()) {
+                                    ExposedDropdownMenuBox(expanded = expandedPresentacion, onExpandedChange = { expandedPresentacion = it }) {
+                                        OutlinedTextField(
+                                            value = presentacionSeleccionada ?: "Selecciona presentación",
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = { Text("Presentación") },
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPresentacion) },
+                                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                        ExposedDropdownMenu(expanded = expandedPresentacion, onDismissRequest = { expandedPresentacion = false }) {
+                                            presentaciones.forEach { pres ->
+                                                DropdownMenuItem(
+                                                    text = { Text("${pres.nombre} - ${pres.descripcion}") },
+                                                    onClick = {
+                                                        presentacionSeleccionada = pres.nombre
+                                                        contenidoPorUnidad = if (pres.contenidoSugerido % 1.0 == 0.0) pres.contenidoSugerido.toLong().toString() else pres.contenidoSugerido.toString()
+                                                        expandedPresentacion = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    OutlinedTextField(
+                                        value = cantidadComprada,
+                                        onValueChange = { cantidadComprada = it },
+                                        label = { Text("Cantidad") },
+                                        modifier = Modifier.weight(0.35f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                        shape = RoundedCornerShape(14.dp),
+                                        singleLine = true
+                                    )
+                                    OutlinedTextField(
+                                        value = contenidoPorUnidad,
+                                        onValueChange = { contenidoPorUnidad = it },
+                                        label = { Text("Contenido (${insumo.unidadBase})") },
+                                        modifier = Modifier.weight(0.65f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                        shape = RoundedCornerShape(14.dp),
+                                        singleLine = true,
+                                        leadingIcon = { Icon(Icons.Default.Inventory2, "Inventario", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
+                                    )
+                                }
+                                val totalSurtido = (cantidadComprada.toDoubleOrNull() ?: 0.0) * (contenidoPorUnidad.toDoubleOrNull() ?: 0.0)
+                                if (totalSurtido > 0.0) {
+                                    Text("Se agregan ${"%.2f".format(totalSurtido)} ${insumo.unidadBase}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                }
                             }
 
                             ExposedDropdownMenuBox(expanded = expandedCat, onExpandedChange = { expandedCat = it }) {
@@ -188,26 +274,40 @@ fun GastosScreen(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                             )
 
+                            val descripcionFinal = concepto.ifBlank { insumoSeleccionado?.let { "Compra de ${it.nombre}" } ?: "" }
+                            val totalCompraInsumo = (cantidadComprada.toDoubleOrNull() ?: 0.0) * (contenidoPorUnidad.toDoubleOrNull() ?: 0.0)
+                            val compraInsumoValida = insumoSeleccionado == null || totalCompraInsumo > 0.0
                             BocattaButton(
                                 texto = if (insumoSeleccionado != null) "Surtir y registrar" else "Registrar gasto",
                                 onClick = {
+                                    val totalSurtido = if (insumoSeleccionado != null) {
+                                        (cantidadComprada.toDoubleOrNull() ?: 0.0) * (contenidoPorUnidad.toDoubleOrNull() ?: 0.0)
+                                    } else {
+                                        cantidadSurtida.toDoubleOrNull() ?: 0.0
+                                    }
                                     vm.registrarGastoIndustrial(
-                                        descripcion = concepto,
+                                        descripcion = descripcionFinal,
                                         monto = monto.toDoubleOrNull() ?: 0.0,
                                         categoria = categoria,
                                         sucursal = session.sucursalActual,
                                         usuarioId = session.nombreUsuario,
                                         insumoId = insumoSeleccionado?.id,
-                                        cantidadSurtida = cantidadSurtida.toDoubleOrNull() ?: 0.0
+                                        cantidadSurtida = totalSurtido,
+                                        presentacionCompra = presentacionSeleccionada,
+                                        cantidadComprada = cantidadComprada.toDoubleOrNull() ?: 0.0,
+                                        contenidoPorUnidad = contenidoPorUnidad.toDoubleOrNull() ?: 0.0
                                     )
                                     concepto = ""
                                     monto = ""
                                     insumoSeleccionado = null
                                     cantidadSurtida = "1"
+                                    cantidadComprada = "1"
+                                    contenidoPorUnidad = ""
+                                    presentacionSeleccionada = null
                                     categoria = "Insumo"
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                enabled = !vm.cargando && monto.isNotBlank() && concepto.isNotBlank(),
+                                enabled = !vm.cargando && monto.isNotBlank() && descripcionFinal.isNotBlank() && compraInsumoValida,
                                 cargando = vm.cargando,
                                 icono = if (insumoSeleccionado != null) Icons.Default.AddShoppingCart else Icons.Default.AddCircle
                             )
@@ -237,7 +337,7 @@ fun GastosScreen(
                 if (vm.gastos.isEmpty()) {
                     item {
                         BocattaEmptyState(
-                            icono = Icons.Default.ReceiptLong,
+                            icono = Icons.AutoMirrored.Filled.ReceiptLong,
                             titulo = "Sin registros hoy",
                             descripcion = "Los gastos del día aparecerán aquí",
                             modifier = Modifier.fillMaxWidth()

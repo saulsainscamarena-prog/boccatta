@@ -1,6 +1,8 @@
 package com.bocatta.pos.presentation.ui.theme
 
+import android.annotation.SuppressLint
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
@@ -10,6 +12,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.bocatta.pos.domain.model.ThemeConfigV2
+import kotlin.math.roundToInt
 
 private val m3Primary = mapOf(
     0 to Color(0xFF000000), 10 to Color(0xFF1B5E20),
@@ -138,17 +142,114 @@ val DarkColorScheme = darkColorScheme(
 @Composable
 fun getColorScheme(
     darkTheme: Boolean,
-    dynamicColor: Boolean
+    dynamicColor: Boolean,
+    themeConfig: ThemeConfigV2? = null
 ): ColorScheme {
+    if (themeConfig?.enabled == true) {
+        return buildCustomColorScheme(themeConfig, darkTheme)
+    }
     if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val context = LocalContext.current
-        return if (darkTheme) dynamicDarkColorScheme(context)
-        else dynamicLightColorScheme(context)
+        return dynamicPlatformColorScheme(darkTheme)
     }
     return if (darkTheme) DarkColorScheme else LightColorScheme
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@SuppressLint("NewApi")
+@Composable
+private fun dynamicPlatformColorScheme(darkTheme: Boolean): ColorScheme {
+    val context = LocalContext.current
+    return if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 }
 
 // Aliases para retrocompatibilidad durante la migración
 val BocattaLightColorScheme get() = LightColorScheme
 val BocattaDarkColorScheme get() = DarkColorScheme
 @Composable fun getBocattaColorScheme(darkTheme: Boolean, dynamicColor: Boolean) = getColorScheme(darkTheme, dynamicColor)
+
+fun previewCustomColorScheme(config: ThemeConfigV2, darkTheme: Boolean = true): ColorScheme {
+    return buildCustomColorScheme(config.copy(enabled = true), darkTheme)
+}
+
+private fun buildCustomColorScheme(config: ThemeConfigV2, darkTheme: Boolean): ColorScheme {
+    val primary = parseHexColor(config.primaryHex) ?: parseHexColor("#FFB394")!!
+    val secondary = parseHexColor(config.secondaryHex) ?: parseHexColor("#5B4035")!!
+    val tertiary = parseHexColor(config.tertiaryHex) ?: parseHexColor("#F2C078")!!
+
+    return if (darkTheme) {
+        DarkColorScheme.copy(
+            primary = lighten(primary, 0.30f),
+            onPrimary = readableOn(lighten(primary, 0.30f)),
+            primaryContainer = darken(primary, 0.45f),
+            onPrimaryContainer = lighten(primary, 0.72f),
+            secondary = lighten(secondary, 0.34f),
+            onSecondary = readableOn(lighten(secondary, 0.34f)),
+            secondaryContainer = darken(secondary, 0.35f),
+            onSecondaryContainer = lighten(secondary, 0.78f),
+            tertiary = lighten(tertiary, 0.26f),
+            onTertiary = readableOn(lighten(tertiary, 0.26f)),
+            tertiaryContainer = darken(tertiary, 0.40f),
+            onTertiaryContainer = lighten(tertiary, 0.74f),
+            surfaceTint = lighten(primary, 0.30f),
+            inversePrimary = darken(primary, 0.10f)
+        )
+    } else {
+        LightColorScheme.copy(
+            primary = darken(primary, 0.10f),
+            onPrimary = readableOn(darken(primary, 0.10f)),
+            primaryContainer = lighten(primary, 0.72f),
+            onPrimaryContainer = darken(primary, 0.58f),
+            secondary = darken(secondary, 0.08f),
+            onSecondary = readableOn(darken(secondary, 0.08f)),
+            secondaryContainer = lighten(secondary, 0.76f),
+            onSecondaryContainer = darken(secondary, 0.58f),
+            tertiary = darken(tertiary, 0.10f),
+            onTertiary = readableOn(darken(tertiary, 0.10f)),
+            tertiaryContainer = lighten(tertiary, 0.70f),
+            onTertiaryContainer = darken(tertiary, 0.58f),
+            surfaceTint = darken(primary, 0.10f),
+            inversePrimary = lighten(primary, 0.34f)
+        )
+    }
+}
+
+fun parseHexColor(value: String): Color? {
+    val clean = value.trim().removePrefix("#")
+    if (!Regex("^[0-9a-fA-F]{6}$").matches(clean)) return null
+    val argb = 0xFF000000 or clean.toLong(16)
+    return Color(argb)
+}
+
+fun colorToHex(color: Color): String {
+    val r = (color.red * 255).roundToInt().coerceIn(0, 255)
+    val g = (color.green * 255).roundToInt().coerceIn(0, 255)
+    val b = (color.blue * 255).roundToInt().coerceIn(0, 255)
+    return "#%02X%02X%02X".format(r, g, b)
+}
+
+private fun readableOn(color: Color): Color {
+    return if (relativeLuminance(color) > 0.48f) Color(0xFF1F1A17) else Color.White
+}
+
+private fun lighten(color: Color, amount: Float): Color = mix(color, Color.White, amount)
+private fun darken(color: Color, amount: Float): Color = mix(color, Color.Black, amount)
+
+private fun mix(start: Color, end: Color, amount: Float): Color {
+    val a = amount.coerceIn(0f, 1f)
+    return Color(
+        red = start.red + (end.red - start.red) * a,
+        green = start.green + (end.green - start.green) * a,
+        blue = start.blue + (end.blue - start.blue) * a,
+        alpha = 1f
+    )
+}
+
+private fun relativeLuminance(color: Color): Float {
+    fun channel(v: Float): Float {
+        return if (v <= 0.03928f) v / 12.92f else {
+            val adjusted = (v + 0.055f) / 1.055f
+            adjusted * adjusted * adjusted
+        }
+    }
+    return 0.2126f * channel(color.red) + 0.7152f * channel(color.green) + 0.0722f * channel(color.blue)
+}

@@ -4,10 +4,12 @@ import com.bocatta.pos.data.local.OfflineDatabase
 import com.bocatta.pos.domain.model.IngredienteReceta
 import com.bocatta.pos.domain.model.InsumoV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
+import com.bocatta.pos.domain.model.RecetaV2
 import com.bocatta.pos.domain.model.RegistroCompraV2
 import com.google.firebase.firestore.FieldValue
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Transaction
 import com.google.firebase.firestore.WriteBatch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
@@ -104,7 +106,7 @@ class InventoryRepository(
         val db = offlineDb?.writableDatabase ?: return
         db.execSQL(
             "UPDATE ${OfflineDatabase.TABLE_INSUMOS} SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
-            arrayOf(cantidad, insumoId)
+            arrayOf<Any>(cantidad, insumoId)
         )
     }
 
@@ -113,7 +115,7 @@ class InventoryRepository(
         val db = offlineDb?.writableDatabase ?: return
         db.execSQL(
             "UPDATE ${OfflineDatabase.TABLE_INSUMOS} SET cantidadEnBase = cantidadEnBase + ? WHERE id = ?",
-            arrayOf(cantidad, insumoId)
+            arrayOf<Any>(cantidad, insumoId)
         )
     }
 
@@ -148,9 +150,10 @@ class InventoryRepository(
         base: String? = null,
         aderezos: List<String> = emptyList(),
         esSeparado: Boolean = false,
-        cantidad: Int = 1
+        cantidad: Int = 1,
+        componentes: List<ItemCarritoV2> = emptyList()
     ): Boolean {
-        val deducciones = calcularDeduccionesVentaOffline(productoId, recetaId, toppings, base, aderezos, esSeparado, cantidad)
+        val deducciones = calcularDeduccionesVentaOffline(productoId, recetaId, toppings, base, aderezos, esSeparado, cantidad, componentes)
         if (!validarStockLocal(deducciones)) {
             Timber.tag("INVENTORY").w("Stock insuficiente para $productoId")
             return false
@@ -160,6 +163,19 @@ class InventoryRepository(
         return true
     }
 
+    fun calcularDeduccionesItemOffline(item: ItemCarritoV2): Map<String, Double> {
+        return calcularDeduccionesVentaOffline(
+            productoId = item.producto.id,
+            recetaId = item.producto.recetaId,
+            toppings = item.toppings,
+            base = item.base,
+            aderezos = item.aderezos,
+            esSeparado = item.esSeparado,
+            cantidad = item.cantidad,
+            componentes = item.componentesCombo
+        )
+    }
+
     private fun calcularDeduccionesVentaOffline(
         productoId: String,
         recetaId: String?,
@@ -167,7 +183,8 @@ class InventoryRepository(
         base: String?,
         aderezos: List<String>,
         esSeparado: Boolean,
-        cantidad: Int
+        cantidad: Int,
+        componentes: List<ItemCarritoV2> = emptyList()
     ): Map<String, Double> {
         val db = offlineDb ?: return emptyMap()
         val producto = db.obtenerProductoPorId(productoId) ?: return emptyMap()
@@ -179,7 +196,8 @@ class InventoryRepository(
             base = base,
             aderezos = aderezos,
             toppings = toppings,
-            esSeparado = esSeparado
+            esSeparado = esSeparado,
+            componentesCombo = componentes
         )
         return InventoryDeductions.calcularParaItem(item, receta?.ingredientes ?: emptyList())
     }
@@ -193,47 +211,76 @@ class InventoryRepository(
     suspend fun registrarProduccion(
         insumoId: String,
         porcionesObtenidas: Double,
-        tandasPreparadas: Double, // Ahora representa 'tandas'
+        tandasPreparadas: Double,
         sobranteAnterior: Double,
         sucursal: String
     ): Boolean {
         return try {
             val sucursalId = sucursal.lowercase()
-            val batch = firestore.batch()
-            
-            // 1. Añadir porciones a la sucursal
-            batch.set(
-                firestore.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"),
-                mapOf(
-                    "id" to "${sucursalId}_$insumoId",
-                    "insumoId" to insumoId,
-                    "sucursal" to sucursalId,
-                    "cantidadEnBase" to FieldValue.increment(porcionesObtenidas),
-                    "ultimaActualizacion" to System.currentTimeMillis()
-                ),
-                SetOptions.merge()
-            )
+            val produccionId = firestore.collection(FirestoreCollections.MOVIMIENTOS_INVENTARIO).document().id
+            firestore.runTransaction { transaction ->
+                val now = System.currentTimeMillis()
+                val receta = recetaProduccionIdPara(insumoId)?.let { recetaId ->
+                    val recetaRef = firestore.collection(FirestoreCollections.RECETAS_PRODUCCION).document(recetaId)
+                    transaction.get(recetaRef).toObject(RecetaV2::class.java)
+                }
+                val deducciones = receta?.ingredientes
+                    ?.fold(linkedMapOf<String, Double>()) { acc, ing ->
+                        val cantidadBase = InventoryDeductions.convertirAUnidadBase(ing.cantidad, ing.unidad) * tandasPreparadas
+                        acc[ing.insumoId] = (acc[ing.insumoId] ?: 0.0) + cantidadBase
+                        acc
+                    }
+                    ?: emptyMap()
 
-            // 2. Descontar ingredientes de Bodega Central (Global)
-            val deducciones = InventoryDeductions.getProductionDeductions(insumoId, tandasPreparadas)
-            deducciones.forEach { (ingId, cant) ->
-                batch.set(
-                    firestore.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(ingId),
+                val stockRefs = deducciones.keys.associateWith {
+                    firestore.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(it)
+                }
+                val stockSnapshots = stockRefs.mapValues { (_, ref) -> transaction.get(ref) }
+                deducciones.forEach { (ingId, requerido) ->
+                    val snap = stockSnapshots.getValue(ingId)
+                    val disponible = snap.getDouble("cantidadEnBase")
+                        ?: snap.getDouble("cantidadDisponible")
+                        ?: 0.0
+                    if (disponible < requerido) {
+                        throw IllegalStateException("Stock insuficiente en bodega para $ingId: $disponible < $requerido")
+                    }
+                }
+
+                val finishedRef = firestore.collection(FirestoreCollections.INVENTARIO_GLOBAL)
+                    .document(insumoId)
+                transaction.set(
+                    finishedRef,
                     mapOf(
-                        "cantidadEnBase" to FieldValue.increment(-cant),
-                        "ultimaActualizacion" to System.currentTimeMillis()
+                        "id" to insumoId,
+                        "insumoId" to insumoId,
+                        "cantidadEnBase" to FieldValue.increment(porcionesObtenidas),
+                        "sobranteAnterior" to sobranteAnterior,
+                        "ultimaActualizacion" to now
                     ),
                     SetOptions.merge()
                 )
-                registrarMovimiento(batch, "consumo_produccion", ingId, -cant, "global", "sistema", null)
-            }
 
-            registrarMovimiento(batch, "produccion", insumoId, porcionesObtenidas, sucursalId, "sistema", null)
-            batch.commit().await()
-            Timber.tag("PRODUCTION").i("Producción registrada: $insumoId +$porcionesObtenidas en $sucursalId")
+                deducciones.forEach { (ingId, cant) ->
+                    transaction.set(
+                        stockRefs.getValue(ingId),
+                        mapOf(
+                            "id" to ingId,
+                            "insumoId" to ingId,
+                            "cantidadEnBase" to FieldValue.increment(-cant),
+                            "ultimaActualizacion" to now
+                        ),
+                        SetOptions.merge()
+                    )
+                    registrarMovimiento(transaction, "consumo_produccion", ingId, -cant, "global", "sistema", produccionId, now)
+                }
+
+                registrarMovimiento(transaction, "produccion", insumoId, porcionesObtenidas, "global", "sistema", produccionId, now)
+                null
+            }.await()
+            Timber.tag("PRODUCTION").i("Produccion registrada: $insumoId +$porcionesObtenidas en bodega central")
             true
         } catch (e: Exception) {
-            Timber.tag("PRODUCTION").e(e, "Error al registrar producción")
+            Timber.tag("PRODUCTION").e(e, "Error al registrar produccion")
             false
         }
     }
@@ -360,6 +407,41 @@ class InventoryRepository(
                 "fecha" to System.currentTimeMillis()
             )
         )
+    }
+
+    private fun registrarMovimiento(
+        transaction: Transaction,
+        tipo: String,
+        insumoId: String,
+        cantidad: Double,
+        sucursal: String,
+        usuarioId: String,
+        referenciaId: String?,
+        fecha: Long = System.currentTimeMillis()
+    ) {
+        val ref = firestore.collection(FirestoreCollections.MOVIMIENTOS_INVENTARIO).document()
+        transaction.set(
+            ref,
+            mapOf(
+                "id" to ref.id,
+                "tipo" to tipo,
+                "insumoId" to insumoId,
+                "cantidadEnBase" to cantidad,
+                "sucursal" to sucursal.lowercase(),
+                "usuarioId" to usuarioId,
+                "referenciaId" to referenciaId,
+                "fecha" to fecha
+            )
+        )
+    }
+
+    private fun recetaProduccionIdPara(insumoId: String): String? = when (insumoId) {
+        "masa_crepa" -> "receta_masa_crepa"
+        "carlota_unidad" -> "receta_carlota"
+        "tiramisu_unidad" -> "receta_tiramisu"
+        "fresas_crema_unidad" -> "receta_fresas_crema"
+        "duraznos_crema_unidad" -> "receta_duraznos_crema"
+        else -> null
     }
 }
 

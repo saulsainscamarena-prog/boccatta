@@ -145,7 +145,7 @@ private fun HeldOrderCard(
             }
 
             Spacer(Modifier.height(12.dp))
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
             Spacer(Modifier.height(8.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {

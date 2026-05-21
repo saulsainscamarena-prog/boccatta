@@ -67,7 +67,7 @@ fun SplitPaymentDialog(
                                     value = parte.metodoPago.valor,
                                     onValueChange = {},
                                     readOnly = true,
-                                    modifier = Modifier.width(110.dp).menuAnchor(),
+                                    modifier = Modifier.width(110.dp).menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                                     textStyle = MaterialTheme.typography.labelSmall,
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                                     shape = RoundedCornerShape(8.dp)

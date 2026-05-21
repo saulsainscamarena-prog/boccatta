@@ -42,12 +42,13 @@ class ExpensesViewModelV2 : BaseViewModel() {
         expensesListener?.remove()
         expensesListener = db.collection(FirestoreCollections.GASTOS)
             .whereEqualTo("sucursal", sucursal.lowercase())
-            .whereGreaterThanOrEqualTo("fecha", hoy)
             .addSnapshotListener { snap, _ ->
                 if (snap != null) {
                     gastos.clear()
                     snap.documents.forEach { doc ->
-                        doc.toObject(GastoV2::class.java)?.let { gastos.add(it.copy(id = doc.id)) }
+                        doc.toObject(GastoV2::class.java)
+                            ?.takeIf { it.fecha >= hoy }
+                            ?.let { gastos.add(it.copy(id = doc.id)) }
                     }
                 }
             }
@@ -66,7 +67,10 @@ class ExpensesViewModelV2 : BaseViewModel() {
         sucursal: String, 
         usuarioId: String,
         insumoId: String? = null,
-        cantidadSurtida: Double = 0.0
+        cantidadSurtida: Double = 0.0,
+        presentacionCompra: String? = null,
+        cantidadComprada: Double = 0.0,
+        contenidoPorUnidad: Double = 0.0
     ) {
         if (cargando) return
         if (monto <= 0) {
@@ -99,22 +103,34 @@ class ExpensesViewModelV2 : BaseViewModel() {
                         "sucursal" to gasto.sucursal,
                         "usuarioId" to gasto.usuarioId,
                         "insumoId" to insumoId,
-                        "cantidadSurtida" to cantidadSurtida
+                        "cantidadSurtida" to cantidadSurtida,
+                        "presentacionCompra" to presentacionCompra,
+                        "cantidadComprada" to cantidadComprada,
+                        "contenidoPorUnidad" to contenidoPorUnidad
                     )
                 )
                 
-                // Si es compra de insumo, actualizar stock global
                 if (insumoId != null && cantidadSurtida > 0) {
+                    val costoUnitario = monto / cantidadSurtida
                     val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
                     batch.set(
                         stockRef,
                         mapOf("cantidadEnBase" to FieldValue.increment(cantidadSurtida), "ultimaActualizacion" to System.currentTimeMillis()),
                         com.google.firebase.firestore.SetOptions.merge()
                     )
+                    batch.set(
+                        db.collection(FirestoreCollections.INSUMOS).document(insumoId),
+                        mapOf(
+                            "cantidadEnBase" to FieldValue.increment(cantidadSurtida),
+                            "costoUnitarioBase" to costoUnitario,
+                            "ultimaActualizacion" to System.currentTimeMillis()
+                        ),
+                        com.google.firebase.firestore.SetOptions.merge()
+                    )
                 }
                 
                 batch.commit().await()
-                mensajeExito = "OperaciÑn exitosa ?"
+                mensajeExito = "Operación exitosa"
             } finally {
                 cargando = false
             }
@@ -134,10 +150,15 @@ class ExpensesViewModelV2 : BaseViewModel() {
                     mapOf("cantidadEnBase" to FieldValue.increment(-cantidadSurtida), "ultimaActualizacion" to System.currentTimeMillis()),
                     com.google.firebase.firestore.SetOptions.merge()
                 )
+                batch.set(
+                    db.collection(FirestoreCollections.INSUMOS).document(insumoId),
+                    mapOf("cantidadEnBase" to FieldValue.increment(-cantidadSurtida), "ultimaActualizacion" to System.currentTimeMillis()),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
             }
             batch.delete(gastoRef)
             batch.commit().await()
-            mensajeExito = "Gasto eliminado ?"
+            mensajeExito = "Gasto eliminado"
         }
     }
     

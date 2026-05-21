@@ -2,6 +2,7 @@ package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.domain.model.OpcionCatalogo
 import com.bocatta.pos.domain.repository.ICatalogoRepository
+import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -9,7 +10,7 @@ import timber.log.Timber
 class CatalogoRepository : ICatalogoRepository {
 
     private val db = FirebaseFirestoreProvider.db
-    private val collection = db.collection("v2_catalogo_opciones")
+    private val collection = db.collection(FirestoreCollections.CATALOGO_OPCIONES)
 
     private val _cache = mutableListOf<OpcionCatalogo>()
 

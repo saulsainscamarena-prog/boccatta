@@ -2,6 +2,7 @@ package com.bocatta.pos.presentation.viewmodel
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewModelScope
+import com.bocatta.pos.data.repository.StockAllocationRepository
 import com.bocatta.pos.domain.model.ItemVendidoV2
 import com.bocatta.pos.domain.model.SolicitudDevolucion
 import com.bocatta.pos.domain.model.VentaV2
@@ -14,6 +15,7 @@ import com.bocatta.pos.core.constants.FirestoreCollections
 
 class DevolucionViewModel : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
+    private val allocationRepo = StockAllocationRepository()
 
     var solicitudes = mutableStateListOf<SolicitudDevolucion>()
         private set
@@ -46,6 +48,8 @@ class DevolucionViewModel : BaseViewModel() {
             try {
                 // REVERSIÓN V2: Restaurar stock en sucursal
                 val batch = db.batch()
+                val idsConCuotaSucursal = allocationRepo.itemsVendibles.toSet()
+                val idsFisicosSucursal = allocationRepo.itemsFisicos.toSet()
                 
                 // 1. Obtener los productos de la venta para saber qué stock restaurar
                 val ventaDoc = db.collection(FirestoreCollections.VENTAS).document(solicitud.ventaId).get().await()
@@ -68,12 +72,33 @@ class DevolucionViewModel : BaseViewModel() {
                 itemsVendidos.forEach { item ->
                     item.deducciones.forEach { (insumoId, cantidad) ->
                         if (cantidad > 0.0) {
-                            val stockRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursal}_$insumoId")
-                            batch.set(
-                                stockRef,
-                                mapOf("cantidadEnBase" to FieldValue.increment(cantidad), "ultimaActualizacion" to System.currentTimeMillis()),
-                                com.google.firebase.firestore.SetOptions.merge()
-                            )
+                            if (insumoId in idsConCuotaSucursal) {
+                                val stockRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursal}_$insumoId")
+                                batch.set(
+                                    stockRef,
+                                    mapOf(
+                                        "id" to "${sucursal}_$insumoId",
+                                        "insumoId" to insumoId,
+                                        "sucursal" to sucursal,
+                                        "cantidadEnBase" to FieldValue.increment(cantidad),
+                                        "ultimaActualizacion" to System.currentTimeMillis()
+                                    ),
+                                    com.google.firebase.firestore.SetOptions.merge()
+                                )
+                            }
+                            if (insumoId !in idsFisicosSucursal) {
+                                val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
+                                batch.set(
+                                    stockRef,
+                                    mapOf(
+                                        "id" to insumoId,
+                                        "insumoId" to insumoId,
+                                        "cantidadEnBase" to FieldValue.increment(cantidad),
+                                        "ultimaActualizacion" to System.currentTimeMillis()
+                                    ),
+                                    com.google.firebase.firestore.SetOptions.merge()
+                                )
+                            }
                         }
                     }
                 }

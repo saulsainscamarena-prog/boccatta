@@ -47,7 +47,7 @@ fun CarritoPanelV2(
         modifier = modifier.fillMaxHeight(),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
     ) {
-        Column(modifier = Modifier.padding(24.dp).fillMaxHeight()) {
+        Column(modifier = Modifier.padding(18.dp).fillMaxHeight()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     color = MaterialTheme.colorScheme.primary.copy(0.1f),
@@ -92,7 +92,7 @@ fun CarritoPanelV2(
                 }
             }
             
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (carrito.isEmpty()) {
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -104,7 +104,7 @@ fun CarritoPanelV2(
                     )
                 }
             } else {
-                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(carrito, key = { it.cartId }) { item ->
                         BocattaCartItemRow(
                             item = item,
@@ -115,16 +115,16 @@ fun CarritoPanelV2(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Resumen con Glassmorphism
             Surface(
                 color = MaterialTheme.colorScheme.onSurface.copy(0.03f),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(18.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (descuentoPromociones > 0) {
                         BocattaFilaResumen(
                             "DESCUENTO PROMO",
@@ -164,7 +164,7 @@ fun CarritoPanelV2(
                             Text(
                                 "$${"%.2f".format(totalFinal)}",
                                 fontWeight = FontWeight.Black,
-                                fontSize = 34.sp,
+                                fontSize = 30.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -199,7 +199,7 @@ fun CarritoPanelV2(
                 Spacer(Modifier.height(16.dp))
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             
             if (onApartar != null && carrito.isNotEmpty()) {
                 OutlinedButton(
@@ -216,7 +216,7 @@ fun CarritoPanelV2(
             }
 
             NeonButton(
-                texto = "FINALIZAR PEDIDO",
+                texto = "COBRAR",
                 onClick = onCobrar,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = carrito.isNotEmpty(),

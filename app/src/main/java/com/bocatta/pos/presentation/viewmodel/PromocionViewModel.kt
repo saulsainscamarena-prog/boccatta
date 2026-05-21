@@ -3,11 +3,7 @@ package com.bocatta.pos.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.data.repository.PromocionesRepository
-import com.bocatta.pos.domain.engine.CostCalculator
-import com.bocatta.pos.domain.engine.CostoProducto
 import com.bocatta.pos.domain.model.PromocionUniversal
-import com.bocatta.pos.domain.model.SalesInventoryProductV2
-import com.bocatta.pos.domain.model.ItemCombo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,26 +39,6 @@ class PromocionViewModel : ViewModel() {
             cargar()
             _mensajeFeedback.value = "Promoción eliminada"
         }
-    }
-
-    fun calcularRentabilidad(
-        productoIds: List<String>,
-        productos: List<SalesInventoryProductV2>,
-        precioPromo: Double
-    ): CostoProducto? {
-        if (productoIds.isEmpty()) return null
-        val costoTotal = productoIds.sumOf { id ->
-            productos.find { it.id == id }?.let { prod ->
-                prod.precioVenta.values.firstOrNull() ?: 0.0
-            } ?: 0.0
-        }
-        return CostoProducto(
-            nombre = "Promoción",
-            costoTotal = costoTotal,
-            precioVenta = precioPromo,
-            margen = precioPromo - costoTotal,
-            margenPorcentaje = if (precioPromo > 0) ((precioPromo - costoTotal) / precioPromo * 100) else 0.0
-        )
     }
 
     fun limpiarFeedback() { _mensajeFeedback.value = null }

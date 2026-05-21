@@ -90,7 +90,7 @@ fun MasaPostresStep(
                 }
                 val conteos = mutableMapOf("masa_crepa" to masaVal, "postres_vitrina" to (if (hayPostres) postresSeleccionados.size.toDouble() else 0.0))
                 postresSeleccionados.forEachIndexed { i, p -> conteos["postre_${p.lowercase()}"] = 1.0 }
-                vm.registrarAperturaDiaria(conteos, sessionVm.uid ?: "", onResult = { if (it) onNext() })
+                vm.registrarAperturaDiaria(conteos, sessionVm.uid, onResult = { if (it) onNext() })
             },
             enabled = datosCompletos,
             modifier = Modifier.fillMaxWidth().height(56.dp),

@@ -18,6 +18,7 @@ class SyncErrorRepositoryImpl : ISyncErrorRepository {
                 "timestamp" to error.timestamp,
                 "errorMessage" to error.errorMessage,
                 "failedIds" to error.failedIds,
+                "failedSaleIds" to error.failedSaleIds,
                 "appVersion" to error.appVersion,
                 "stackTrace" to error.stackTrace
             )).await()

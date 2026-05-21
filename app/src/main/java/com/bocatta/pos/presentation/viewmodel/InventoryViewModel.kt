@@ -75,11 +75,10 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
                 val hace7Dias = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
                 val snap = db.collection(FirestoreCollections.VENTAS)
                     .whereEqualTo("sucursal", sucursal)
-                    .whereGreaterThanOrEqualTo("fecha", hace7Dias)
                     .get().await()
 
                 val counts = mutableMapOf<String, Double>()
-                snap.documents.forEach { doc ->
+                snap.documents.filter { (it.getLong("fecha") ?: 0L) >= hace7Dias }.forEach { doc ->
                     val productosIds = (doc.get("productosIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                     productosIds.forEach { pid ->
                         counts[pid] = (counts[pid] ?: 0.0) + 1.0
@@ -182,11 +181,10 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
                 val hace7Dias = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
                 val snap = db.collection(FirestoreCollections.VENTAS)
                     .whereEqualTo("sucursal", sucursalActiva)
-                    .whereGreaterThanOrEqualTo("fecha", hace7Dias)
                     .get().await()
 
                 var totalVendido = 0.0
-                snap.documents.forEach { doc ->
+                snap.documents.filter { (it.getLong("fecha") ?: 0L) >= hace7Dias }.forEach { doc ->
                     val productosIds = (doc.get("productosIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                     totalVendido += productosIds.count { it == insumoId }
 

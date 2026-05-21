@@ -102,7 +102,10 @@ object DynamicFormEngine {
                     is FormField.BooleanField -> value as? Boolean ?: false
                     is FormField.TextField -> value.toString()
                     is FormField.SelectField -> value.toString()
-                    is FormField.ListField -> @Suppress("UNCHECKED_CAST") (value as? List<String>) ?: emptyList<String>()
+                    is FormField.ListField -> {
+                        @Suppress("UNCHECKED_CAST")
+                        (value as? List<String>) ?: emptyList<String>()
+                    }
                 }
             }
         }
@@ -110,7 +113,36 @@ object DynamicFormEngine {
     }
 }
 
-fun sanitizeLabel(label: String): String = label.replace(Regex("[\\x00-\\x1F\\x7F]"), "")
+fun fixMojibake(input: String): String {
+    if (!input.contains("Ã") && !input.contains("Â") && !input.contains("\uFFFD")) {
+        return input
+    }
+
+    return try {
+        val decoded = String(input.toByteArray(Charsets.ISO_8859_1), Charsets.UTF_8)
+        if (
+            decoded != input &&
+            !decoded.contains("\uFFFD") &&
+            decoded.count { it == 'Ã' || it == 'Â' } <= input.count { it == 'Ã' || it == 'Â' }
+        ) {
+            decoded
+        } else {
+            input
+        }
+    } catch (_: Exception) {
+        input
+    }
+}
+
+fun sanitizeLabel(label: String): String {
+    val fixed = fixMojibake(label)
+    return fixed.filter {
+        it.isLetterOrDigit() ||
+            it.isWhitespace() ||
+            it in ".,:;-_()[]{}¿?¡!@#%&*+-/=" ||
+            it in "áéíóúñÁÉÍÓÚÑüÜ"
+    }.trim()
+}
 
 @Composable
 fun DynamicProductForm(
@@ -139,6 +171,11 @@ fun DynamicProductForm(
         )
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+        if (schema.fields.isEmpty()) {
+            DynamicFormEmptyState()
+            return@Column
+        }
 
         for (field in schema.fields) {
             val label = sanitizeLabel(field.label)
@@ -182,6 +219,32 @@ fun DynamicProductForm(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DynamicFormEmptyState() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "Sin atributos configurados",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Este giro no requiere campos adicionales.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
     }
 }
@@ -286,7 +349,7 @@ private fun SelectFormField(
                 value = selected,
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 shape = RoundedCornerShape(8.dp),
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }
             )
@@ -335,7 +398,7 @@ fun GiroSelector(
                 value = currentLabel,
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 shape = RoundedCornerShape(8.dp),
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                 colors = OutlinedTextFieldDefaults.colors(

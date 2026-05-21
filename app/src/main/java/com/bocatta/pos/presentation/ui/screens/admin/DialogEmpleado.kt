@@ -21,14 +21,14 @@ fun DialogEmpleado(
     var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Datos", "Horario", "Permisos", "Salario", "Zona")
     var nombre by remember { mutableStateOf(user.nombre) }
-    var rol by remember { mutableStateOf(user.rol?.name ?: "VENDEDOR") }
+    var rol by remember { mutableStateOf(user.rol.name) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("EDITAR EMPLEADO", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                TabRow(selectedTabIndex = tabIndex) {
+                SecondaryTabRow(selectedTabIndex = tabIndex) {
                     tabs.forEachIndexed { i, label ->
                         Tab(selected = tabIndex == i, onClick = { tabIndex = i }, text = { Text(label, fontSize = 11.sp) })
                     }

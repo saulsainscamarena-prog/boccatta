@@ -14,11 +14,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.RegistroJornada
-import com.bocatta.pos.presentation.viewmodel.SessionViewModel
 import com.bocatta.pos.presentation.viewmodel.CajaViewModel
-import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
+import com.bocatta.pos.presentation.viewmodel.SessionViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun TurnosScreen(
@@ -33,12 +33,18 @@ fun TurnosScreen(
     onLogout: () -> Unit
 ) {
     val turno = cajaVm.turnoActivo
+    val cargandoTurno = cajaVm.cargandoTurno
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
     val hayTurno = turno != null
-
-    // Filtrar participantes según rol
-    val participantesVisibles = if (sessionVm.esAdmin) participantes
-    else participantes.filter { it.rol != "ADMIN" }
+    val participantesVisibles = if (sessionVm.esAdmin) participantes else participantes.filter { it.rol != "ADMIN" }
+    val errorTurno = cajaVm.errorTurno?.let { error ->
+        when {
+            error.contains("FAILED_PRECONDITION", ignoreCase = true) ||
+                error.contains("index", ignoreCase = true) ->
+                "No se pudo leer el turno en tiempo real. Toca iniciar o unirte; la app intentara recuperar el turno."
+            else -> error
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding(),
@@ -51,50 +57,76 @@ fun TurnosScreen(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.2f))
         ) {
             Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                // Header
                 Icon(
                     if (hayTurno) Icons.Default.AccountCircle else Icons.Default.Schedule,
-                    null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary
+                    null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("TURNOS", fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface, letterSpacing = 2.sp)
+                Text(
+                    "TURNOS",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    letterSpacing = 2.sp
+                )
                 Text(
                     "${sessionVm.sucursalActual.uppercase()} · ${dateFormat.format(Date())}",
-                    fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
                 )
 
                 Spacer(Modifier.height(24.dp))
 
                 if (sessionVm.esAdmin) {
-                    Text(sessionVm.usuario?.nombre?.uppercase() ?: "ADMIN", fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        sessionVm.usuario?.nombre?.uppercase() ?: "ADMIN",
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                     Spacer(Modifier.height(8.dp))
                 }
 
-                // Status card
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer.copy(if (hayTurno) 0.15f else 0.05f),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (hayTurno) {
-                            Text("TURNO ACTIVO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.height(6.dp))
-                            Text("Abierto por: ${turno!!.usuarioResponsable}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
-                            Text("Fondo: $${"%.2f".format(turno.fondoInicial)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.height(8.dp))
-                            Text("Participantes:", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
-                            participantesVisibles.forEach { p ->
-                                Text("• ${p.usuario} (${p.rol})", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
+                        when {
+                            cargandoTurno -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    strokeWidth = 3.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text("CARGANDO TURNO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                                Text("Validando la jornada abierta.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
                             }
-                            if (participantesVisibles.none { it.usuario == sessionVm.usuario?.nombre }) {
-                                Text("• Tú (${sessionVm.rol.name})", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            hayTurno -> {
+                                val turnoActivo = turno
+                                Text("TURNO ACTIVO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.height(6.dp))
+                                Text("Abierto por: ${turnoActivo.usuarioResponsable}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
+                                Text("Fondo: $${"%.2f".format(turnoActivo.fondoInicial)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Participantes:", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                                participantesVisibles.forEach { p ->
+                                    Text("• ${p.usuario} (${p.rol})", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
+                                }
+                                if (participantesVisibles.none { it.usuario == sessionVm.usuario?.nombre }) {
+                                    Text("• Tú (${sessionVm.rol.name})", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                }
                             }
-                        } else {
-                            Icon(Icons.Default.Schedule, "Horario", modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
-                            Spacer(Modifier.height(8.dp))
-                            Text("NO HAY TURNO ACTIVO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
-                            Text("Inicia la jornada para comenzar a operar.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
+                            else -> {
+                                Icon(Icons.Default.Schedule, "Horario", modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
+                                Spacer(Modifier.height(8.dp))
+                                Text("NO HAY TURNO ACTIVO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                                Text("Inicia la jornada para comenzar a operar.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
+                            }
                         }
                     }
                 }
@@ -112,25 +144,47 @@ fun TurnosScreen(
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // Botón principal
+                errorTurno?.let { error ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(0.35f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(error, fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+
                 Button(
                     onClick = if (hayTurno) onUnirseTurno else onIniciarTurno,
+                    enabled = !cargandoTurno,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(if (hayTurno) Icons.Default.GroupAdd else Icons.Default.PlayArrow, if (hayTurno) "Unirse a turno" else "Iniciar turno", modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (hayTurno) "UNIRSE AL TURNO" else "INICIAR TURNO",
-                        fontWeight = FontWeight.Black, letterSpacing = 1.sp
-                    )
+                    if (cargandoTurno) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("VALIDANDO", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    } else {
+                        Icon(if (hayTurno) Icons.Default.GroupAdd else Icons.Default.PlayArrow, if (hayTurno) "Unirse a turno" else "Iniciar turno", modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (hayTurno) "UNIRSE AL TURNO" else "INICIAR TURNO", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    }
                 }
+
                 if (hayTurno) {
                     Text("Inicia tu jornada laboral", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
                 }
 
-                // Admin button
                 if (sessionVm.esAdmin) {
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
@@ -152,5 +206,3 @@ fun TurnosScreen(
         }
     }
 }
-
-

@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -31,12 +32,12 @@ import com.bocatta.pos.presentation.viewmodel.CajaViewModel
 import com.bocatta.pos.presentation.viewmodel.SessionViewModel
 import com.bocatta.pos.presentation.viewmodel.AdminViewModel
 import org.koin.androidx.compose.koinViewModel
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
+    val locale = LocalLocale.current.platformLocale
     LaunchedEffect(session.sucursalActual) { vm.configurarSucursal(session.sucursalActual) }
 
     val snackbarHost = remember { SnackbarHostState() }
@@ -107,7 +108,23 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     )
                 }
 
-                if (vm.turnoActivo == null) {
+                if (vm.cargandoTurno) {
+                    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Text("CARGANDO TURNO", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "Validando la apertura activa de ${session.sucursalActual.uppercase()}.",
+                                color = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else if (vm.turnoActivo == null) {
                     Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f)), modifier = Modifier.fillMaxWidth()) {
                         BocattaEmptyState(
                             icono = Icons.Default.LockOpen,
@@ -196,7 +213,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 )
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    "$${String.format(java.util.Locale.getDefault(), "%+.2f", diff)}",
+                                    "$${String.format(locale, "%+.2f", diff)}",
                                     fontWeight = FontWeight.Black,
                                     fontSize = 48.sp,
                                     color = statusColor
@@ -255,11 +272,11 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                                 Column(Modifier.weight(1f)) {
                                                     Text(compra.insumoNombre, fontWeight = FontWeight.Bold)
                                                     Text("${compra.cantidadComprada} ${compra.presentacion} (${"%.0f".format(compra.contenidoUnidades)} uds) · $$${"%.2f".format(compra.precioPagado)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
-                                                    Text("${compra.compradoPorNombre} · ${java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault()).format(java.util.Date(compra.fecha))}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
+                                                    Text("${compra.compradoPorNombre} · ${java.text.SimpleDateFormat("dd/MM HH:mm", locale).format(java.util.Date(compra.fecha))}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
                                                 }
                                             }
                                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                Button(onClick = { adminVm.aprobarCompra(compra, session.uid ?: "", session.nombreUsuario, "") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("✓ Aprobar", fontSize = 11.sp) }
+                                                Button(onClick = { adminVm.aprobarCompra(compra, session.uid, session.nombreUsuario, "") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp)) { Text("✓ Aprobar", fontSize = 11.sp) }
                                                 OutlinedButton(onClick = {
                                                     compraAccion = compra; accionTipo = "reajustar"
                                                     nuevoPrecioAjuste = compra.precioPagado.toString()
@@ -292,7 +309,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                     },
                                     confirmButton = {
                                         Button(onClick = {
-                                            adminVm.reajustarCompra(compra, nuevaCantidadAjuste.toDoubleOrNull() ?: compra.cantidadComprada, nuevoPrecioAjuste.toDoubleOrNull() ?: compra.precioPagado, motivoTexto, session.uid ?: "", session.nombreUsuario)
+                                            adminVm.reajustarCompra(compra, nuevaCantidadAjuste.toDoubleOrNull() ?: compra.cantidadComprada, nuevoPrecioAjuste.toDoubleOrNull() ?: compra.precioPagado, motivoTexto, session.uid, session.nombreUsuario)
                                             compraAccion = null; motivoTexto = ""
                                         }, enabled = motivoTexto.isNotBlank()) { Text("Guardar y aprobar") }
                                     },
@@ -313,7 +330,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                     },
                                     confirmButton = {
                                         Button(onClick = {
-                                            adminVm.registrarPerdida(compra, motivoTexto, session.uid ?: "", session.nombreUsuario)
+                                            adminVm.registrarPerdida(compra, motivoTexto, session.uid, session.nombreUsuario)
                                             compraAccion = null; motivoTexto = ""; confirmacionEscrita = ""
                                         }, enabled = motivoTexto.isNotBlank() && confirmacionEscrita == "CONFIRMAR", colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Registrar pérdida") }
                                     },
@@ -377,7 +394,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                         )
                         BocattaFilaResumen(
                             "Diferencia",
-                            "$${String.format(java.util.Locale.getDefault(), "%+.2f", vm.diferenciaCaja)}",
+                            "$${String.format(locale, "%+.2f", vm.diferenciaCaja)}",
                             colorValor = if (vm.cadraCaja) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             negrita = true
                         )

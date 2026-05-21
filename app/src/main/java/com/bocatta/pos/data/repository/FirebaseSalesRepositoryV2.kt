@@ -13,9 +13,11 @@ import com.google.firebase.firestore.FieldValue
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import java.util.Locale
 
 class FirebaseSalesRepositoryV2 : SalesRepository {
     private val db = FirebaseFirestoreProvider.db
+    private val allocationRepo = StockAllocationRepository()
 
     override suspend fun finalizarVentaConInventario(
         carrito: List<ItemCarritoV2>,
@@ -28,14 +30,13 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
         descuentoPromociones: Double,
         descuentoManual: Double
     ): ResultadoVenta {
-        val sucursalId = sucursal.lowercase()
+        val sucursalId = normalizarSucursal(sucursal)
         val subtotal = carrito.sumOf { it.precioFinal.toDouble() * it.cantidad }
         val totalFinal = if (esConsumoEmpleado) 0.0 else (subtotal - descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
 
         return db.runTransaction { transaction ->
             val contadorRef = db.collection(FirestoreCollections.CONFIGURACION).document("contadores_$sucursalId")
             val counterDoc = transaction.get(contadorRef)
-            if (!counterDoc.exists()) throw IllegalStateException("Contador no inicializado")
             val nextTicket = (counterDoc.getLong("ultimo_ticket") ?: 0L) + 1
             val codigoTicket = TicketUtils.generarCodigoTicket(sucursalId, nextTicket)
 
@@ -65,14 +66,41 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
             }
 
             val branchRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
-            val stockDocs = deducciones.keys.associateWith { insumoId ->
-                transaction.get(branchRef.document("${sucursalId}_$insumoId"))
+            val globalRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL)
+            val legacySucursalId = sucursal.trim()
+            val idsConCuotaSucursal = allocationRepo.itemsVendibles.toSet()
+            val idsFisicosSucursal = allocationRepo.itemsFisicos.toSet()
+            val stockDocs = deducciones.keys.filter { idsConCuotaSucursal.contains(it) }.associateWith { insumoId ->
+                val requerido = deducciones[insumoId] ?: 0.0
+                val primaryRef = branchRef.document("${sucursalId}_$insumoId")
+                val primarySnap = transaction.get(primaryRef)
+                val primaryActual = primarySnap.getDouble("cantidadEnBase") ?: primarySnap.getDouble("cantidadDisponible") ?: 0.0
+                val legacyRef = branchRef.document("${legacySucursalId}_$insumoId")
+                if (legacyRef.id != primaryRef.id && primaryActual < requerido) {
+                    val legacySnap = transaction.get(legacyRef)
+                    val legacyActual = legacySnap.getDouble("cantidadEnBase") ?: legacySnap.getDouble("cantidadDisponible") ?: 0.0
+                    if (legacyActual >= requerido) legacyRef to legacySnap else primaryRef to primarySnap
+                } else {
+                    primaryRef to primarySnap
+                }
+            }
+            val globalDocs = deducciones.keys.filter { !idsFisicosSucursal.contains(it) }.associateWith { insumoId ->
+                transaction.get(globalRef.document(insumoId))
             }
             deducciones.forEach { (insumoId, requerido) ->
-                val snap = stockDocs[insumoId]
-                val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
-                if (actual < requerido) {
-                    throw IllegalStateException("Stock insuficiente para $insumoId")
+                if (idsConCuotaSucursal.contains(insumoId)) {
+                    val snap = stockDocs[insumoId]?.second
+                    val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
+                    if (actual < requerido) {
+                        throw IllegalStateException("Stock insuficiente para $insumoId en sucursal $sucursalId. Disponible: $actual, requerido: $requerido")
+                    }
+                }
+                if (!idsFisicosSucursal.contains(insumoId)) {
+                    val globalSnap = globalDocs[insumoId]
+                    val globalActual = globalSnap?.getDouble("cantidadEnBase") ?: globalSnap?.getDouble("cantidadDisponible") ?: 0.0
+                    if (globalActual < requerido) {
+                        throw IllegalStateException("Stock insuficiente para $insumoId en bodega central. Disponible: $globalActual, requerido: $requerido")
+                    }
                 }
             }
 
@@ -89,12 +117,34 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                     toppings = item.toppings,
                     separadas = item.esSeparado,
                     recetaId = item.producto.recetaId,
-                    deducciones = deduccionesPorLinea[item.cartId] ?: emptyMap()
+                    deducciones = deduccionesPorLinea[item.cartId] ?: emptyMap(),
+                    componentesCombo = item.componentesCombo.map { componente ->
+                        ItemVendidoV2(
+                            cartId = componente.cartId,
+                            productoId = componente.producto.id,
+                            nombre = componente.nombre.ifBlank { componente.producto.nombre },
+                            cantidad = componente.cantidad,
+                            precioUnitario = componente.precioFinal.toDouble(),
+                            base = componente.base,
+                            aderezos = componente.aderezos,
+                            toppings = componente.toppings,
+                            separadas = componente.esSeparado,
+                            recetaId = componente.producto.recetaId
+                        )
+                    }
                 )
             }
             val productosIds = carrito.flatMap { item -> List(item.cantidad) { item.producto.id } }
 
-            transaction.set(contadorRef, mapOf("ultimo_ticket" to nextTicket), SetOptions.merge())
+            transaction.set(
+                contadorRef,
+                mapOf(
+                    "ultimo_ticket" to nextTicket,
+                    "sucursal" to sucursalId,
+                    "creado" to (counterDoc.getLong("creado") ?: System.currentTimeMillis())
+                ),
+                SetOptions.merge()
+            )
             transaction.set(
                 db.collection(FirestoreCollections.VENTAS).document(ventaId),
                 mapOf(
@@ -131,18 +181,33 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
             }
 
             deducciones.forEach { (insumoId, cantidad) ->
-                val stockRef = branchRef.document("${sucursalId}_$insumoId")
-                transaction.set(
-                    stockRef,
-                    mapOf(
-                        "id" to "${sucursalId}_$insumoId",
-                        "insumoId" to insumoId,
-                        "sucursal" to sucursalId,
-                        "cantidadEnBase" to FieldValue.increment(-cantidad),
-                        "ultimaActualizacion" to System.currentTimeMillis()
-                    ),
-                    SetOptions.merge()
-                )
+                if (idsConCuotaSucursal.contains(insumoId)) {
+                    val stockRef = stockDocs[insumoId]?.first ?: branchRef.document("${sucursalId}_$insumoId")
+                    transaction.set(
+                        stockRef,
+                        mapOf(
+                            "id" to stockRef.id,
+                            "insumoId" to insumoId,
+                            "sucursal" to sucursalId,
+                            "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "ultimaActualizacion" to System.currentTimeMillis()
+                        ),
+                        SetOptions.merge()
+                    )
+                }
+                if (!idsFisicosSucursal.contains(insumoId)) {
+                    val centralRef = globalRef.document(insumoId)
+                    transaction.set(
+                        centralRef,
+                        mapOf(
+                            "id" to insumoId,
+                            "insumoId" to insumoId,
+                            "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "ultimaActualizacion" to System.currentTimeMillis()
+                        ),
+                        SetOptions.merge()
+                    )
+                }
                 val movRef = db.collection(FirestoreCollections.MOVIMIENTOS_INVENTARIO).document()
                 transaction.set(
                     movRef,
@@ -161,6 +226,9 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
             ResultadoVenta(numeroTicket = nextTicket, codigoTicket = codigoTicket)
         }.await()
     }
+
+    private fun normalizarSucursal(sucursal: String): String =
+        sucursal.trim().lowercase(Locale.ROOT).replace(" ", "_")
 
     override suspend fun registrarGastoValidado(monto: Double, motivo: String, sucursal: String, usuarioId: String): Boolean {
         return try {

@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -102,7 +104,7 @@ fun DialogEditarInsumo(
                         Surface(shape = RoundedCornerShape(12.dp), color = diffColor.copy(0.1f)) {
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    if (diferencia >= 0) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                                    if (diferencia >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                     null, tint = diffColor, modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))

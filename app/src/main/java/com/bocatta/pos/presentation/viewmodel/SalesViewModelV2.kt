@@ -1,4 +1,4 @@
-package com.bocatta.pos.presentation.viewmodel
+﻿package com.bocatta.pos.presentation.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.*
@@ -7,8 +7,10 @@ import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.di.SalesDependencies
 import com.bocatta.pos.network.NetworkStateProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,9 +21,9 @@ import com.bocatta.pos.domain.repository.IProductRepository
 import com.bocatta.pos.domain.repository.SalesRepository
 import com.bocatta.pos.data.sync.OfflineManager
 import com.bocatta.pos.data.sync.SyncScheduler
-import com.bocatta.pos.core.TicketUtils
 import com.bocatta.pos.data.repository.InventoryDeductions
 import com.bocatta.pos.data.repository.PromocionesRepository
+import com.bocatta.pos.data.local.OfflineDatabase
 import timber.log.Timber
 import com.google.firebase.firestore.ListenerRegistration
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
@@ -52,8 +54,14 @@ class SalesViewModelV2(
     var isOnline by mutableStateOf(true)
        private set
 
-    private var _productos = mutableStateListOf<SalesInventoryProductV2>()
+   private var _productos = mutableStateListOf<SalesInventoryProductV2>()
    val productos: List<SalesInventoryProductV2> get() = _productos
+   var menuCargando by mutableStateOf(false)
+      private set
+   var menuError by mutableStateOf<String?>(null)
+      private set
+   var menuUltimaCarga by mutableStateOf(0L)
+      private set
    private val _carrito = mutableStateListOf<ItemCarritoV2>()
    val carrito: List<ItemCarritoV2> get() = _carrito
    private var _clienteSeleccionado by mutableStateOf<ClienteV2?>(null)
@@ -135,7 +143,7 @@ class SalesViewModelV2(
 
     fun guardarEstadoParaUndo() {
        _undoStack.add(_carrito.toList())
-       if (_undoStack.size > 20) _undoStack.removeFirst() // límite 20
+       if (_undoStack.size > 20) _undoStack.removeFirst() // limite 20
     }
 
     fun undoLastAction() {
@@ -161,6 +169,12 @@ class SalesViewModelV2(
        obtenerPromociones()
     }
 
+    fun refrescarMenu() {
+       escucharMenu()
+       escucharStock()
+       mensajeFeedback = "Actualizando menu y stock..."
+    }
+
    private fun obtenerPromociones() {
       viewModelScope.launch {
          val promos = promocionesRepository.getPromocionesActivas()
@@ -171,16 +185,31 @@ class SalesViewModelV2(
 
     private fun escucharMenu() {
        menuListener?.remove()
-       menuListener = db.collection(FirestoreCollections.PRODUCTOS).addSnapshotListener { snap, _ ->
+       menuCargando = true
+       menuError = null
+       menuListener = db.collection(FirestoreCollections.PRODUCTOS).addSnapshotListener { snap, error ->
+          if (error != null) {
+             menuCargando = false
+             menuError = "No se pudo cargar el menu. Revisa conexion o vuelve a intentar."
+             return@addSnapshotListener
+          }
           if (snap != null) {
              _productos.clear()
              snap.documents.forEach { doc ->
                 doc.toObject(SalesInventoryProductV2::class.java)?.let { prod ->
-                   val schema = (doc.get("configSchema") as? List<Map<String, Any?>>)
+                   val schema = (doc.get("configSchema") as? List<*>)
+                      ?.mapNotNull { rawGroup ->
+                         (rawGroup as? Map<*, *>)?.entries
+                            ?.mapNotNull { (key, value) -> (key as? String)?.let { it to value } }
+                            ?.toMap()
+                      }
                       ?.map { mapToConfigGroup(it) } ?: emptyList()
                    _productos.add(prod.copy(configSchema = schema, id = doc.id))
                 }
              }
+             menuCargando = false
+             menuError = null
+             menuUltimaCarga = System.currentTimeMillis()
           }
        }
     }
@@ -248,7 +277,7 @@ class SalesViewModelV2(
       viewModelScope.launch(safeHandler) {
          val snap = db.collection(FirestoreCollections.CLIENTES).whereEqualTo("telefono", telefono).get().await()
          if (!snap.isEmpty) { 
-            mensajeError = "Este cliente ya está registrado."
+            mensajeError = "Este cliente ya esta registrado."
             return@launch 
          }
          val docRef = db.collection(FirestoreCollections.CLIENTES).document()
@@ -259,16 +288,15 @@ class SalesViewModelV2(
       }
    }
 
-    fun agregarAlCarrito(
-       producto: SalesInventoryProductV2, 
-       sucursal: String, 
-       base: String? = null, 
-       aderezos: List<String> = emptyList(), 
-       toppings: List<String> = emptyList(), 
+    private fun crearItemCarrito(
+       producto: SalesInventoryProductV2,
+       sucursal: String,
+       base: String? = null,
+       aderezos: List<String> = emptyList(),
+       toppings: List<String> = emptyList(),
        esSeparado: Boolean = false,
        componentes: List<ItemCarritoV2> = emptyList()
-     ) {
-        guardarEstadoParaUndo()
+     ): ItemCarritoV2 {
         val nota = buildString {
            base?.let { append("Base: $it. ") }
           if (aderezos.isNotEmpty()) append("Aderezos: ${aderezos.joinToString(", ")}. ")
@@ -292,7 +320,8 @@ class SalesViewModelV2(
           precioBase + extraToppings
        }
 
-       val item = ItemCarritoV2(
+       return ItemCarritoV2(
+          cartId = "cart_${System.currentTimeMillis()}_${_carrito.size}_${producto.id}",
           producto = producto,
           precioFinal = BigDecimal.valueOf(precioCalculado),
           nota = nota,
@@ -303,8 +332,37 @@ class SalesViewModelV2(
            esSeparado = esSeparado,
            componentesCombo = componentes
         )
+     }
+
+    fun agregarAlCarrito(
+       producto: SalesInventoryProductV2,
+       sucursal: String,
+       base: String? = null,
+       aderezos: List<String> = emptyList(),
+       toppings: List<String> = emptyList(),
+       esSeparado: Boolean = false,
+       componentes: List<ItemCarritoV2> = emptyList()
+     ) {
+        guardarEstadoParaUndo()
+        val item = crearItemCarrito(producto, sucursal, base, aderezos, toppings, esSeparado, componentes)
         _carrito.add(item)
      }
+
+    fun reemplazarItemCarrito(
+       itemOriginal: ItemCarritoV2,
+       producto: SalesInventoryProductV2,
+       sucursal: String,
+       base: String? = null,
+       aderezos: List<String> = emptyList(),
+       toppings: List<String> = emptyList(),
+       esSeparado: Boolean = false,
+       componentes: List<ItemCarritoV2> = emptyList()
+    ) {
+       val index = _carrito.indexOf(itemOriginal)
+       if (index == -1) return
+       guardarEstadoParaUndo()
+       _carrito[index] = crearItemCarrito(producto, sucursal, base, aderezos, toppings, esSeparado, componentes)
+    }
 
     fun agregarAlCarritoConConfig(
        producto: SalesInventoryProductV2,
@@ -331,6 +389,7 @@ class SalesViewModelV2(
         val precioCalculado = PricingEngine.calcularPrecioProducto(precioBase, producto.categoria, config, preciosExtra)
 
        val item = ItemCarritoV2(
+          cartId = "cart_${System.currentTimeMillis()}_${_carrito.size}_${producto.id}",
           producto = producto,
           precioFinal = BigDecimal.valueOf(precioCalculado),
           nota = nota,
@@ -353,23 +412,24 @@ class SalesViewModelV2(
    }
 
    fun eliminarDelCarrito(item: ItemCarritoV2, motivo: String, usuarioNombre: String, sucursal: String) {
-       guardarEstadoParaUndo()
-       _carrito.remove(item)
+      guardarEstadoParaUndo()
+      _carrito.remove(item)
       viewModelScope.launch {
          try {
             val logId = db.collection(FirestoreCollections.CANCELACIONES).document().id
             val log = mapOf(
-               "id" to logId, 
-               "productoNombre" to item.nombre, 
+               "id" to logId,
+               "productoNombre" to item.nombre,
                "precio" to item.precioFinal.toDouble(),
-               "cantidad" to item.cantidad, 
-               "motivo" to motivo, 
+               "cantidad" to item.cantidad,
+               "motivo" to motivo,
                "usuario" to usuarioNombre,
-               "sucursal" to sucursal.lowercase(), 
+               "sucursal" to sucursal.lowercase(),
+               "estado" to "pendiente_revision",
                "fecha" to System.currentTimeMillis()
             )
             db.collection(FirestoreCollections.CANCELACIONES).document(logId).set(log).await()
-            Timber.tag("CART").i("Cancelación guardada en Firestore: $logId")
+            Timber.tag("CART").i("Cancelacion guardada en Firestore: $logId")
          } catch (e: Exception) {
             val dataJson = "{\"productoNombre\":\"${item.nombre}\",\"precio\":${item.precioFinal.toDouble()},\"cantidad\":${item.cantidad}}"
             OfflineManager.guardarOperacionOffline(
@@ -382,33 +442,73 @@ class SalesViewModelV2(
                dataJson = dataJson,
                requiereAprobacion = true
             )
-            Timber.tag("CART").w("Error guardando cancelación en Firestore, se guardó offline")
+            Timber.tag("CART").w("Error guardando cancelacion en Firestore, se guardo offline")
          }
       }
    }
 
    suspend fun validarStockCarrito(sucursal: String): Pair<Boolean, String> {
       val sucursalId = sucursal.lowercase()
+      val offlineDb = OfflineDatabase.getInstance(getApplication())
+      val consolidado = mutableMapOf<String, Double>()
+
       for (item in _carrito) {
-         // Si es una crepa o combo, el insumo base es la masa
-         val insumoId = if (item.producto.id.contains("crepa") || item.producto.categoria.uppercase().contains("COMBO")) {
-            "masa_crepa"
+         val recetaId = item.producto.recetaId
+         val receta = if (!recetaId.isNullOrEmpty()) {
+            withContext(Dispatchers.IO) {
+               offlineDb.obtenerRecetaPorId(recetaId)
+            }
          } else {
-            item.producto.id
+            null
          }
 
-         val suficiente = inventoryRepo.hasSufficientStock(
-            branchId = sucursalId,
-            productId = insumoId,
-            requiredQty = item.cantidad.toDouble(),
-            unit = "pza"
-         )
-         
-         if (!suficiente) {
-            val msg = if (insumoId == "masa_crepa") {
-               "Sin stock de MASA DE CREPA en $sucursalId. Registra una tanda en Inventario > Producción."
+         val deds = InventoryDeductions.calcularParaItem(item, receta?.ingredientes ?: emptyList())
+         if (deds.isNotEmpty()) {
+            deds.forEach { (insumoId, cantidad) ->
+               consolidado[insumoId] = (consolidado[insumoId] ?: 0.0) + cantidad
+            }
+            if (item.producto.id.contains("crepa", ignoreCase = true) ||
+                item.producto.categoria.uppercase().contains("COMBO")) {
+               if (!consolidado.containsKey("masa_crepa")) {
+                  consolidado["masa_crepa"] = (consolidado["masa_crepa"] ?: 0.0) + item.cantidad.toDouble()
+               }
+            }
+         } else {
+            val insumoId = if (item.producto.id.contains("crepa", ignoreCase = true) ||
+                               item.producto.categoria.uppercase().contains("COMBO")) {
+               "masa_crepa"
             } else {
-               "Stock insuficiente de ${item.nombre} en $sucursalId."
+               item.producto.id
+            }
+            consolidado[insumoId] = (consolidado[insumoId] ?: 0.0) + item.cantidad.toDouble()
+         }
+      }
+
+      for ((insumoId, cantidadRequerida) in consolidado) {
+         val suficiente = withContext(Dispatchers.IO) {
+            inventoryRepo.hasSufficientStock(
+               branchId = sucursalId,
+               productId = insumoId,
+               requiredQty = cantidadRequerida,
+               unit = "pza"
+            )
+         }
+
+         if (!suficiente) {
+            val nombreInsumo = if (insumoId == "masa_crepa") {
+               "MASA DE CREPA"
+            } else {
+               withContext(Dispatchers.IO) {
+                  offlineDb.obtenerInsumos().find { it.id == insumoId }?.nombre
+                      ?: offlineDb.obtenerProductoPorId(insumoId)?.nombre
+                      ?: insumoId
+               }
+            }
+
+            val msg = if (insumoId == "masa_crepa") {
+               "Sin stock de MASA DE CREPA en $sucursalId. Registra una tanda en Inventario > Produccion."
+            } else {
+               "Stock insuficiente de $nombreInsumo en $sucursalId. Requerido: $cantidadRequerida."
             }
             Timber.tag("INVENTORY").w(msg)
             return Pair(false, msg)
@@ -428,65 +528,103 @@ class SalesViewModelV2(
     fun finalizarVenta(sucursal: String, usuarioNombre: String) {
        if (cargando || _carrito.isEmpty()) return
        if (_esConsumoEmpleado && _rolUsuario == Rol.VENDEDOR) {
-          mensajeError = "Solo administradores pueden registrar consumos de cortesía"
+          mensajeError = "Solo administradores pueden registrar consumos de cortesia"
           return
        }
 
+       cargando = true
+       _uiState.update { it.copy(isLoading = true, error = null, showSuccess = false) }
+
        viewModelScope.launch {
+          val (stockValido, errorMsg) = validarStockCarrito(sucursal)
+          if (!stockValido) {
+             mensajeError = errorMsg
+             _uiState.update { it.copy(isLoading = false, error = errorMsg) }
+             cargando = false
+             return@launch
+          }
+
+          val totalVenta = calcularTotalVenta()
+          val currentCarrito = _carrito.toList()
+          val clienteSnapshot = _clienteSeleccionado
+          val descuentoLealtadSnapshot = _descuentoLealtad
+          val descuentoPromocionesSnapshot = descuentoPromociones
+          val descuentoManualSnapshot = _descuentoManual
+          val esConsumoEmpleadoSnapshot = _esConsumoEmpleado
+          val metodoPago = if (esConsumoEmpleadoSnapshot) "Cortesia" else _metodoPagoSeleccionado.valor
+
           try {
-             _uiState.update { it.copy(isLoading = true, error = null, showSuccess = false) }
-             cargando = true
-             mensajeError = null
-             isOnline = OfflineManager.isNetworkAvailable(getApplication())
-
-
-            // 1. Validación de Stock
-            val stockOk = validarStockCarrito(sucursal)
-            if (!stockOk.first) {
-               throw IllegalStateException(stockOk.second)
-            }
-
-            val totalVenta = calcularTotalVenta()
-            val currentCarrito = _carrito.toList()
-            val metodoPago = if (_esConsumoEmpleado) "Cortesía" else _metodoPagoSeleccionado.valor
-
-            if (!isOnline) {
-               procesarVentaOfflineConResultado(sucursal, usuarioNombre)
-               mensajeFeedback = "✅ Venta guardada localmente (Modo Offline)"
+              mensajeError = null
+              val online = withContext(Dispatchers.IO) {
+                 OfflineManager.isNetworkAvailable(getApplication())
+              }
+              isOnline = online
+            if (!online) {
+               val resultado = withContext(Dispatchers.IO) {
+                  procesarVentaOffline(
+                     currentCarrito = currentCarrito,
+                     sucursal = sucursal,
+                     usuarioNombre = usuarioNombre,
+                     totalVenta = totalVenta,
+                     metodoPago = metodoPago,
+                     descuentoLealtad = descuentoLealtadSnapshot,
+                     clienteSeleccionado = clienteSnapshot,
+                     esConsumoEmpleado = esConsumoEmpleadoSnapshot
+                  )
+               }
+               aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
+               mensajeFeedback = "Venta guardada localmente (modo offline)"
                _uiState.update { it.copy(showSuccess = true) }
                return@launch
             }
 
             // 2. Ejecutar Venta en la Nube
-                val resultado = repository.finalizarVentaConInventario(
+                val resultado = withContext(Dispatchers.IO) {
+                   repository.finalizarVentaConInventario(
                    carrito = currentCarrito,
                    sucursal = sucursal,
                    usuarioNombre = usuarioNombre,
-                   clienteSeleccionado = _clienteSeleccionado,
-                   descuentoLealtad = _descuentoLealtad,
+                   clienteSeleccionado = clienteSnapshot,
+                   descuentoLealtad = descuentoLealtadSnapshot,
                    metodoPagoSeleccionado = metodoPago,
-                   esConsumoEmpleado = _esConsumoEmpleado,
-                   descuentoPromociones = descuentoPromociones,
-                   descuentoManual = _descuentoManual
-                )
+                   esConsumoEmpleado = esConsumoEmpleadoSnapshot,
+                   descuentoPromociones = descuentoPromocionesSnapshot,
+                   descuentoManual = descuentoManualSnapshot
+                   )
+                }
                 aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
-                mensajeFeedback = "✅ Venta finalizada: TICKET #${resultado.codigoTicket}"
+                mensajeFeedback = "Venta finalizada: ticket #${resultado.codigoTicket}"
                 _uiState.update { it.copy(showSuccess = true) }
 
           } catch (e: Exception) {
-             mensajeError = e.message ?: "Error inesperado al procesar el cobro"
+             mensajeError = mensajeOperativo(e)
              _uiState.update { it.copy(error = mensajeError) }
              Timber.tag("SALE").e(e, "Error en flujo de venta")
 
             
-            // Fallback Offline si es error de conexión/servidor (no de stock)
+            // Fallback offline si es error de conexion/servidor (no de stock)
             if (e !is IllegalStateException && isOnline) {
                try {
-                  procesarVentaOfflineConResultado(sucursal, usuarioNombre)
-                  mensajeFeedback = "⚠️ Error de red. Venta guardada localmente."
-               } catch (fallbackEx: Exception) {
+                  val resultado = withContext(Dispatchers.IO) {
+                     procesarVentaOffline(
+                        currentCarrito = currentCarrito,
+                        sucursal = sucursal,
+                        usuarioNombre = usuarioNombre,
+                        totalVenta = totalVenta,
+                        metodoPago = metodoPago,
+                        descuentoLealtad = descuentoLealtadSnapshot,
+                        clienteSeleccionado = clienteSnapshot,
+                        esConsumoEmpleado = esConsumoEmpleadoSnapshot
+                     )
+                  }
+                  aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
+                  mensajeFeedback = "Error de red. Venta guardada localmente."
+                  mensajeError = null
+                  _uiState.update { it.copy(error = null, showSuccess = true) }
+                } catch (fallbackEx: Exception) {
                   mensajeError = "Fallo total: ${fallbackEx.message}"
-               }
+                  _uiState.update { it.copy(error = mensajeError) }
+                }
             }
           } finally {
              cargando = false
@@ -494,15 +632,6 @@ class SalesViewModelV2(
           }
        }
     }
-
-
-   private suspend fun procesarVentaOfflineConResultado(sucursal: String, usuarioNombre: String) {
-      val totalVenta = calcularTotalVenta()
-      val currentCarrito = _carrito.toList()
-      val metodoPago = if (_esConsumoEmpleado) "Cortesía" else _metodoPagoSeleccionado.valor
-      val resultado = procesarVentaOffline(currentCarrito, sucursal, usuarioNombre, totalVenta, metodoPago)
-      aplicarResultadoVenta(resultado, sucursal, currentCarrito, totalVenta)
-   }
 
     private fun calcularTotalVenta(): Double {
         return CarritoCalculator.calcularTotalVenta(
@@ -513,29 +642,42 @@ class SalesViewModelV2(
         )
     }
 
+   private fun mensajeOperativo(error: Exception): String {
+      val raw = error.message.orEmpty()
+      return when {
+         raw.contains("masa_crepa", ignoreCase = true) ->
+            "No hay crepas asignadas para esta sucursal. Ve a apertura/asignacion o registra produccion."
+         raw.contains("bodega central", ignoreCase = true) ->
+            "Falta stock en bodega central. Revisa compras, produccion o asignacion antes de cobrar."
+         raw.contains("sucursal", ignoreCase = true) && raw.contains("Stock insuficiente", ignoreCase = true) ->
+            "Falta stock asignado para esta sucursal. Revisa la asignacion del turno."
+         raw.contains("Contador", ignoreCase = true) ->
+            "El folio de tickets se preparo automaticamente. Intenta cobrar de nuevo."
+         raw.isBlank() -> "No se pudo completar la venta. Revisa stock y conexion."
+         else -> raw
+      }
+   }
+
    private fun procesarVentaOffline(
       currentCarrito: List<ItemCarritoV2>,
       sucursal: String,
       usuarioNombre: String,
       totalVenta: Double,
-      metodoPago: String
+      metodoPago: String,
+      descuentoLealtad: Double,
+      clienteSeleccionado: ClienteV2?,
+      esConsumoEmpleado: Boolean
    ): com.bocatta.pos.domain.repository.ResultadoVenta {
-      val sucursalId = sucursal.lowercase()
-      val ticketNum = OfflineManager.obtenerUltimoTicketLocal(getApplication(), sucursalId) + 1
-      val codigoTicket = TicketUtils.generarCodigoTicket(sucursalId, ticketNum)
-      OfflineManager.guardarUltimoTicketLocal(getApplication(), sucursalId, ticketNum)
       return OfflineManager.guardarVentaOffline(
          context = getApplication(),
          carrito = currentCarrito,
          sucursal = sucursal,
          usuarioNombre = usuarioNombre,
          total = totalVenta,
-         descuentoLealtad = _descuentoLealtad,
-         clienteSeleccionado = _clienteSeleccionado,
+         descuentoLealtad = descuentoLealtad,
+         clienteSeleccionado = clienteSeleccionado,
          metodoPago = metodoPago,
-         esConsumoEmpleado = _esConsumoEmpleado,
-         ticketNumber = ticketNum,
-         codigoTicket = codigoTicket
+         esConsumoEmpleado = esConsumoEmpleado
       )
    }
 
@@ -558,7 +700,7 @@ class SalesViewModelV2(
 
    fun registrarRetiroAlimento(sucursal: String, usuarioNombre: String, monto: Double) {
       if (monto > 150.0) { 
-         mensajeError = "Límite excedido: Máximo $150"
+         mensajeError = "Limite excedido: Maximo $150"
          return 
       }
       viewModelScope.launch {
@@ -594,6 +736,10 @@ class SalesViewModelV2(
 
     fun onErrorShown() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun onSuccessShown() {
+        _uiState.update { it.copy(showSuccess = false) }
     }
 }
 

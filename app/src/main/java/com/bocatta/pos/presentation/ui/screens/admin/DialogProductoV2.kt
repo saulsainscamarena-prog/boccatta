@@ -87,7 +87,7 @@ fun DialogProducto(
                             OutlinedTextField(value = emoji, onValueChange = { emoji = it }, label = { Text("Emoji") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                             ExposedDropdownMenuBox(expanded = expandCat, onExpandedChange = { expandCat = it }) {
                                 OutlinedTextField(value = categoria, onValueChange = { categoria = it }, label = { Text("Categoría*") },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandCat) }, modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandCat) }, modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                                 ExposedDropdownMenu(expanded = expandCat, onDismissRequest = { expandCat = false }) {
                                     vm.categorias.forEach { cat -> DropdownMenuItem(text = { Text(cat.nombre) }, onClick = { categoria = cat.nombre; expandCat = false }) }
                                     HorizontalDivider()
@@ -123,7 +123,7 @@ fun DialogProducto(
                                 var expandProd by remember { mutableStateOf(false) }
                                 ExposedDropdownMenuBox(expanded = expandProd, onExpandedChange = { expandProd = it }) {
                                     OutlinedTextField(value = "", onValueChange = {}, readOnly = true, placeholder = { Text("Agregar producto...") },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandProd) }, modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandProd) }, modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                                     ExposedDropdownMenu(expanded = expandProd, onDismissRequest = { expandProd = false }) {
                                         productosDisponibles.filter { it.id !in productosCombo }.forEach { prod ->
                                             DropdownMenuItem(text = { Text(prod.nombre) }, onClick = { productosCombo = productosCombo + prod.id; expandProd = false })
@@ -151,7 +151,7 @@ fun DialogProducto(
                                             Text(g.title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                             IconButton(onClick = { configSchema = configSchema.toMutableList().also { it.removeAt(idx) } }) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp)) }
                                         }
-                                        Text("Tipo: ${g.type.name} | Opciones: ${g.options.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                        Text("Tipo: ${labelConfigTypeProducto(g.type)} | Opciones: ${g.options.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                                     }
                                 }
                             }
@@ -163,8 +163,13 @@ fun DialogProducto(
                                         OutlinedTextField(value = editandoTitle.value, onValueChange = { editandoTitle.value = it }, label = { Text("Título visible*") }, placeholder = { Text("SALSA, EXTRAS") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
                                         Text("Tipo:", style = MaterialTheme.typography.labelSmall)
                                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            listOf("SINGLE_CHIP", "MULTI_CHIP", "MULTI_CHECKBOX", "TEXT").forEach { t ->
-                                                FilterChip(selected = editandoType.value == t, onClick = { editandoType.value = t }, label = { Text(t.replace("_", " "), fontSize = 10.sp) }, modifier = Modifier.height(36.dp))
+                                            ConfigFieldType.entries.forEach { t ->
+                                                FilterChip(
+                                                    selected = editandoType.value == t.name,
+                                                    onClick = { editandoType.value = t.name },
+                                                    label = { Text(labelConfigTypeProducto(t), fontSize = 10.sp) },
+                                                    modifier = Modifier.height(36.dp)
+                                                )
                                             }
                                         }
                                         Text("OPCIONES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
@@ -313,6 +318,13 @@ fun DialogProducto(
         },
         shape = RoundedCornerShape(20.dp)
     )
+}
+
+private fun labelConfigTypeProducto(type: ConfigFieldType): String = when (type) {
+    ConfigFieldType.SINGLE_CHIP -> "Una opcion"
+    ConfigFieldType.MULTI_CHIP -> "Varias opciones"
+    ConfigFieldType.MULTI_CHECKBOX -> "Casillas"
+    ConfigFieldType.TEXT -> "Texto libre"
 }
 
 

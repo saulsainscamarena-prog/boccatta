@@ -41,9 +41,8 @@ fun AperturaDiaScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Cargar stock global al arrancar para que el paso 2 tenga datos
     LaunchedEffect(sessionVm.sucursalActual) {
-        aperturaVmV2.cargarGlobalStock()
+        aperturaVmV2.cargarStockApertura(sessionVm.sucursalActual)
     }
 
     fun verificarYAvanzar(siguiente: () -> Unit) {
@@ -91,7 +90,7 @@ fun AperturaDiaScreen(
                         PasoItemPremium("1", "SUCURSAL", pasoActual >= 1, pasoActual == 0)
                         Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp)
                             .background(if (pasoActual >= 1) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
-                        PasoItemPremium("2", "SURTIDO", pasoActual >= 2, pasoActual == 1)
+                        PasoItemPremium("2", "ASIGNACION", pasoActual >= 2, pasoActual == 1)
                         Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp)
                             .background(if (pasoActual >= 2) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
                         PasoItemPremium("3", "CAJA", pasoActual >= 3, pasoActual == 2)
@@ -112,10 +111,11 @@ fun AperturaDiaScreen(
                                 verificarYAvanzar { pasoActual = 1 }
                             }
                             // FIX CRÍTICO: usa ValidacionStockPremium (ya existía y funciona)
-                            // NO más MasaPostresStep que no existe
+                            // Flujo legacy de masa/postres aislado en cuarentena.
                             1 -> ValidacionStockPremium(
                                 vm = aperturaVmV2,
-                                sucursal = sessionVm.sucursalActual
+                                sucursal = sessionVm.sucursalActual,
+                                usuarioId = sessionVm.uid.ifBlank { sessionVm.nombreUsuario }
                             ) {
                                 pasoActual = 2
                             }
@@ -208,8 +208,16 @@ fun SucursalCardPremium(nombre: String, seleccionada: Boolean, onClick: () -> Un
 }
 
 @Composable
-fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: () -> Unit) {
+fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId: String, onNext: () -> Unit) {
     val transferencias = remember { mutableStateMapOf<String, Int>() }
+    val motivosDiferencia = remember { mutableStateMapOf<String, String>() }
+    var autoSurtidoAplicado by remember { mutableStateOf(false) }
+    val hayStockOperable = vm.allocationPreview.any { it.cuotaSugeridaSucursal > 0 || it.cuotaActualSucursal > 0 }
+    val faltanMotivos = vm.allocationPreview.any { item ->
+        item.esFisico &&
+            (transferencias[item.insumoId] ?: item.cuotaSugeridaSucursal) != item.cuotaSugeridaSucursal &&
+            motivosDiferencia[item.insumoId].isNullOrBlank()
+    }
 
     val nombresAmigables = mapOf(
         "masa_crepa" to "Masa de Crepa",
@@ -219,12 +227,49 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
         "duraznos_crema_unidad" to "Duraznos con Crema"
     )
 
+    LaunchedEffect(vm.allocationPreview.toList()) {
+        if (!autoSurtidoAplicado && vm.allocationPreview.isNotEmpty()) {
+            vm.allocationPreview.forEach { item ->
+                transferencias[item.insumoId] = item.cuotaSugeridaSucursal
+            }
+            autoSurtidoAplicado = true
+        }
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column {
-            Text("¿CUÁNTAS TANDAS LLEVAS HOY?", fontWeight = FontWeight.Black,
+            Text("STOCK VENDIBLE PARA EL TURNO", fontWeight = FontWeight.Black,
                 style = MaterialTheme.typography.headlineSmall, color = Color.White)
-            Text("Indica cuántas tandas de cada producto traes de bodega central.",
+            Text("Bodega central sugiere el surtido; confirma o ajusta antes de abrir.",
                 color = Color.White.copy(0.6f), fontSize = 14.sp)
+        }
+
+        vm.mensajeError?.let { error ->
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer.copy(0.3f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Error,
+                        contentDescription = "Error de red",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
         when {
@@ -250,8 +295,10 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
             else -> {
                 LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(vm.globalStock.keys.toList()) { id ->
-                        val disponible = vm.globalStock[id] ?: 0
+                    items(vm.allocationPreview, key = { it.insumoId }) { item ->
+                        val id = item.insumoId
+                        val disponible = item.stockCentral
+                        val actualSucursal = item.cuotaActualSucursal
                         val cantidad = transferencias[id] ?: 0
                         val nombre = nombresAmigables[id]
                             ?: id.replace("_", " ").replaceFirstChar { it.uppercase() }
@@ -279,32 +326,51 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
                                     Text(nombre, fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp, color = Color.White)
                                     Text(
-                                        if (disponible > 0) "En bodega: $disponible tandas"
-                                        else "Sin stock en bodega",
+                                        if (disponible > 0) "Sucursal: $actualSucursal u - Bodega: $disponible u - Sugerido: ${item.cuotaSugeridaSucursal} u"
+                                        else "Sucursal: $actualSucursal u - Sin stock en bodega",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = if (disponible > 0) Color.White.copy(0.4f)
                                         else MaterialTheme.colorScheme.error.copy(0.7f)
                                     )
+                                    Text(
+                                        if (item.esFisico) "Fisico: confirmar conteo real"
+                                        else "Virtual: cuota automatica por sucursal",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary.copy(0.8f)
+                                    )
                                 }
-                                Row(verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.background(Color.White.copy(0.1f),
-                                        RoundedCornerShape(12.dp)).padding(2.dp)) {
-                                    IconButton(onClick = { if (cantidad > 0) transferencias[id] = cantidad - 1 },
-                                        modifier = Modifier.size(36.dp)) {
-                                        Icon(Icons.Default.Remove, "Quitar",
-                                            modifier = Modifier.size(18.dp), tint = Color.White)
+                                if (item.esFisico) {
+                                    Row(verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.background(Color.White.copy(0.1f),
+                                            RoundedCornerShape(12.dp)).padding(2.dp)) {
+                                        IconButton(onClick = { if (cantidad > 0) transferencias[id] = cantidad - 1 },
+                                            modifier = Modifier.size(36.dp)) {
+                                            Icon(Icons.Default.Remove, "Quitar",
+                                                modifier = Modifier.size(18.dp), tint = Color.White)
+                                        }
+                                        Text(cantidad.toString(), fontWeight = FontWeight.Black,
+                                            fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp),
+                                            color = if (cantidad > 0) MaterialTheme.colorScheme.primary else Color.White)
+                                        IconButton(onClick = { if (cantidad < disponible + actualSucursal) transferencias[id] = cantidad + 1 },
+                                            modifier = Modifier.size(36.dp), enabled = disponible > 0) {
+                                            Icon(Icons.Default.Add, "Agregar",
+                                                tint = if (disponible > 0) MaterialTheme.colorScheme.primary
+                                                else Color.White.copy(0.3f),
+                                                modifier = Modifier.size(18.dp))
+                                        }
                                     }
-                                    Text(cantidad.toString(), fontWeight = FontWeight.Black,
-                                        fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp),
-                                        color = if (cantidad > 0) MaterialTheme.colorScheme.primary else Color.White)
-                                    IconButton(onClick = { if (cantidad < disponible) transferencias[id] = cantidad + 1 },
-                                        modifier = Modifier.size(36.dp), enabled = disponible > 0) {
-                                        Icon(Icons.Default.Add, "Agregar",
-                                            tint = if (disponible > 0) MaterialTheme.colorScheme.primary
-                                            else Color.White.copy(0.3f),
-                                            modifier = Modifier.size(18.dp))
-                                    }
+                                } else {
+                                    Text(cantidad.toString(), fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
                                 }
+                            }
+                            if (item.esFisico && cantidad != item.cuotaSugeridaSucursal) {
+                                OutlinedTextField(
+                                    value = motivosDiferencia[id] ?: "",
+                                    onValueChange = { motivosDiferencia[id] = it },
+                                    label = { Text("Motivo de diferencia") },
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                    singleLine = true
+                                )
                             }
                         }
                     }
@@ -312,15 +378,37 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
             }
         }
 
+        if (!hayStockOperable) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer.copy(0.32f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.35f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Warning, "Sin stock", tint = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Confirma la asignacion automatica antes de abrir turno.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+
         Button(
             onClick = {
-                if (transferencias.values.any { it > 0 }) {
-                    vm.confirmarTransferencia(sucursal, transferencias.toMap()) { onNext() }
-                } else {
-                    onNext()
-                }
+                if (!hayStockOperable || faltanMotivos) return@Button
+                val conteosFisicos = vm.allocationPreview
+                    .filter { it.esFisico }
+                    .associate { it.insumoId to (transferencias[it.insumoId] ?: it.cuotaSugeridaSucursal) }
+                vm.confirmarAsignacion(sucursal, usuarioId, conteosFisicos, motivosDiferencia.toMap()) { onNext() }
             },
-            enabled = !vm.cargando,
+            enabled = !vm.cargando && hayStockOperable && !faltanMotivos,
             modifier = Modifier.fillMaxWidth().height(64.dp).padding(bottom = 8.dp),
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -333,8 +421,9 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, onNext: ()
                 Icon(Icons.Default.CheckCircle, "Confirmar", tint = MaterialTheme.colorScheme.background)
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    if (transferencias.values.any { it > 0 }) "CONFIRMAR Y CARGAR INVENTARIO"
-                    else "CONTINUAR SIN SURTIR",
+                    if (!hayStockOperable) "SIN STOCK PARA ASIGNAR"
+                    else if (faltanMotivos) "CAPTURA MOTIVOS"
+                    else "CONFIRMAR ASIGNACION",
                     fontWeight = FontWeight.ExtraBold, fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.background)
             }

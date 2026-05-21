@@ -13,6 +13,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.Locale
 import java.util.UUID
 
 
@@ -35,6 +36,7 @@ class AdminViewModel(
     private var listenerProductos: ListenerRegistration? = null
     private var listenerUsuarios: ListenerRegistration? = null
     private var listenerCancelaciones: ListenerRegistration? = null
+    private var listenerDiferenciasInventario: ListenerRegistration? = null
     private var listenerComprasPendientes: ListenerRegistration? = null
     private var listenerConfigCaja: ListenerRegistration? = null
     private var listenerConfigSeguridad: ListenerRegistration? = null
@@ -51,6 +53,8 @@ class AdminViewModel(
     var historialVentasV2 = mutableStateListOf<VentaV2>()
         private set
     var cancelacionesPendientes = mutableStateListOf<Map<String, Any>>()
+        private set
+    var diferenciasInventario = mutableStateListOf<Map<String, Any>>()
         private set
     var configCaja by mutableStateOf<Map<String, Any>>(emptyMap())
         private set
@@ -76,6 +80,7 @@ class AdminViewModel(
         escucharUsuarios()
         cargarHistorial()
         escucharCancelaciones()
+        escucharDiferenciasInventario()
         escucharRecetas()
         escucharGastosHoy()
         escucharConfigGlobal()
@@ -86,24 +91,12 @@ class AdminViewModel(
 
     private fun escucharInsumosMaestrosAutomatico() {
         listenerInsumosAuto?.remove()
-        listenerInsumosAuto = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).addSnapshotListener { snap, _ ->
+        listenerInsumosAuto = db.collection(FirestoreCollections.INSUMOS).addSnapshotListener { snap, _ ->
             if (snap != null) {
                 insumosMaestros.clear()
                 snap.documents.forEach { doc ->
-                    val data = doc.data
-                    if (data != null) {
-                        insumosMaestros.add(InsumoV2(
-                            id = doc.id,
-                            nombre = data["nombre"]?.toString() ?: doc.id,
-                            cantidadEnBase = (data["cantidadEnBase"] as? Number)?.toDouble()
-                                ?: (data["cantidadDisponible"] as? Number)?.toDouble()
-                                ?: 0.0,
-                            categoria = data["categoria"]?.toString() ?: "Bodega",
-                            unidadBase = data["unidadBase"]?.toString()
-                                ?: data["unidadMedida"]?.toString()
-                                ?: data["unidadMedidaMinima"]?.toString()
-                                ?: "g"
-                        ))
+                    doc.toObject(InsumoV2::class.java)?.let { insumo ->
+                        insumosMaestros.add(insumo.copy(id = doc.id))
                     }
                 }
             }
@@ -163,7 +156,25 @@ class AdminViewModel(
                 snap.documents.forEach { doc ->
                     categorias.add(Categoria(id = doc.id, nombre = doc.getString("nombre") ?: doc.id))
                 }
+                if (categorias.isEmpty()) {
+                    sembrarCategoriasBase()
+                }
             }
+        }
+    }
+
+    private fun sembrarCategoriasBase() {
+        viewModelScope.launch(safeHandler) {
+            val base = listOf("CREPAS_DULCES", "CREPAS_SALADAS", "COMBOS", "POSTRES", "SNACKS", "BEBIDAS")
+            val batch = db.batch()
+            base.forEach { categoria ->
+                batch.set(
+                    db.collection(FirestoreCollections.CATEGORIAS).document(categoria),
+                    mapOf("id" to categoria, "nombre" to categoria, "activa" to true),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
+            }
+            batch.commit().await()
         }
     }
 
@@ -171,13 +182,12 @@ class AdminViewModel(
         listenerComprasPendientes?.remove()
         listenerComprasPendientes = db.collection(FirestoreCollections.COMPRAS)
             .whereEqualTo("auditada", false)
-            .orderBy("fecha", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, _ ->
                 if (snap != null) {
                     comprasPendientes.clear()
-                    snap.documents.forEach { doc ->
-                        val d = doc.data ?: return@forEach
-                        comprasPendientes.add(CompraRegistro(
+                    val compras = snap.documents.mapNotNull { doc ->
+                        val d = doc.data ?: return@mapNotNull null
+                        CompraRegistro(
                             id = doc.id,
                             insumoId = d["insumoId"]?.toString() ?: "",
                             insumoNombre = d["insumoNombre"]?.toString() ?: "",
@@ -196,8 +206,9 @@ class AdminViewModel(
                             resueltoPor = d["resueltoPor"]?.toString() ?: "",
                             resueltoPorNombre = d["resueltoPorNombre"]?.toString() ?: "",
                             fechaResolucion = (d["fechaResolucion"] as? Number)?.toLong() ?: 0L
-                        ))
+                        )
                     }
+                    comprasPendientes.addAll(compras.sortedByDescending { it.fecha })
                 }
             }
     }
@@ -205,10 +216,10 @@ class AdminViewModel(
     fun agregarCategoria(nombre: String): Result<String> {
         return try {
             val nombreNorm = nombre.trim()
-            check(nombreNorm.isNotEmpty()) { "El nombre no puede estar vacÑo" }
+            check(nombreNorm.isNotEmpty()) { "El nombre no puede estar vacio" }
             // Verificar duplicado
             if (categorias.any { it.nombre.equals(nombreNorm, ignoreCase = true) }) {
-                throw Exception("Ya existe una categorÑa con ese nombre")
+                throw Exception("Ya existe una categoria con ese nombre")
             }
             val docRef = db.collection(FirestoreCollections.CATEGORIAS).document()
             val nuevoId = docRef.id
@@ -229,11 +240,11 @@ class AdminViewModel(
     suspend fun agregarInsumo(insumo: InsumoV2): Result<String> {
         return try {
             val nombreNorm = insumo.nombre.trim()
-            check(nombreNorm.isNotEmpty()) { "El nombre no puede estar vacÑo" }
+            check(nombreNorm.isNotEmpty()) { "El nombre no puede estar vacio" }
             // Verificar duplicado en lista local
             val existente = insumosMaestros.find { it.nombre.equals(nombreNorm, ignoreCase = true) }
             if (existente != null) {
-                mensajeExito = "Insumo ya existe, se usarÑ el existente: ${existente.id}"
+                mensajeExito = "Insumo ya existe, se usara el existente: ${existente.id}"
                 return Result.success(existente.id)
             }
             // Crear nuevo
@@ -355,6 +366,23 @@ class AdminViewModel(
             }
     }
 
+    private fun escucharDiferenciasInventario() {
+        listenerDiferenciasInventario?.remove()
+        listenerDiferenciasInventario = db.collection(FirestoreCollections.MOVIMIENTOS_INVENTARIO)
+            .whereEqualTo("tipo", "diferencia_apertura_fisica")
+            .limit(30)
+            .addSnapshotListener { snap, _ ->
+                if (snap != null) {
+                    diferenciasInventario.clear()
+                    diferenciasInventario.addAll(
+                        snap.documents
+                            .mapNotNull { doc -> doc.data?.plus("id" to doc.id) }
+                            .sortedByDescending { it["fecha"] as? Long ?: 0L }
+                    )
+                }
+            }
+    }
+
     fun revisarCancelacion(id: String) {
         viewModelScope.launch(safeHandler) {
             db.collection(FirestoreCollections.CANCELACIONES).document(id).delete().await()
@@ -364,7 +392,7 @@ class AdminViewModel(
 
     fun realizarLimpiezaTotal() {
         if (!puedeEjecutarOperacionCritica()) {
-            mensajeError = "? Sin permisos: Solo ADMIN o DUEÑO pueden ejecutar esta operaciÑn."
+            mensajeError = "Sin permisos: Solo ADMIN o DUEÑO pueden ejecutar esta operación."
             return
         }
         viewModelScope.launch(safeHandler) {
@@ -384,14 +412,14 @@ class AdminViewModel(
 
     fun inicializarV2() {
         if (!puedeEjecutarOperacionCritica()) {
-            mensajeError = "? Sin permisos: Solo ADMIN o DUEÑO pueden ejecutar esta operaciÑn."
+            mensajeError = "Sin permisos: Solo ADMIN o DUEÑO pueden ejecutar esta operación."
             return
         }
         viewModelScope.launch(safeHandler) {
             cargando = true
-            mensajeExito = "Inyectando inteligencia V2..."
+            mensajeExito = "Cargando catálogo V2..."
             dataSeeder.inicializarTodoV2().onSuccess {
-                mensajeExito = "SISTEMA V2 LISTO ?"
+                mensajeExito = "Sistema V2 listo"
             }.onFailure {
                 mensajeError = "Error al inyectar V2: ${it.message}"
             }
@@ -439,7 +467,7 @@ class AdminViewModel(
     fun registrarGastoNegocio(gasto: GastoV2) {
         viewModelScope.launch(safeHandler) {
             db.collection(FirestoreCollections.GASTOS).document(gasto.id).set(gasto).await()
-            mensajeExito = "Gasto V2 registrado ?"
+            mensajeExito = "Gasto V2 registrado"
         }
     }
 
@@ -451,7 +479,7 @@ class AdminViewModel(
             batch.set(stockRef, mapOf("cantidadEnBase" to FieldValue.increment(cantidad)), com.google.firebase.firestore.SetOptions.merge())
             batch.update(stockRef, "ultimaActualizacion", System.currentTimeMillis())
             batch.commit().await()
-            mensajeExito = "Compra e inventario V2 registrados ?"
+            mensajeExito = "Compra e inventario V2 registrados"
         }
     }
 
@@ -461,6 +489,7 @@ class AdminViewModel(
         compradoPor: String, compradoPorNombre: String, sucursal: String, esAdmin: Boolean
     ) {
         viewModelScope.launch(safeHandler) {
+            val sucursalId = sucursal.trim().lowercase(Locale.ROOT).replace(" ", "_")
             val totalUnidades = cantidadComprada * contenidoUnidades
             val batch = db.batch()
 
@@ -473,7 +502,7 @@ class AdminViewModel(
                 contenidoUnidades = contenidoUnidades,
                 precioPagado = precioPagado,
                 compradoPor = compradoPor, compradoPorNombre = compradoPorNombre,
-                fecha = System.currentTimeMillis(), sucursal = sucursal,
+                fecha = System.currentTimeMillis(), sucursal = sucursalId,
                 auditada = esAdmin,
                 estado = if (esAdmin) "aprobada" else "pendiente"
             )
@@ -482,6 +511,14 @@ class AdminViewModel(
             val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
             batch.set(stockRef, mapOf(
                 "cantidadEnBase" to FieldValue.increment(totalUnidades),
+                "ultimaActualizacion" to System.currentTimeMillis()
+            ), com.google.firebase.firestore.SetOptions.merge())
+
+            val costoUnitario = if (totalUnidades > 0.0) precioPagado / totalUnidades else 0.0
+            val insumoRef = db.collection(FirestoreCollections.INSUMOS).document(insumoId)
+            batch.set(insumoRef, mapOf(
+                "cantidadEnBase" to FieldValue.increment(totalUnidades),
+                "costoUnitarioBase" to costoUnitario,
                 "ultimaActualizacion" to System.currentTimeMillis()
             ), com.google.firebase.firestore.SetOptions.merge())
 
@@ -496,6 +533,20 @@ class AdminViewModel(
                     usuarioId = compradoPor
                 )
                 batch.set(db.collection(FirestoreCollections.GASTOS).document(gasto.id), gasto)
+                batch.set(
+                    db.collection(FirestoreCollections.GASTOS).document(gasto.id),
+                    mapOf(
+                        "descripcion" to "Compra rapida: $cantidadComprada $presentacion de $insumoNombre",
+                        "categoria" to "Insumo",
+                        "sucursal" to sucursalId,
+                        "insumoId" to insumoId,
+                        "cantidadSurtida" to totalUnidades,
+                        "presentacionCompra" to presentacion,
+                        "cantidadComprada" to cantidadComprada,
+                        "contenidoPorUnidad" to contenidoUnidades
+                    ),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
             }
 
             batch.commit().await()
@@ -552,11 +603,19 @@ class AdminViewModel(
                     "cantidadEnBase" to FieldValue.increment(diffUnidades),
                     "ultimaActualizacion" to System.currentTimeMillis()
                 ), com.google.firebase.firestore.SetOptions.merge())
+                val insumoRef = db.collection(FirestoreCollections.INSUMOS).document(compra.insumoId)
+                val totalBase = nuevaCantidad * compra.contenidoUnidades
+                val costoUnitario = if (totalBase > 0.0) nuevoPrecio / totalBase else 0.0
+                batch.set(insumoRef, mapOf(
+                    "cantidadEnBase" to FieldValue.increment(diffUnidades),
+                    "costoUnitarioBase" to costoUnitario,
+                    "ultimaActualizacion" to System.currentTimeMillis()
+                ), com.google.firebase.firestore.SetOptions.merge())
             }
 
             val gasto = GastoV2(
                 id = UUID.randomUUID().toString(),
-                descripcion = "Compra reajustada: ${compra.insumoNombre} — $motivo",
+                descripcion = "Compra reajustada: ${compra.insumoNombre} - $motivo",
                 monto = nuevoPrecio,
                 categoria = "Insumos",
                 fecha = compra.fecha,
@@ -590,10 +649,15 @@ class AdminViewModel(
                 "cantidadEnBase" to FieldValue.increment(-totalUnidades),
                 "ultimaActualizacion" to System.currentTimeMillis()
             ), com.google.firebase.firestore.SetOptions.merge())
+            val insumoRef = db.collection(FirestoreCollections.INSUMOS).document(compra.insumoId)
+            batch.set(insumoRef, mapOf(
+                "cantidadEnBase" to FieldValue.increment(-totalUnidades),
+                "ultimaActualizacion" to System.currentTimeMillis()
+            ), com.google.firebase.firestore.SetOptions.merge())
 
             val perdida = GastoV2(
                 id = UUID.randomUUID().toString(),
-                descripcion = "PÉRDIDA por compra rechazada: ${compra.insumoNombre} — $motivo",
+                descripcion = "PÉRDIDA por compra rechazada: ${compra.insumoNombre} - $motivo",
                 monto = compra.precioPagado,
                 categoria = "Pérdida",
                 fecha = System.currentTimeMillis(),
@@ -615,7 +679,7 @@ class AdminViewModel(
                 "ultimaActualizacion" to System.currentTimeMillis()
             )
             db.collection(FirestoreCollections.CONFIGURACION).document("parametros_caja").set(data).await()
-            mensajeExito = "ParÑmetros de caja actualizados ?"
+            mensajeExito = "Parámetros de caja actualizados"
         }
     }
 
@@ -627,7 +691,7 @@ class AdminViewModel(
                 "ultimaActualizacion" to System.currentTimeMillis()
             )
             db.collection(FirestoreCollections.CONFIGURACION).document("seguridad").set(data).await()
-            mensajeExito = "Seguridad actualizada ?"
+            mensajeExito = "Seguridad actualizada"
         }
     }
 
@@ -638,6 +702,7 @@ class AdminViewModel(
         listenerGastos?.remove(); listenerRecetas?.remove()
         listenerProductos?.remove(); listenerUsuarios?.remove()
         listenerCancelaciones?.remove()
+        listenerDiferenciasInventario?.remove()
         listenerComprasPendientes?.remove()
         listenerConfigCaja?.remove(); listenerConfigSeguridad?.remove()
     }

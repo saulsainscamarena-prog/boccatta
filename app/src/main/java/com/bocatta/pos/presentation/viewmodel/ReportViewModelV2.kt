@@ -7,9 +7,11 @@ import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.google.firebase.firestore.ListenerRegistration
 import com.bocatta.pos.data.repository.ReportRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class ReportViewModelV2(private val repository: ReportRepository = ReportRepository()) : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
@@ -68,49 +70,52 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
             .whereEqualTo("sucursal", sucursalId)
             .whereGreaterThanOrEqualTo("fecha", hoy)
             .addSnapshotListener { snap, _ ->
-                if (snap != null) {
+                val docs = snap?.documents.orEmpty()
+                viewModelScope.launch(Dispatchers.Default) {
                     var bruto = 0.0
                     var efec = 0.0
                     var tarj = 0.0
                     val vendedores = mutableMapOf<String, Double>()
-                    ventasDelDia.clear()
+                    val ventas = mutableListOf<VentaV2>()
                     val conteoProductos = mutableMapOf<String, Int>()
                     val ingresosProductos = mutableMapOf<String, Double>()
 
-                    snap.documents.forEach { doc ->
+                    docs.forEach { doc ->
                         val v = doc.toObject(VentaV2::class.java)
                         if (v != null) {
-                            ventasDelDia.add(v)
+                            ventas.add(v)
                             bruto += v.total
                             vendedores[v.atendio] = (vendedores[v.atendio] ?: 0.0) + v.total
                             if (v.metodoPago == "Tarjeta") tarj += v.total else efec += v.total
                             
                             // MÑtricas de productos (Casting seguro para V2)
-                            @Suppress("UNCHECKED_CAST")
                             v.productos.forEach { item ->
-                                val pMap = (item as? Map<*, *>)?.filterKeys { it is String }?.mapKeys { it.key as String } ?: return@forEach
-                                val nombre = pMap["nombre"]?.toString() ?: "Desconocido"
-                                val cant = (pMap["cantidad"] as? Number)?.toInt() ?: 1
-                                val precioTotalItem = (pMap["precio"] as? Number)?.toDouble() ?: 0.0
+                                val nombre = item.nombre.ifBlank { "Desconocido" }
+                                val cant = item.cantidad
+                                val precioUnitario = item.precioUnitario
                                 
                                 conteoProductos[nombre] = (conteoProductos[nombre] ?: 0) + cant
-                                ingresosProductos[nombre] = (ingresosProductos[nombre] ?: 0.0) + (precioTotalItem * cant)
+                                ingresosProductos[nombre] = (ingresosProductos[nombre] ?: 0.0) + (precioUnitario * cant)
                             }
                         }
                     }
-                    ventasBrutas = bruto
-                    ventasEfectivo = efec
-                    ventasTarjeta = tarj
-                    mejorVendedor = vendedores.maxByOrNull { it.value }?.key ?: "N/A"
-                    ticketPromedio = if (snap.size() > 0) bruto / snap.size() else 0.0
-                    
-                    productoMasVendido.value = conteoProductos.maxByOrNull { it.value }?.key ?: "N/A"
-                    topProductos.clear()
-                    conteoProductos.map { (nombre, cant) ->
+                    val top = conteoProductos.map { (nombre, cant) ->
                         ProductoMetrica(nombre, cant, ingresosProductos[nombre] ?: 0.0)
-                    }.sortedByDescending { it.cantidad }.take(5).let { topProductos.addAll(it) }
+                    }.sortedByDescending { it.cantidad }.take(5)
 
-                    recalcularUtilidad()
+                    withContext(Dispatchers.Main) {
+                        ventasDelDia.clear()
+                        ventasDelDia.addAll(ventas)
+                        ventasBrutas = bruto
+                        ventasEfectivo = efec
+                        ventasTarjeta = tarj
+                        mejorVendedor = vendedores.maxByOrNull { it.value }?.key ?: "N/A"
+                        ticketPromedio = if (ventas.isNotEmpty()) bruto / ventas.size else 0.0
+                        productoMasVendido.value = conteoProductos.maxByOrNull { it.value }?.key ?: "N/A"
+                        topProductos.clear()
+                        topProductos.addAll(top)
+                        recalcularUtilidad()
+                    }
                 }
             }
 
@@ -124,7 +129,8 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
             .whereEqualTo("sucursal", sucursalId)
             .whereGreaterThanOrEqualTo("fecha", hace7Dias)
             .addSnapshotListener { snap, _ ->
-                if (snap != null) {
+                val docs = snap?.documents.orEmpty()
+                viewModelScope.launch(Dispatchers.Default) {
                     val mapa = mutableMapOf<String, Double>()
                     val sdf = java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault())
                     
@@ -134,7 +140,7 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
                         mapa[sdf.format(cal.time)] = 0.0
                     }
 
-                    snap.documents.forEach { doc ->
+                    docs.forEach { doc ->
                         val t = doc.getDouble("total") ?: 0.0
                         val f = doc.getLong("fecha") ?: 0L
                         val etiq = sdf.format(java.util.Date(f))
@@ -142,9 +148,12 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
                             mapa[etiq] = (mapa[etiq] ?: 0.0) + t
                         }
                     }
-                    
-                    ventasPorDia.clear()
-                    mapa.forEach { (k, v) -> ventasPorDia.add(VentaPorDia(k, v)) }
+
+                    val serie = mapa.map { (k, v) -> VentaPorDia(k, v) }
+                    withContext(Dispatchers.Main) {
+                        ventasPorDia.clear()
+                        ventasPorDia.addAll(serie)
+                    }
                 }
             }
 
@@ -153,9 +162,13 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
             .whereEqualTo("sucursal", sucursalId)
             .whereGreaterThanOrEqualTo("fecha", hoy)
             .addSnapshotListener { snap, _ ->
-                if (snap != null) {
-                    totalGastos = snap.documents.sumOf { it.getDouble("monto") ?: 0.0 }
-                    recalcularUtilidad()
+                val docs = snap?.documents.orEmpty()
+                viewModelScope.launch(Dispatchers.Default) {
+                    val total = docs.sumOf { it.getDouble("monto") ?: 0.0 }
+                    withContext(Dispatchers.Main) {
+                        totalGastos = total
+                        recalcularUtilidad()
+                    }
                 }
             }
 
@@ -164,9 +177,13 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
             .whereEqualTo("sucursal", sucursalId)
             .whereGreaterThanOrEqualTo("fecha", hoy)
             .addSnapshotListener { snap, _ ->
-                if (snap != null) {
-                    totalMermas = snap.documents.sumOf { it.getDouble("costo") ?: 0.0 } 
-                    recalcularUtilidad()
+                val docs = snap?.documents.orEmpty()
+                viewModelScope.launch(Dispatchers.Default) {
+                    val total = docs.sumOf { it.getDouble("costo") ?: 0.0 }
+                    withContext(Dispatchers.Main) {
+                        totalMermas = total
+                        recalcularUtilidad()
+                    }
                 }
             }
 
@@ -188,15 +205,7 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
     }
 
     private fun recalcularUtilidad() {
-        // En V2, el costoProduccionTeorico se actualiza desde el repositorio cuando se genera el reporte.
-        // Solo usamos el 30% como un fallback visual si el costo real es exactamente 0.0 (indicando que no se ha calculado).
-        val costoFinal = if (costoProduccionTeorico > 0.0) {
-            costoProduccionTeorico
-        } else {
-            Timber.tag("ReportViewModelV2").w("Fallback 30% usado - costoProduccionTeorico es 0. Ventas: $ventasBrutas")
-            ventasBrutas * 0.30
-        }
-        utilidadNeta = ventasBrutas - totalGastos - costoFinal
+        utilidadNeta = ventasBrutas - totalGastos - costoProduccionTeorico
     }
 
     override fun onCleared() {

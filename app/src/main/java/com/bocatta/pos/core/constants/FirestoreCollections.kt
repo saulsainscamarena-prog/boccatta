@@ -37,6 +37,8 @@ object FirestoreCollections {
     const val RECIPES = "v2_recipes"
     const val MOVEMENTS = "v2_movements"
     const val PRESENTACIONES = "v2_presentaciones_compra"
+    const val PROMOCIONES = "promociones"
+    const val CATALOGO_OPCIONES = "v2_catalogo_opciones"
 
     // Configuración de Negocio
     const val MEMBRESIA_CICLO_VISITAS = 5

@@ -156,7 +156,7 @@ private fun TabResumenHoy(vmV2: ReportViewModelV2) {
         // Historial del día
         if (vmV2.ventasDelDia.isNotEmpty()) {
             item { BocattaSectionTitle("Últimas transacciones") }
-            items(vmV2.ventasDelDia.takeLast(8).reversed()) { venta ->
+            items(vmV2.ventasDelDia.takeLast(8).reversed(), key = { it.id }) { venta ->
                 ElevatedCard(shape = RoundedCornerShape(14.dp)) {
                     Row(
                         modifier = Modifier.padding(14.dp).fillMaxWidth(),
@@ -282,7 +282,7 @@ private fun TabProductos(vmV2: ReportViewModelV2) {
     ) {
         item { BocattaSectionTitle("Top productos del día") }
 
-        items(vmV2.topProductos) { prod ->
+        items(vmV2.topProductos, key = { it.nombre }) { prod ->
             ElevatedCard(shape = RoundedCornerShape(16.dp)) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(

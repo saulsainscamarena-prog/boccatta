@@ -13,9 +13,6 @@ import com.bocatta.pos.domain.repository.ResultadoVenta
 import com.bocatta.pos.data.repository.InventoryRepository
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 object OfflineManager {
 
@@ -41,35 +38,19 @@ object OfflineManager {
         descuentoLealtad: Double,
         clienteSeleccionado: ClienteV2?,
         metodoPago: String,
-        esConsumoEmpleado: Boolean,
-        ticketNumber: Long,
-        codigoTicket: String
+        esConsumoEmpleado: Boolean
     ): ResultadoVenta {
-        val ventaId = "offline_${System.currentTimeMillis()}_${ticketNumber}"
+        val ventaId = "offline_${System.currentTimeMillis()}"
         val sucursalId = sucursal.lowercase()
         val db = OfflineDatabase.getInstance(context)
         val inventoryRepo = InventoryRepository(db)
 
-        // Procesar deducción de inventario local INMEDIATAMENTE
-        var stockSuficiente = true
-        for (item in carrito) {
-            val exito = inventoryRepo.descontarVentaCompleta(
-                productoId = item.producto.id,
-                recetaId = item.producto.recetaId,
-                toppings = item.toppings,
-                base = item.base,
-                aderezos = item.aderezos,
-                esSeparado = item.esSeparado,
-                cantidad = item.cantidad
-            )
-            if (!exito) {
-                stockSuficiente = false
-                break
+        // Calcular primero; venta y stock se confirman juntos en SQLite.
+        val deducciones = linkedMapOf<String, Double>()
+        carrito.forEach { item ->
+            inventoryRepo.calcularDeduccionesItemOffline(item).forEach { (insumoId, cantidad) ->
+                deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad
             }
-        }
-
-        if (!stockSuficiente) {
-            throw IllegalStateException("Stock local insuficiente")
         }
 
         val carritoJson = json.encodeToString(carrito.map { item ->
@@ -83,14 +64,23 @@ object OfflineManager {
                 "esSeparado" to item.esSeparado,
                 "base" to item.base,
                 "aderezos" to item.aderezos,
-                "toppings" to item.toppings
+                "toppings" to item.toppings,
+                "componentesCombo" to item.componentesCombo.map { componente ->
+                    mapOf(
+                        "nombre" to componente.nombre,
+                        "cantidad" to componente.cantidad.toDouble(),
+                        "base" to componente.base,
+                        "aderezos" to componente.aderezos,
+                        "toppings" to componente.toppings
+                    )
+                }
             )
         })
 
         val ventaPendiente = VentaOffline(
             id = ventaId,
-            ticket = ticketNumber,
-            codigoTicket = codigoTicket,
+            ticket = 0L,
+            codigoTicket = "",
             total = total,
             descuentoLealtad = descuentoLealtad,
             fecha = System.currentTimeMillis(),
@@ -105,9 +95,17 @@ object OfflineManager {
             ultimoIntento = null
         )
 
-        db.guardarVenta(ventaPendiente)
+        val legacyUltimoTicket = leerUltimoTicketLocalLegacy(context, sucursalId)
+        val ventaConfirmada = db.guardarVentaYDescontarStockReservandoFolio(
+            ventaBase = ventaPendiente,
+            deducciones = deducciones,
+            legacyUltimoTicket = legacyUltimoTicket
+        )
 
-        return ResultadoVenta(numeroTicket = ticketNumber, codigoTicket = codigoTicket)
+        return ResultadoVenta(
+            numeroTicket = ventaConfirmada.ticket,
+            codigoTicket = ventaConfirmada.codigoTicket
+        )
     }
 
     fun guardarOperacionOffline(
@@ -139,12 +137,15 @@ object OfflineManager {
         OfflineDatabase.getInstance(context).guardarOperacion(operacion)
     }
 
-    fun obtenerUltimoTicketLocal(context: Context, sucursalId: String): Long {
+    @Deprecated("Legacy SharedPreferences counter is read only as a migration floor. Use SQLite folios in OfflineDatabase.")
+    fun obtenerUltimoTicketLocal(context: Context, sucursalId: String): Long = leerUltimoTicketLocalLegacy(context, sucursalId)
+
+    private fun leerUltimoTicketLocalLegacy(context: Context, sucursalId: String): Long {
         val prefs = context.getSharedPreferences("bocatta_offline_tickets", Context.MODE_PRIVATE)
-        val lastTicket = prefs.getLong("last_ticket_$sucursalId", 0L)
-        return lastTicket + 1
+        return prefs.getLong("last_ticket_$sucursalId", 0L)
     }
 
+    @Deprecated("Legacy SharedPreferences counter is no longer updated by the checkout flow.")
     fun guardarUltimoTicketLocal(context: Context, sucursalId: String, ticket: Long) {
         val prefs = context.getSharedPreferences("bocatta_offline_tickets", Context.MODE_PRIVATE)
         prefs.edit().putLong("last_ticket_$sucursalId", ticket).apply()

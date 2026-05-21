@@ -13,12 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.presentation.viewmodel.SalesViewModelV2
 import com.bocatta.pos.presentation.ui.theme.*
 import java.math.BigDecimal
+import java.util.Locale
 
 @Composable
 fun SectionTitle(title: String, color: Color) {
@@ -31,38 +33,58 @@ fun SectionTitle(title: String, color: Color) {
 }
 
 data class ConfigCrepa(
-    val base: String? = null,
+    val bases: List<String> = emptyList(),
     val aderezos: List<String> = emptyList(),
     val toppings: List<String> = emptyList(),
     val esSalada: Boolean = false
 )
 
-// Datos reales del menú Bocatta — conectados a OpcionesProducto
+// Datos reales del menu Bocatta conectados a opciones vendibles.
 private val BASES_DULCES = listOf(
-    "Sin Base", "Nutella", "Philadelphia", "Lechera",
-    "Mermelada Fresa", "Cajeta", "Zarzamora"
+    "Nutella", "Lechera", "Zarzamora", "Mermelada Fresa", "Philadelphia"
 )
 private val BASES_SALADAS = listOf(
-    "Sin Base", "Salsa de Tomate", "Philadelphia"
+    "Tomate", "Philadelphia"
 )
 private val TOPPINGS_DULCES = listOf(
-    "Fresa Natural", "Durazno", "Coco Rayado",
-    "Granillo Chocolate", "Granillo Colores", "Bombon", "Nuez"
+    "Durazno", "Fresa Natural", "Coco Rayado",
+    "Granillo Chocolate", "Granillo Colores"
 )
 private val TOPPINGS_PREMIUM = listOf(
-    "Oreo", "Nuez Caramelizada"
+    "Oreo", "Bombon", "Nuez"
 )
 private val TOPPINGS_SALADOS = listOf(
-    "Pepperoni", "Jamón", "Piña", "Champiñones",
-    "Queso Mozzarella", "Chorizo"
-)
-private val ADEREZOS_DULCES = listOf(
-    "Cajeta", "Hershey's", "Canela", "Azúcar Glass"
+    "Jamon", "Pina", "Peperoni"
 )
 private val ADEREZOS_SALADOS = listOf(
-    "Mayonesa", "Catsup", "Valentina", "Blue Cheese",
-    "BBQ", "Buffalo", "Queso Amarillo"
+    "BBQ", "Buffalo", "Blue Cheese", "Valentina",
+    "Queso Amarillo", "Catsup", "Mayonesa"
 )
+private val PRESETS_SALADOS = mapOf(
+    "Hawaiana" to ConfigCrepa(bases = listOf("Tomate"), toppings = listOf("Jamon", "Pina"), esSalada = true),
+    "Peperoni" to ConfigCrepa(bases = listOf("Tomate"), toppings = listOf("Peperoni"), esSalada = true),
+    "Jamon con Philadelphia" to ConfigCrepa(bases = listOf("Philadelphia"), toppings = listOf("Jamon"), esSalada = true)
+)
+
+private fun basesDesdeTexto(base: String?): List<String> =
+    base.orEmpty().split(",").map { it.trim() }.filter { it.isNotBlank() }.take(2)
+
+private fun tiposCrepaParaProducto(producto: SalesInventoryProductV2): List<Boolean> {
+    val nombre = producto.nombre.uppercase(Locale.ROOT)
+    val categoria = producto.categoria.uppercase(Locale.ROOT)
+    return when {
+        producto.esCombo && (nombre.contains("DUO") || (nombre.contains("DULCE") && nombre.contains("SALADA"))) ->
+            listOf(false, true)
+        producto.esCombo && nombre.contains("SALADA") ->
+            listOf(true, true)
+        producto.esCombo && nombre.contains("DULCE") ->
+            listOf(false, false)
+        categoria.contains("SALADA") || nombre.contains("SALADA") ->
+            listOf(true)
+        else ->
+            listOf(false)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -70,52 +92,55 @@ fun CrepeBuilderDialog(
     producto: SalesInventoryProductV2,
     vmV2: SalesViewModelV2,
     sucursal: String,
+    itemInicial: ItemCarritoV2? = null,
     onDismiss: () -> Unit,
     onAddToCart: (SalesInventoryProductV2, String?, List<String>, List<String>, Boolean, List<ItemCarritoV2>) -> Unit
 ) {
-    val numConfiguraciones = when {
-        producto.esCombo && producto.nombre.uppercase().contains("DUO") -> 2
-        producto.esCombo && producto.nombre.uppercase().contains("2 CREPAS") -> 2
-        producto.esCombo && producto.nombre.uppercase().contains("DULCE") &&
-            producto.nombre.uppercase().contains("SALADA") -> 2
-        else -> 1
+    val tiposCrepa = remember(producto.id, producto.nombre, producto.categoria, producto.esCombo) {
+        tiposCrepaParaProducto(producto)
     }
+    val numConfiguraciones = tiposCrepa.size
 
     var currentConfigIndex by remember { mutableIntStateOf(0) }
-    val configs = remember {
+    val configs = remember(tiposCrepa, itemInicial?.cartId) {
         mutableStateListOf<ConfigCrepa>().apply {
-            // Para combo DUO: primera crepa dulce, segunda salada
-            if (numConfiguraciones == 2 &&
-                (producto.nombre.uppercase().contains("DUO") ||
-                    (producto.nombre.uppercase().contains("DULCE") &&
-                        producto.nombre.uppercase().contains("SALADA")))) {
-                add(ConfigCrepa(esSalada = false))
-                add(ConfigCrepa(esSalada = true))
-            } else {
-                repeat(numConfiguraciones) {
-                    add(ConfigCrepa(esSalada = producto.categoria.uppercase().contains("SALADA")))
-                }
+            val iniciales = itemInicial?.componentesCombo?.takeIf { it.isNotEmpty() } ?: itemInicial?.let { listOf(it) }.orEmpty()
+            tiposCrepa.forEachIndexed { index, esSalada ->
+                val item = iniciales.getOrNull(index)
+                add(
+                    ConfigCrepa(
+                        bases = basesDesdeTexto(item?.base),
+                        aderezos = item?.aderezos ?: emptyList(),
+                        toppings = item?.toppings ?: emptyList(),
+                        esSalada = esSalada
+                    )
+                )
             }
         }
     }
+    LaunchedEffect(configs.size) {
+        if (configs.isNotEmpty() && currentConfigIndex > configs.lastIndex) {
+            currentConfigIndex = configs.lastIndex
+        }
+    }
 
-    var esSeparado by remember { mutableStateOf(false) }
+    var esSeparado by remember(itemInicial?.cartId) { mutableStateOf(itemInicial?.esSeparado ?: false) }
     val scrollState = rememberScrollState()
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.padding(16.dp).fillMaxWidth()
+        modifier = Modifier.padding(8.dp).fillMaxWidth().heightIn(max = 720.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
         ) {
-            Column(modifier = Modifier.padding(24.dp).verticalScroll(scrollState)) {
+            Column(modifier = Modifier.padding(18.dp).verticalScroll(scrollState)) {
 
                 // Header
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val configActual = configs[currentConfigIndex]
+                    val configActual = configs[currentConfigIndex.coerceIn(0, configs.lastIndex)]
                     Surface(
                         color = if (configActual.esSalada) MaterialTheme.colorScheme.primary.copy(0.1f)
                         else MaterialTheme.colorScheme.tertiary.copy(0.1f),
@@ -167,7 +192,8 @@ fun CrepeBuilderDialog(
                 }
 
                 Spacer(Modifier.height(24.dp))
-                val currentConfig = configs[currentConfigIndex]
+                val safeIndex = currentConfigIndex.coerceIn(0, configs.lastIndex)
+                val currentConfig = configs[safeIndex]
 
                 // TIPO — toggle dulce/salada por crepa
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -176,8 +202,9 @@ fun CrepeBuilderDialog(
                     Spacer(Modifier.width(12.dp))
                     FilterChip(
                         selected = !currentConfig.esSalada,
-                        onClick = { configs[currentConfigIndex] = currentConfig.copy(esSalada = false) },
+                        onClick = { },
                         label = { Text("Dulce") },
+                        enabled = !currentConfig.esSalada,
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.tertiary,
                             selectedLabelColor = MaterialTheme.colorScheme.onTertiary)
@@ -185,8 +212,9 @@ fun CrepeBuilderDialog(
                     Spacer(Modifier.width(8.dp))
                     FilterChip(
                         selected = currentConfig.esSalada,
-                        onClick = { configs[currentConfigIndex] = currentConfig.copy(esSalada = true) },
+                        onClick = { },
                         label = { Text("Salada") },
+                        enabled = currentConfig.esSalada,
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary)
@@ -194,6 +222,35 @@ fun CrepeBuilderDialog(
                 }
 
                 Spacer(Modifier.height(16.dp))
+
+                if (currentConfig.esSalada) {
+                    SectionTitle("PREPARACION",
+                        MaterialTheme.colorScheme.primary)
+                    FlowRow(modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        PRESETS_SALADOS.forEach { (nombre, preset) ->
+                            val isSelected = currentConfig.bases == preset.bases &&
+                                currentConfig.toppings.containsAll(preset.toppings)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    configs[safeIndex] = currentConfig.copy(
+                                        bases = preset.bases,
+                                        toppings = preset.toppings,
+                                        esSalada = true
+                                    )
+                                },
+                                label = { Text(nombre) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                }
 
                 // BASE
                 val basesOpts = if (currentConfig.esSalada) BASES_SALADAS else BASES_DULCES
@@ -204,12 +261,17 @@ fun CrepeBuilderDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     basesOpts.forEach { b ->
-                        val isSelected = currentConfig.base == b ||
-                            (currentConfig.base == null && b == "Sin Base")
+                        val isSelected = currentConfig.bases.contains(b)
                         FilterChip(
                             selected = isSelected,
-                            onClick = { configs[currentConfigIndex] = currentConfig.copy(
-                                base = if (b == "Sin Base") null else b) },
+                            onClick = {
+                                val nuevasBases = when {
+                                    isSelected -> currentConfig.bases - b
+                                    currentConfig.bases.size < 2 -> currentConfig.bases + b
+                                    else -> currentConfig.bases
+                                }
+                                configs[safeIndex] = currentConfig.copy(bases = nuevasBases)
+                            },
                             label = { Text(b) },
                             shape = RoundedCornerShape(12.dp),
                             colors = FilterChipDefaults.filterChipColors(
@@ -225,34 +287,31 @@ fun CrepeBuilderDialog(
                 Spacer(Modifier.height(24.dp))
 
                 // ADEREZOS — multiselección real
-                val aderezosOpts = if (currentConfig.esSalada) ADEREZOS_SALADOS else ADEREZOS_DULCES
-                SectionTitle("ADEREZOS (elige varios)",
-                    if (currentConfig.esSalada) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.tertiary)
-                FlowRow(modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    aderezosOpts.forEach { a ->
-                        val isSelected = currentConfig.aderezos.contains(a)
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = {
-                                val newList = if (isSelected) currentConfig.aderezos - a
-                                else currentConfig.aderezos + a
-                                configs[currentConfigIndex] = currentConfig.copy(aderezos = newList)
-                            },
-                            label = { Text(a) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = if (currentConfig.esSalada)
-                                    MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.tertiary,
-                                selectedLabelColor = MaterialTheme.colorScheme.surface)
-                        )
+                if (currentConfig.esSalada) {
+                    SectionTitle("ADEREZOS (elige varios)",
+                        MaterialTheme.colorScheme.primary)
+                    FlowRow(modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ADEREZOS_SALADOS.forEach { a ->
+                            val isSelected = currentConfig.aderezos.contains(a)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    val newList = if (isSelected) currentConfig.aderezos - a
+                                    else currentConfig.aderezos + a
+                                    configs[safeIndex] = currentConfig.copy(aderezos = newList)
+                                },
+                                label = { Text(a) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.surface)
+                            )
+                        }
                     }
+                    Spacer(Modifier.height(24.dp))
                 }
-
-                Spacer(Modifier.height(24.dp))
 
                 // TOPPINGS — datos reales del menú, no hardcoded
                 val toppingsOpts = if (currentConfig.esSalada) TOPPINGS_SALADOS
@@ -261,51 +320,43 @@ fun CrepeBuilderDialog(
                 SectionTitle("TOPPINGS",
                     if (currentConfig.esSalada) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.tertiary)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     toppingsOpts.forEach { topping ->
                         val isSelected = currentConfig.toppings.contains(topping)
                         val isPremium = TOPPINGS_PREMIUM.contains(topping)
-                        Surface(
+                        FilterChip(
+                            selected = isSelected,
                             onClick = {
                                 val newList = if (isSelected) currentConfig.toppings - topping
                                 else currentConfig.toppings + topping
-                                configs[currentConfigIndex] = currentConfig.copy(toppings = newList)
+                                configs[safeIndex] = currentConfig.copy(toppings = newList)
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = if (isSelected) {
-                                if (currentConfig.esSalada) MaterialTheme.colorScheme.primary.copy(0.1f)
-                                else MaterialTheme.colorScheme.tertiary.copy(0.1f)
-                            } else MaterialTheme.colorScheme.onSurface.copy(0.03f),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp,
-                                if (isSelected) {
-                                    if (currentConfig.esSalada) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.tertiary
-                                } else MaterialTheme.colorScheme.outlineVariant.copy(0.4f))
-                        ) {
-                            Row(modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = null,
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = if (currentConfig.esSalada)
-                                            MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.tertiary)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(topping, color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 15.sp, modifier = Modifier.weight(1f))
-                                if (isPremium) {
-                                    Surface(color = MaterialTheme.colorScheme.tertiary.copy(0.15f),
-                                        shape = RoundedCornerShape(4.dp)) {
-                                        Text("PREMIUM", fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.tertiary,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            label = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(topping, fontSize = 13.sp)
+                                    if (isPremium) {
+                                        Spacer(Modifier.width(4.dp))
+                                        Box(
+                                            Modifier
+                                                .background(MaterialTheme.colorScheme.tertiary.copy(0.2f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                "★",
+                                                fontSize = 8.sp,
+                                                color = MaterialTheme.colorScheme.tertiary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        }
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        )
                     }
                 }
 
@@ -327,8 +378,8 @@ fun CrepeBuilderDialog(
                     if (numConfiguraciones > 1 && currentConfigIndex < numConfiguraciones - 1) {
                         Button(
                             onClick = { currentConfigIndex++ },
-                            modifier = Modifier.fillMaxWidth().height(60.dp),
-                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text("CONFIGURAR CREPA ${currentConfigIndex + 2}",
@@ -339,29 +390,40 @@ fun CrepeBuilderDialog(
                         }
                     } else {
                         OutlinedButton(onClick = onDismiss,
-                            modifier = Modifier.weight(1f).height(60.dp),
-                            shape = RoundedCornerShape(20.dp)) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.onSurface)
+                            modifier = Modifier.weight(1f).height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            Text(
+                                "Cerrar",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = 13.sp
+                            )
                         }
                         Button(
                             onClick = {
                                 if (numConfiguraciones == 1) {
                                     val conf = configs[0]
-                                    onAddToCart(producto, conf.base, conf.aderezos,
+                                    val baseTexto = conf.bases.joinToString(", ").ifBlank { null }
+                                    onAddToCart(producto, baseTexto, conf.aderezos,
                                         conf.toppings, esSeparado, emptyList())
                                 } else {
-                                    val subItems = configs.map { conf ->
+                                    val subItems = configs.mapIndexed { index, conf ->
+                                        val baseTexto = conf.bases.joinToString(", ")
                                         ItemCarritoV2(
-                                            producto = SalesInventoryProductV2(
-                                                nombre = "Crepa ${if (conf.esSalada) "Salada" else "Dulce"}"),
+                                            producto = producto.copy(
+                                                id = "${producto.id}_crepa_${index + 1}",
+                                                nombre = "Crepa ${if (conf.esSalada) "Salada" else "Dulce"}"
+                                            ),
                                             nombre = buildString {
                                                 append("Crepa ${if (conf.esSalada) "Salada" else "Dulce"}")
-                                                conf.base?.let { append(" c/$it") }
+                                                if (baseTexto.isNotBlank()) append(" c/$baseTexto")
                                                 if (conf.toppings.isNotEmpty())
                                                     append(" + ${conf.toppings.joinToString(", ")}")
                                             },
                                             precioFinal = BigDecimal.ZERO,
-                                            base = conf.base ?: "",
+                                            base = baseTexto,
                                             aderezos = conf.aderezos,
                                             toppings = conf.toppings
                                         )
@@ -370,8 +432,9 @@ fun CrepeBuilderDialog(
                                         emptyList(), esSeparado, subItems)
                                 }
                             },
-                            modifier = Modifier.weight(1.5f).height(60.dp),
-                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.weight(1.5f).height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (currentConfig.esSalada)
                                     MaterialTheme.colorScheme.primary
@@ -380,8 +443,13 @@ fun CrepeBuilderDialog(
                             Icon(Icons.Default.AddShoppingCart, "Agregar",
                                 tint = MaterialTheme.colorScheme.surface)
                             Spacer(Modifier.width(8.dp))
-                            Text("AGREGAR A ORDEN", fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.surface)
+                            Text(
+                                "AGREGAR",
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.surface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }

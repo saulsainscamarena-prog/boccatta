@@ -41,15 +41,15 @@ fun DynamicConfigSheet(
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.padding(16.dp).fillMaxWidth()
+        modifier = Modifier.padding(8.dp).fillMaxWidth().heightIn(max = 720.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
         ) {
             Column(
-                modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())
+                modifier = Modifier.padding(18.dp).verticalScroll(rememberScrollState())
             ) {
                 configGroups.forEach { group ->
                     ConfigGroupSection(

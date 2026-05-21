@@ -155,7 +155,7 @@ fun InicioDiaScreen(
                         postresSeleccionados.forEachIndexed { i, p ->
                             conteos["postre_${p.lowercase()}"] = 1.0
                         }
-                        vm.registrarAperturaDiaria(conteos, sessionVm.uid ?: "", onResult = { exito ->
+                        vm.registrarAperturaDiaria(conteos, sessionVm.uid, onResult = { exito ->
                             if (exito) onFinalizar()
                         })
                     },

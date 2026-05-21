@@ -149,7 +149,7 @@ class ProductoRepository {
         return try {
             // Utilizar agregación count() para obtener número de productos sin descargar documentos
             val countSnapshot = db.collection(FirestoreCollections.PRODUCTOS).count().get(AggregateSource.SERVER).await()
-            val total = countSnapshot.count?.toInt() ?: 0
+            val total = countSnapshot.count.toInt()
 
             // Actualizar sucursal con referencia al catálogo y total de productos
             db.collection(FirestoreCollections.SUCURSALES)

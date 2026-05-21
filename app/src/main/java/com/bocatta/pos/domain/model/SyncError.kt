@@ -8,6 +8,7 @@ data class SyncError(
     val timestamp: Long = 0L,
     val errorMessage: String = "",
     val failedIds: List<Long> = emptyList(),
+    val failedSaleIds: List<String> = emptyList(),
     val appVersion: String = "",
     val stackTrace: String? = null
 )

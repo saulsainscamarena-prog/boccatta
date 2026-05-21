@@ -10,7 +10,7 @@ import android.util.Log
 abstract class BaseViewModel : ViewModel() {
     protected val safeHandler = CoroutineExceptionHandler { _, exception ->
         mensajeError = "Error: ${exception.localizedMessage}"
-        Log.e(javaClass.simpleName, "Error CrÑtico", exception)
+        Log.e(javaClass.simpleName, "Error Cr\u00edtico", exception)
     }
 
     var cargando by mutableStateOf(false)
