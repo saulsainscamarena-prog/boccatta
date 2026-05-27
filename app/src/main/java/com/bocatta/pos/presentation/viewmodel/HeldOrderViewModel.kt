@@ -18,10 +18,13 @@ import kotlinx.serialization.json.Json
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.bocatta.pos.data.repository.MesaRepository
+import com.bocatta.pos.domain.usecase.HeldOrderMesaLinkPolicy
 
 class HeldOrderViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = HeldOrderRepository(OfflineDatabase.getInstance(application))
+    private val mesaRepository = MesaRepository()
+    private val mesaLinkPolicy = HeldOrderMesaLinkPolicy()
     private val json = Json { ignoreUnknownKeys = true }
 
     val orders = mutableStateListOf<HeldOrder>()
@@ -58,9 +61,9 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
         orders.add(0, order)
         mensajeFeedback = "Orden apartada"
 
-        if (mesaId != null) {
+        mesaLinkPolicy.alGuardar(order)?.let { action ->
             viewModelScope.launch {
-                MesaRepository().vincularOrden(mesaId, "OCUPADA", id)
+                mesaRepository.vincularOrden(action.mesaId, action.estado, action.ordenId)
             }
         }
     }
@@ -71,9 +74,9 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
         orders.removeAll { it.id == id }
         mensajeFeedback = "Orden eliminada"
 
-        if (liberarMesa && order?.mesaId != null) {
+        mesaLinkPolicy.alBorrar(order, liberarMesa)?.let { action ->
             viewModelScope.launch {
-                MesaRepository().vincularOrden(order.mesaId, "LIBRE", null)
+                mesaRepository.vincularOrden(action.mesaId, action.estado, action.ordenId)
             }
         }
     }

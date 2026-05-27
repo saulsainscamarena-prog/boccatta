@@ -85,7 +85,7 @@ fun ActividadScreen(
                             fontSize = 24.sp
                         )
                         Text(
-                            "Gestiona el salÃ³n, pedidos rÃ¡pidos y apartados fÃ­sicamente",
+                            "Gestiona el salon, pedidos rapidos y apartados fisicamente",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -105,7 +105,7 @@ fun ActividadScreen(
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
@@ -117,7 +117,7 @@ fun ActividadScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // SecciÃ³n principal (Zonas y Mesas)
+            // Seccion principal (Zonas y Mesas)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -126,7 +126,7 @@ fun ActividadScreen(
             ) {
                 // Selector de Zonas (Tabs)
                 if (mesaVm.zonas.isNotEmpty()) {
-                    ScrollableTabRow(
+                    PrimaryScrollableTabRow(
                         selectedTabIndex = mesaVm.zonas.indexOfFirst { it.id == selectedZonaId }.coerceAtLeast(0),
                         edgePadding = 0.dp,
                         containerColor = Color.Transparent,
@@ -214,10 +214,10 @@ fun ActividadScreen(
                                                     idMesa = mesa.id,
                                                     heldOrderId = ordenAsociada.id
                                                 )
-                                                // La orden se mantiene activa en SQLite para protegerla contra pÃ©rdidas por apagado
-                                                // Se eliminarÃ¡ Ãºnicamente cuando se finalice el cobro o se guarde con un nuevo apartado
+                                                // La orden se mantiene activa en SQLite para protegerla contra perdidas por apagado.
+                                                // Se elimina unicamente cuando se finaliza el cobro o se guarda con un nuevo apartado.
                                             } else {
-                                                // Mesa ocupada sin orden local en SQLite, mostramos el diÃ¡logo informativo y de seguridad
+                                                // Mesa ocupada sin orden local en SQLite; mostramos el dialogo informativo y de seguridad.
                                                 showMesaOcupadaExternoDialog = mesa
                                             }
                                         }
@@ -229,7 +229,7 @@ fun ActividadScreen(
                 }
             }
 
-            // Panel Lateral de Ventas RÃ¡pidas (o secciÃ³n adaptativa)
+            // Panel lateral de ventas rapidas
             if (isTablet) {
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Column(
@@ -239,13 +239,13 @@ fun ActividadScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        "Ventas RÃ¡pidas Abiertas",
+                        "Ventas Rapidas Abiertas",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        "Ã“rdenes apartadas listas para cobrar o asignar a mesa",
+                        "Ordenes apartadas listas para cobrar o asignar a mesa",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -260,7 +260,7 @@ fun ActividadScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "No hay pedidos rÃ¡pidos abiertos",
+                                "No hay pedidos rapidos abiertos",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -291,7 +291,7 @@ fun ActividadScreen(
                                         if (sessionVm.esAdmin) {
                                             deleteAction()
                                         } else {
-                                            pinDialogMessage = "Se requiere PIN de administrador para eliminar un pedido rÃ¡pido."
+                                            pinDialogMessage = "Se requiere PIN de administrador para eliminar un pedido rapido."
                                             pendingActionOnPinSuccess = deleteAction
                                         }
                                     },
@@ -300,7 +300,7 @@ fun ActividadScreen(
                                         if (sessionVm.esAdmin) {
                                             assignAction()
                                         } else {
-                                            pinDialogMessage = "Se requiere PIN de administrador para mover un pedido rÃ¡pido a una mesa."
+                                            pinDialogMessage = "Se requiere PIN de administrador para mover un pedido rapido a una mesa."
                                             pendingActionOnPinSuccess = assignAction
                                         }
                                     }
@@ -313,7 +313,7 @@ fun ActividadScreen(
         }
     }
 
-    // Modal de Asignar Venta RÃ¡pida a Mesa
+    // Modal de asignar venta rapida a mesa
     if (orderToMoveToMesa != null) {
         val orden = orderToMoveToMesa!!
         val mesasLibres = mesaVm.mesas.filter { it.estado == EstadoMesa.LIBRE }
@@ -337,7 +337,7 @@ fun ActividadScreen(
 
                     if (mesasLibres.isEmpty()) {
                         Text(
-                            "âŒ No hay mesas libres en ninguna zona actualmente.",
+                            "No hay mesas libres en ninguna zona actualmente.",
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium
@@ -424,7 +424,7 @@ fun ActividadScreen(
     if (pendingActionOnPinSuccess != null) {
         var pinError by remember { mutableStateOf<String?>(null) }
         AdminPinDialog(
-            titulo = "AutorizaciÃ³n de Administrador",
+            titulo = "Autorizacion de Administrador",
             mensaje = pinDialogMessage,
             error = pinError,
             onDismiss = {
@@ -445,7 +445,7 @@ fun ActividadScreen(
         )
     }
 
-    // Modal de Mesa Ocupada en Otro Dispositivo (Seguridad e InformaciÃ³n)
+    // Modal de mesa ocupada en otro dispositivo
     if (showMesaOcupadaExternoDialog != null) {
         val mesa = showMesaOcupadaExternoDialog!!
         val esAdmin = sessionVm.esAdmin
@@ -461,20 +461,20 @@ fun ActividadScreen(
             text = {
                 Column {
                     Text(
-                        "Esta mesa estÃ¡ registrada como ocupada en Firestore, pero no cuenta con un ticket activo en la base de datos local de este dispositivo.",
+                        "Esta mesa esta registrada como ocupada en Firestore, pero no cuenta con un ticket activo en la base de datos local de este dispositivo.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Lo mÃ¡s probable es que estÃ© siendo gestionada desde otra tablet de la sucursal. No la liberes a menos que confirmes que la mesa ya pagÃ³.",
+                        "Lo mas probable es que este siendo gestionada desde otra tablet de la sucursal. No la liberes a menos que confirmes que la mesa ya pago.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (esAdmin) {
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "ðŸ”‘ Como Administrador/DueÃ±o, tienes autorizaciÃ³n para liberar la mesa de forma remota en Firestore si es necesario.",
+                            "Como administrador o dueno, tienes autorizacion para liberar la mesa de forma remota en Firestore si es necesario.",
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.bodyMedium
@@ -494,7 +494,7 @@ fun ActividadScreen(
                             }
                         }
                     ) {
-                        Text("Forzar LiberaciÃ³n")
+                        Text("Forzar liberacion")
                     }
                 }
             },
@@ -581,7 +581,7 @@ fun MesaCard(
 
             Spacer(Modifier.height(16.dp))
 
-            // NÃºmero grande
+            // Numero grande
             Text(
                 "${mesa.numero}",
                 fontWeight = FontWeight.Black,
@@ -591,7 +591,7 @@ fun MesaCard(
 
             Spacer(Modifier.height(8.dp))
 
-            // InformaciÃ³n de la cuenta / orden activa
+            // Informacion de la cuenta / orden activa
             if (orden != null) {
                 val locale = LocalLocale.current.platformLocale
                 val formattedTime = remember(orden.fecha, locale) {
@@ -655,7 +655,7 @@ fun VentaRapidaCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Pedido RÃ¡pido",
+                    "Pedido Rapido",
                     fontWeight = FontWeight.Black,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface
