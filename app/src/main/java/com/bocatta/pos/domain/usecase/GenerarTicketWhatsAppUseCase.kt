@@ -12,7 +12,7 @@ class GenerarTicketWhatsAppUseCase {
         total: Double,
         descuentoLealtad: Double,
         descuentoPromociones: Double,
-        metodoPago: MetodoPago
+        metodoPago: String
     ): String {
         val localeMX = java.util.Locale.forLanguageTag("es-MX")
         val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", localeMX)
@@ -37,11 +37,31 @@ class GenerarTicketWhatsAppUseCase {
             sb.append("🏷️ Promo Aplicada: -$${"%.2f".format(descuentoPromociones)}\n")
         }
         sb.append("*TOTAL: $${"%.2f".format(total)}*\n")
-        sb.append(" Pago: ${metodoPago.valor}\n")
+        sb.append(" Pago: $metodoPago\n")
         sb.append("─────────────────────\n")
         sb.append("_¡Gracias por ser parte de la familia Bocatta!_")
         
         return sb.toString()
+    }
+
+    operator fun invoke(
+        sucursal: String,
+        items: List<ItemCarritoV2>,
+        codigoTicket: String,
+        total: Double,
+        descuentoLealtad: Double,
+        descuentoPromociones: Double,
+        metodoPago: MetodoPago
+    ): String {
+        return invoke(
+            sucursal = sucursal,
+            items = items,
+            codigoTicket = codigoTicket,
+            total = total,
+            descuentoLealtad = descuentoLealtad,
+            descuentoPromociones = descuentoPromociones,
+            metodoPago = metodoPago.valor
+        )
     }
 }
 

@@ -21,6 +21,7 @@ data class SalesInventoryProductV2(
     val rendimientoTanda: Int = 1,
     val unidadCompra: String = "",
     val pesoPorcion: Double? = null,
+    val porPeso: Boolean = false,
     val overrideGrupos: OverrideGrupos = OverrideGrupos(),
     val activo: Boolean = true
 )

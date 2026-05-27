@@ -63,7 +63,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 5
+        private const val DATABASE_VERSION = 6
 
         const val TABLE_VENTAS = "ventas_pendientes"
         const val TABLE_FOLIOS = "folios_offline"
@@ -157,7 +157,9 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 nota TEXT NOT NULL DEFAULT '',
                 fecha INTEGER NOT NULL,
                 sucursal TEXT NOT NULL,
-                total REAL NOT NULL DEFAULT 0.0
+                total REAL NOT NULL DEFAULT 0.0,
+                modalidad TEXT NOT NULL DEFAULT 'LOCAL',
+                mesaId TEXT
             )
         """)
 
@@ -277,6 +279,19 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         if (oldVersion < 5) {
             createFolioTable(db)
         }
+        if (oldVersion < 6) {
+            addColumnIfMissing(db, TABLE_HELD_ORDERS, "modalidad", "TEXT NOT NULL DEFAULT 'LOCAL'")
+            addColumnIfMissing(db, TABLE_HELD_ORDERS, "mesaId", "TEXT")
+        }
+    }
+
+    private fun addColumnIfMissing(db: SQLiteDatabase, table: String, column: String, definition: String) {
+        db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                if (cursor.getString(cursor.getColumnIndexOrThrow("name")) == column) return
+            }
+        }
+        db.execSQL("ALTER TABLE $table ADD COLUMN $column $definition")
     }
 
     fun guardarVenta(venta: VentaOffline) {
@@ -289,9 +304,11 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.beginTransaction()
         try {
             deducciones.forEach { (insumoId, requerido) ->
-                val actual = obtenerStockInsumo(db, insumoId)
-                if (actual < requerido) {
-                    throw IllegalStateException("Stock local insuficiente para $insumoId. Disponible: $actual, requerido: $requerido")
+                if (insumoExiste(db, insumoId)) {
+                    val actual = obtenerStockInsumo(db, insumoId)
+                    if (actual < requerido) {
+                        throw IllegalStateException("Stock local insuficiente para $insumoId. Disponible: $actual, requerido: $requerido")
+                    }
                 }
             }
 
@@ -306,10 +323,12 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             }
 
             deducciones.forEach { (insumoId, cantidad) ->
-                db.execSQL(
-                    "UPDATE $TABLE_INSUMOS SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
-                    arrayOf<Any>(cantidad, insumoId)
-                )
+                if (insumoExiste(db, insumoId)) {
+                    db.execSQL(
+                        "UPDATE $TABLE_INSUMOS SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
+                        arrayOf<Any>(cantidad, insumoId)
+                    )
+                }
             }
 
             db.setTransactionSuccessful()
@@ -340,9 +359,11 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             )
 
             deducciones.forEach { (insumoId, requerido) ->
-                val actual = obtenerStockInsumo(db, insumoId)
-                if (actual < requerido) {
-                    throw IllegalStateException("Stock local insuficiente para $insumoId. Disponible: $actual, requerido: $requerido")
+                if (insumoExiste(db, insumoId)) {
+                    val actual = obtenerStockInsumo(db, insumoId)
+                    if (actual < requerido) {
+                        throw IllegalStateException("Stock local insuficiente para $insumoId. Disponible: $actual, requerido: $requerido")
+                    }
                 }
             }
 
@@ -357,10 +378,12 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             }
 
             deducciones.forEach { (insumoId, cantidad) ->
-                db.execSQL(
-                    "UPDATE $TABLE_INSUMOS SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
-                    arrayOf<Any>(cantidad, insumoId)
-                )
+                if (insumoExiste(db, insumoId)) {
+                    db.execSQL(
+                        "UPDATE $TABLE_INSUMOS SET cantidadEnBase = cantidadEnBase - ? WHERE id = ?",
+                        arrayOf<Any>(cantidad, insumoId)
+                    )
+                }
             }
 
             guardarUltimoTicket(db, sucursalId, ticket)
@@ -481,9 +504,8 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun limpiarSincronizadas() {
-        writableDatabase.use { db ->
-            db.delete(TABLE_VENTAS, "estado = ?", arrayOf(VentaOffline.ESTADO_SINCRONIZADA))
-        }
+        val db = writableDatabase
+        db.delete(TABLE_VENTAS, "estado = ?", arrayOf(VentaOffline.ESTADO_SINCRONIZADA))
     }
 
     fun contarPendientes(): Int {
@@ -494,30 +516,28 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun guardarOperacion(op: OperacionOffline) {
-        writableDatabase.use { db ->
-            val values = ContentValues().apply {
-                put("id", op.id)
-                put("tipo", op.tipo)
-                put("ventaId", op.ventaId)
-                put("motivo", op.motivo)
-                put("usuarioId", op.usuarioId)
-                put("sucursal", op.sucursal)
-                put("fecha", op.fecha)
-                put("requiereAprobacion", if (op.requiereAprobacion) 1 else 0)
-                put("dataJson", op.dataJson)
-                put("estado", op.estado)
-                put("intentos", op.intentos)
-            }
-            db.insertWithOnConflict(TABLE_OPS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("id", op.id)
+            put("tipo", op.tipo)
+            put("ventaId", op.ventaId)
+            put("motivo", op.motivo)
+            put("usuarioId", op.usuarioId)
+            put("sucursal", op.sucursal)
+            put("fecha", op.fecha)
+            put("requiereAprobacion", if (op.requiereAprobacion) 1 else 0)
+            put("dataJson", op.dataJson)
+            put("estado", op.estado)
+            put("intentos", op.intentos)
         }
+        db.insertWithOnConflict(TABLE_OPS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun obtenerOperacionesPendientes(): List<OperacionOffline> {
         val list = mutableListOf<OperacionOffline>()
-        readableDatabase.use { db ->
-            db.query(TABLE_OPS, null, "estado = ?", arrayOf(OperacionOffline.ESTADO_PENDIENTE), null, null, "fecha ASC")
-                .use { cursor -> list.addAll(cursor.toOpsList()) }
-        }
+        val db = readableDatabase
+        db.query(TABLE_OPS, null, "estado = ?", arrayOf(OperacionOffline.ESTADO_PENDIENTE), null, null, "fecha ASC")
+            .use { cursor -> list.addAll(cursor.toOpsList()) }
         return list
     }
 
@@ -544,61 +564,56 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun marcarOperacionSincronizada(id: String) {
-        writableDatabase.use { db ->
-            db.execSQL(
-                "UPDATE $TABLE_OPS SET estado = '${OperacionOffline.ESTADO_SINCRONIZADA}', intentos = intentos + 1 WHERE id = ?",
-                arrayOf(id)
-            )
-        }
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_OPS SET estado = '${OperacionOffline.ESTADO_SINCRONIZADA}', intentos = intentos + 1 WHERE id = ?",
+            arrayOf(id)
+        )
     }
 
     fun marcarOperacionFallida(id: String) {
-        writableDatabase.use { db ->
-            db.execSQL(
-                "UPDATE $TABLE_OPS SET estado = '${OperacionOffline.ESTADO_FALLIDA}', intentos = intentos + 1 WHERE id = ?",
-                arrayOf(id)
-            )
-        }
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_OPS SET estado = '${OperacionOffline.ESTADO_FALLIDA}', intentos = intentos + 1 WHERE id = ?",
+            arrayOf(id)
+        )
     }
 
     fun limpiarOperacionesSincronizadas() {
-        writableDatabase.use { db ->
-            db.delete(TABLE_OPS, "estado = ?", arrayOf(OperacionOffline.ESTADO_SINCRONIZADA))
-        }
+        val db = writableDatabase
+        db.delete(TABLE_OPS, "estado = ?", arrayOf(OperacionOffline.ESTADO_SINCRONIZADA))
     }
 
     fun guardarInsumo(insumo: InsumoV2) {
-        writableDatabase.use { db ->
-            val values = ContentValues().apply {
-                put("id", insumo.id)
-                put("nombre", insumo.nombre)
-                put("categoria", insumo.categoria)
-                put("unidadBase", insumo.unidadBase)
-                put("costoUnitarioBase", insumo.costoUnitarioBase)
-                put("cantidadEnBase", insumo.cantidadEnBase)
-                put("stockMinimo", insumo.stockMinimo)
-            }
-            db.insertWithOnConflict(TABLE_INSUMOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("id", insumo.id)
+            put("nombre", insumo.nombre)
+            put("categoria", insumo.categoria)
+            put("unidadBase", insumo.unidadBase)
+            put("costoUnitarioBase", insumo.costoUnitarioBase)
+            put("cantidadEnBase", insumo.cantidadEnBase)
+            put("stockMinimo", insumo.stockMinimo)
         }
+        db.insertWithOnConflict(TABLE_INSUMOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun obtenerInsumos(): List<InsumoV2> {
         val list = mutableListOf<InsumoV2>()
-        readableDatabase.use { db ->
-            db.query(TABLE_INSUMOS, null, null, null, null, null, "nombre ASC").use { cursor ->
-                while (cursor.moveToNext()) {
-                    list.add(
-                        InsumoV2(
-                            id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
-                            nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
-                            categoria = cursor.getString(cursor.getColumnIndexOrThrow("categoria")) ?: "",
-                            unidadBase = cursor.getString(cursor.getColumnIndexOrThrow("unidadBase")),
-                            costoUnitarioBase = cursor.getDouble(cursor.getColumnIndexOrThrow("costoUnitarioBase")),
-                            cantidadEnBase = cursor.getDouble(cursor.getColumnIndexOrThrow("cantidadEnBase")),
-                            stockMinimo = cursor.getDouble(cursor.getColumnIndexOrThrow("stockMinimo"))
-                        )
+        val db = readableDatabase
+        db.query(TABLE_INSUMOS, null, null, null, null, null, "nombre ASC").use { cursor ->
+            while (cursor.moveToNext()) {
+                list.add(
+                    InsumoV2(
+                        id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
+                        nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
+                        categoria = cursor.getString(cursor.getColumnIndexOrThrow("categoria")) ?: "",
+                        unidadBase = cursor.getString(cursor.getColumnIndexOrThrow("unidadBase")),
+                        costoUnitarioBase = cursor.getDouble(cursor.getColumnIndexOrThrow("costoUnitarioBase")),
+                        cantidadEnBase = cursor.getDouble(cursor.getColumnIndexOrThrow("cantidadEnBase")),
+                        stockMinimo = cursor.getDouble(cursor.getColumnIndexOrThrow("stockMinimo"))
                     )
-                }
+                )
             }
         }
         return list
@@ -622,45 +637,48 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return 0.0
     }
 
-    fun guardarReceta(receta: RecetaV2) {
-        writableDatabase.use { db ->
-            val values = ContentValues().apply {
-                put("id", receta.id)
-                put("nombre", receta.nombre)
-                put("productoId", receta.productoId)
-                put("rendimientoPorcion", receta.rendimientoPorcion)
-            }
-            db.insertWithOnConflict(TABLE_RECETAS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    private fun insumoExiste(db: SQLiteDatabase, insumoId: String): Boolean {
+        db.query(TABLE_INSUMOS, arrayOf("id"), "id = ?", arrayOf(insumoId), null, null, null).use { cursor ->
+            return cursor.moveToFirst()
         }
+    }
+
+    fun guardarReceta(receta: RecetaV2) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("id", receta.id)
+            put("nombre", receta.nombre)
+            put("productoId", receta.productoId)
+            put("rendimientoPorcion", receta.rendimientoPorcion)
+        }
+        db.insertWithOnConflict(TABLE_RECETAS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun guardarIngredienteReceta(ingrediente: IngredienteReceta, recetaId: String) {
-        writableDatabase.use { db ->
-            val values = ContentValues().apply {
-                put("id", java.util.UUID.randomUUID().toString())
-                put("recetaId", recetaId)
-                put("insumoId", ingrediente.insumoId)
-                put("nombreInsumo", ingrediente.nombreInsumo)
-                put("cantidad", ingrediente.cantidad)
-                put("unidad", ingrediente.unidad)
-            }
-            db.insertWithOnConflict(TABLE_INGREDIENTES_RECETA, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("id", java.util.UUID.randomUUID().toString())
+            put("recetaId", recetaId)
+            put("insumoId", ingrediente.insumoId)
+            put("nombreInsumo", ingrediente.nombreInsumo)
+            put("cantidad", ingrediente.cantidad)
+            put("unidad", ingrediente.unidad)
         }
+        db.insertWithOnConflict(TABLE_INGREDIENTES_RECETA, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun obtenerRecetaPorId(recetaId: String): RecetaV2? {
-        readableDatabase.use { db ->
-            db.query(TABLE_RECETAS, null, "id = ?", arrayOf(recetaId), null, null, null).use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val ingredientes = obtenerIngredientesDeReceta(db, recetaId)
-                    return RecetaV2(
-                        id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
-                        nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
-                        productoId = cursor.getString(cursor.getColumnIndexOrThrow("productoId")),
-                        rendimientoPorcion = cursor.getDouble(cursor.getColumnIndexOrThrow("rendimientoPorcion")),
-                        ingredientes = ingredientes
-                    )
-                }
+        val db = readableDatabase
+        db.query(TABLE_RECETAS, null, "id = ?", arrayOf(recetaId), null, null, null).use { cursor ->
+            if (cursor.moveToFirst()) {
+                val ingredientes = obtenerIngredientesDeReceta(db, recetaId)
+                return RecetaV2(
+                    id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
+                    nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
+                    productoId = cursor.getString(cursor.getColumnIndexOrThrow("productoId")),
+                    rendimientoPorcion = cursor.getDouble(cursor.getColumnIndexOrThrow("rendimientoPorcion")),
+                    ingredientes = ingredientes
+                )
             }
         }
         return null
@@ -684,56 +702,53 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun guardarProducto(producto: SalesInventoryProductV2) {
-        writableDatabase.use { db ->
-            val values = ContentValues().apply {
-                put("id", producto.id)
-                put("nombre", producto.nombre)
-                put("emoji", producto.emoji)
-                put("categoria", producto.categoria)
-                val precioJson = org.json.JSONObject(producto.precioVenta).toString()
-                put("precioVenta", precioJson)
-                put("esCombo", if (producto.esCombo) 1 else 0)
-                put("recetaId", producto.recetaId)
-                put("toppingsIncluidos", producto.toppingsIncluidos)
-                put("costoToppingExtra", producto.costoToppingExtra)
-                put("esProductoTopping", if (producto.esProductoTopping) 1 else 0)
-                val consumiblesStr = producto.consumiblesAsociados.joinToString(";") { "${it.consumibleId},${it.cantidad},${it.unidad}" }
-                put("consumiblesJson", consumiblesStr)
-            }
-            db.insertWithOnConflict(TABLE_PRODUCTOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("id", producto.id)
+            put("nombre", producto.nombre)
+            put("emoji", producto.emoji)
+            put("categoria", producto.categoria)
+            val precioJson = org.json.JSONObject(producto.precioVenta).toString()
+            put("precioVenta", precioJson)
+            put("esCombo", if (producto.esCombo) 1 else 0)
+            put("recetaId", producto.recetaId)
+            put("toppingsIncluidos", producto.toppingsIncluidos)
+            put("costoToppingExtra", producto.costoToppingExtra)
+            put("esProductoTopping", if (producto.esProductoTopping) 1 else 0)
+            val consumiblesStr = producto.consumiblesAsociados.joinToString(";") { "${it.consumibleId},${it.cantidad},${it.unidad}" }
+            put("consumiblesJson", consumiblesStr)
         }
+        db.insertWithOnConflict(TABLE_PRODUCTOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun obtenerProductoPorId(productoId: String): SalesInventoryProductV2? {
-        readableDatabase.use { db ->
-            db.query(TABLE_PRODUCTOS, null, "id = ?", arrayOf(productoId), null, null, null).use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val precioJson = cursor.getString(cursor.getColumnIndexOrThrow("precioVenta"))
-                    val precioMap = mutableMapOf<String, Double>()
-                    try {
-                        val json = org.json.JSONObject(precioJson)
-                        json.keys().forEach { key ->
-                            precioMap[key] = json.getDouble(key)
-                        }
-                    } catch (e: Exception) {
-                        Timber.tag("DB").w(e, "Error al parsear precio JSON para producto")
+        val db = readableDatabase
+        db.query(TABLE_PRODUCTOS, null, "id = ?", arrayOf(productoId), null, null, null).use { cursor ->
+            if (cursor.moveToFirst()) {
+                val precioJson = cursor.getString(cursor.getColumnIndexOrThrow("precioVenta"))
+                val precioMap = mutableMapOf<String, Double>()
+                try {
+                    val json = org.json.JSONObject(precioJson)
+                    json.keys().forEach { key ->
+                        precioMap[key] = json.getDouble(key)
                     }
-                    return@use SalesInventoryProductV2(
-                        id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
-                        nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
-                        emoji = cursor.getString(cursor.getColumnIndexOrThrow("emoji")),
-                        categoria = cursor.getString(cursor.getColumnIndexOrThrow("categoria")),
-                        precioVenta = precioMap,
-                        esCombo = cursor.getInt(cursor.getColumnIndexOrThrow("esCombo")) == 1,
-                        recetaId = cursor.getString(cursor.getColumnIndexOrThrow("recetaId")),
-                        toppingsIncluidos = cursor.getInt(cursor.getColumnIndexOrThrow("toppingsIncluidos")),
-                        costoToppingExtra = cursor.getDouble(cursor.getColumnIndexOrThrow("costoToppingExtra")),
-                        esProductoTopping = cursor.getInt(cursor.getColumnIndexOrThrow("esProductoTopping")) == 1
-                    )
+                } catch (e: Exception) {
+                    Timber.tag("DB").w(e, "Error al parsear precio JSON para producto")
                 }
+                return SalesInventoryProductV2(
+                    id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
+                    nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
+                    emoji = cursor.getString(cursor.getColumnIndexOrThrow("emoji")),
+                    categoria = cursor.getString(cursor.getColumnIndexOrThrow("categoria")),
+                    precioVenta = precioMap,
+                    esCombo = cursor.getInt(cursor.getColumnIndexOrThrow("esCombo")) == 1,
+                    recetaId = cursor.getString(cursor.getColumnIndexOrThrow("recetaId")),
+                    toppingsIncluidos = cursor.getInt(cursor.getColumnIndexOrThrow("toppingsIncluidos")),
+                    costoToppingExtra = cursor.getDouble(cursor.getColumnIndexOrThrow("costoToppingExtra")),
+                    esProductoTopping = cursor.getInt(cursor.getColumnIndexOrThrow("esProductoTopping")) == 1
+                )
             }
         }
         return null
     }
 }
-

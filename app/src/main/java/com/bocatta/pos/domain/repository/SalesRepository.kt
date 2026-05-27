@@ -17,7 +17,8 @@ interface SalesRepository {
         metodoPagoSeleccionado: String,
         esConsumoEmpleado: Boolean,
         descuentoPromociones: Double = 0.0,
-        descuentoManual: Double = 0.0
+        descuentoManual: Double = 0.0,
+        splitPartes: List<com.bocatta.pos.domain.model.SplitParte> = emptyList()
     ): ResultadoVenta
 
     suspend fun registrarGastoValidado(

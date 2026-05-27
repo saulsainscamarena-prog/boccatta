@@ -67,6 +67,7 @@ fun DialogProducto(
     var unidadCompra by remember { mutableStateOf(productoInicial?.unidadCompra ?: "") }
     var pesoPorcion by remember { mutableStateOf(productoInicial?.pesoPorcion?.toString() ?: "") }
     var sePorciona by remember { mutableStateOf(productoInicial?.pesoPorcion != null) }
+    var porPeso by remember { mutableStateOf(productoInicial?.porPeso ?: false) }
 
     val productosDisponibles = vm.productos.filter { it.id != productoInicial?.id }
 
@@ -262,6 +263,13 @@ fun DialogProducto(
                                     if (sePorciona) {
                                         OutlinedTextField(value = pesoPorcion, onValueChange = { pesoPorcion = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("Peso/tamaño por porción") }, placeholder = { Text("Ej: 250 (g)") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = RoundedCornerShape(12.dp))
                                     }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text("¿Vender por peso?")
+                                            Text("El precio se interpreta como \$/kg. El operador ingresa gramos al vender.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                        }
+                                        Switch(checked = porPeso, onCheckedChange = { porPeso = it })
+                                    }
                                 }
                             }
                         }
@@ -278,7 +286,7 @@ fun DialogProducto(
                                 if (configSchema.isNotEmpty()) Text("⚙️ ${configSchema.size} grupo(s) de configuración", fontSize = 13.sp, color = MaterialTheme.colorScheme.tertiary)
                                 if (consumibles.isNotEmpty()) Text("📦 ${consumibles.size} consumible(s)", fontSize = 13.sp)
                                 if (tipoProducto == "PREPARADO" && requiereReceta) Text("🥘 ${ingredientes.size} ingredientes · ${"$rendimientoTanda"} p/tanda", fontSize = 13.sp)
-                                if (tipoProducto == "COMPRADO") Text("📦 $unidadCompra${if (sePorciona) " → ${pesoPorcion}g/porción" else ""}", fontSize = 13.sp)
+                                if (tipoProducto == "COMPRADO") Text("📦 $unidadCompra${if (sePorciona) " → ${pesoPorcion}g/porción" else ""}${if (porPeso) " · ⚖️ venta por peso" else ""}", fontSize = 13.sp)
                             }
                         }
                     }
@@ -298,7 +306,8 @@ fun DialogProducto(
                             configSchema = configSchema, consumiblesAsociados = consumibles,
                             rendimientoTanda = rendimientoTanda.toIntOrNull() ?: 1,
                             unidadCompra = unidadCompra,
-                            pesoPorcion = if (sePorciona) pesoPorcion.toDoubleOrNull() else null
+                            pesoPorcion = if (sePorciona) pesoPorcion.toDoubleOrNull() else null,
+                            porPeso = porPeso
                         )
                         val receta = if (requiereReceta && ingredientes.isNotEmpty())
                             RecetaV2(id = "receta_$id", nombre = "$nombre Receta", productoId = id, ingredientes = ingredientes)

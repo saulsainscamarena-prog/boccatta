@@ -113,6 +113,17 @@ class MesaViewModel(
         }
     }
 
+    fun vincularOrdenAMesa(id: String, estado: String, ordenId: String?) {
+        viewModelScope.launch {
+            try {
+                if (mesaRepo.vincularOrden(id, estado, ordenId)) {
+                    cargarMesas()
+                }
+            } catch (e: Exception) { mensajeError = "Error al vincular orden: ${e.message}" }
+        }
+    }
+
+
     fun transferirMesa(origenZonaId: String, destinoZonaId: String, mesaId: String, empleadoOrigen: String, empleadoDestino: String, motivo: String) {
         viewModelScope.launch {
             cargando = true

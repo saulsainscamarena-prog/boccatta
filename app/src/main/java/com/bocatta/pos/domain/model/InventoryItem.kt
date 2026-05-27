@@ -5,11 +5,13 @@ data class InventoryItem(
     val branchId: String = "",
     val productId: String = "",
     val currentQty: Double = 0.0,
+    val cantidadEnBase: Double = 0.0, // Campo compatible
     val unit: String = "pza",
     val minThreshold: Double = 0.0,
     val lastUpdated: Long = 0L
 ) {
-    fun isBelowThreshold(): Boolean = currentQty <= minThreshold
-    fun hasStock(): Boolean = currentQty > 0.0
+    fun getActualQty(): Double = if (currentQty != 0.0) currentQty else cantidadEnBase
+    fun isBelowThreshold(): Boolean = getActualQty() <= minThreshold
+    fun hasStock(): Boolean = getActualQty() > 0.0
 }
 

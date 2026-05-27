@@ -33,5 +33,14 @@ class MesaRepository : IMesaRepository {
     override suspend fun actualizarEstado(id: String, estado: String): Boolean = try {
         col.document(id).update("estado", estado).await(); true
     } catch (e: Exception) { false }
+
+    override suspend fun vincularOrden(id: String, estado: String, ordenId: String?): Boolean = try {
+        col.document(id).update(
+            mapOf(
+                "estado" to estado,
+                "ordenActual" to ordenId
+            )
+        ).await(); true
+    } catch (e: Exception) { Timber.e(e, "Error vincularOrden"); false }
 }
 

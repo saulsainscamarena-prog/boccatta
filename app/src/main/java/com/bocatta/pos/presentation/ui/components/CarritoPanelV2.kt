@@ -11,9 +11,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.ShoppingCartCheckout
 import androidx.compose.material3.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
+import com.bocatta.pos.domain.model.ModalidadOrden
 import com.bocatta.pos.presentation.ui.theme.*
 import java.math.BigDecimal
 
@@ -35,12 +42,20 @@ fun CarritoPanelV2(
     descuentoPromociones: Double,
     descuentoManual: Double = 0.0,
     clienteSeleccionado: ClienteV2?,
+    modalidad: ModalidadOrden,
+    onModalidadChanged: (ModalidadOrden) -> Unit,
+    onToggleParaLlevarItem: (String) -> Unit,
     modifier: Modifier = Modifier,
     onEliminarItem: (ItemCarritoV2) -> Unit,
     onEditarItem: ((ItemCarritoV2) -> Unit)? = null,
     onCobrar: () -> Unit,
     onApplyDiscount: ((Int) -> Unit)? = null,
-    onApartar: (() -> Unit)? = null
+    onApartar: (() -> Unit)? = null,
+    onBuscarCliente: (() -> Unit)? = null,
+    onEliminarCliente: (() -> Unit)? = null,
+    esAdmin: Boolean = true,
+    onValidarPin: ((String, (Boolean) -> Unit) -> Unit)? = null,
+    mesaId: String? = null
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -55,7 +70,7 @@ fun CarritoPanelV2(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.ShoppingCart, "Carrito", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Receipt, "Orden", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -66,8 +81,73 @@ fun CarritoPanelV2(
                     color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 1.sp
                 )
+                if (mesaId != null) {
+                    Spacer(Modifier.weight(1f))
+                    Surface(
+                        color = MaterialTheme.colorScheme.tertiary.copy(0.15f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(0.4f))
+                    ) {
+                        Text(
+                            "📍 $mesaId",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
-            
+
+            // Selector de modalidad de orden premium
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ModalidadOrden.values().forEach { mod ->
+                    val selected = modalidad == mod
+                    val containerColor = when (mod) {
+                        ModalidadOrden.LOCAL -> if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(0.4f)
+                        ModalidadOrden.PARA_LLEVAR -> if (selected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.surfaceVariant.copy(0.4f)
+                        ModalidadOrden.DELIVERY -> if (selected) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant.copy(0.4f)
+                    }
+                    val contentColor = if (selected) {
+                        when (mod) {
+                            ModalidadOrden.LOCAL -> MaterialTheme.colorScheme.onPrimary
+                            ModalidadOrden.PARA_LLEVAR -> MaterialTheme.colorScheme.onTertiary
+                            ModalidadOrden.DELIVERY -> MaterialTheme.colorScheme.onError
+                        }
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(0.6f)
+                    }
+
+                    Surface(
+                        onClick = { onModalidadChanged(mod) },
+                        color = containerColor,
+                        contentColor = contentColor,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f),
+                        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.5f))
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = when (mod) {
+                                    ModalidadOrden.LOCAL -> "AQUÍ"
+                                    ModalidadOrden.PARA_LLEVAR -> "LLEVAR"
+                                    ModalidadOrden.DELIVERY -> "DELIVERY"
+                                },
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+                }
+            }
+
             if (clienteSeleccionado != null) {
                 Spacer(Modifier.height(16.dp))
                 Surface(
@@ -88,17 +168,49 @@ fun CarritoPanelV2(
                             color = MaterialTheme.colorScheme.tertiary,
                             letterSpacing = 0.5.sp
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Desasociar cliente",
+                            tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clickable { onEliminarCliente?.invoke() }
+                        )
+                    }
+                }
+            } else {
+                Spacer(Modifier.height(16.dp))
+                Surface(
+                    onClick = { onBuscarCliente?.invoke() },
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.05f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.PersonAdd, "Asociar", tint = MaterialTheme.colorScheme.onBackground.copy(0.6f), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "ASOCIAR CLIENTE",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onBackground.copy(0.7f),
+                            letterSpacing = 0.5.sp
+                        )
                     }
                 }
             }
-            
+
             Spacer(Modifier.height(16.dp))
 
             if (carrito.isEmpty()) {
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     BocattaEmptyState(
-                        icono = Icons.Default.ShoppingCartCheckout,
-                        titulo = "CARRITO VACÍO",
+                        icono = Icons.Default.Receipt,
+                        titulo = "ORDEN VACÍA",
                         descripcion = "Agrega productos del menú para comenzar",
                         modifier = Modifier.alpha(0.5f)
                     )
@@ -109,7 +221,8 @@ fun CarritoPanelV2(
                         BocattaCartItemRow(
                             item = item,
                             onEliminar = { onEliminarItem(item) },
-                            onEditar = onEditarItem?.let { { it(item) } }
+                            onEditar = onEditarItem?.let { { it(item) } },
+                            onToggleParaLlevar = { onToggleParaLlevarItem(item.cartId) }
                         )
                     }
                 }
@@ -174,12 +287,44 @@ fun CarritoPanelV2(
 
             // Descuento manual
             if (onApplyDiscount != null) {
+                var mostrarPinDescuento by remember { mutableStateOf(false) }
+                var pendingPct by remember { mutableStateOf(0) }
+                var pinDescuentoError by remember { mutableStateOf(false) }
+
+                if (mostrarPinDescuento) {
+                    AdminPinDialog(
+                        titulo = "Autorizar descuento",
+                        mensaje = "El descuento manual requiere autorización de administrador.",
+                        error = if (pinDescuentoError) "PIN incorrecto" else null,
+                        onDismiss = { mostrarPinDescuento = false; pinDescuentoError = false },
+                        onConfirm = { pin ->
+                            onValidarPin?.invoke(pin) { esValido ->
+                                if (esValido) {
+                                    onApplyDiscount(pendingPct)
+                                    mostrarPinDescuento = false
+                                    pinDescuentoError = false
+                                } else {
+                                    pinDescuentoError = true
+                                }
+                            } ?: run { onApplyDiscount(pendingPct); mostrarPinDescuento = false }
+                        }
+                    )
+                }
+
                 Text("DESCUENTO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.5f), fontWeight = FontWeight.Bold)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(10, 20, 30).forEach { pct ->
                         FilterChip(
                             selected = descuentoManual == (totalCarrito.toDouble() - descuentoLealtad - descuentoPromociones).coerceAtLeast(0.0) * pct / 100.0,
-                            onClick = { onApplyDiscount(pct) },
+                            onClick = {
+                                if (esAdmin) {
+                                    onApplyDiscount(pct)
+                                } else {
+                                    pendingPct = pct
+                                    pinDescuentoError = false
+                                    mostrarPinDescuento = true
+                                }
+                            },
                             label = { Text("$pct%") },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.error,
@@ -200,7 +345,7 @@ fun CarritoPanelV2(
             }
 
             Spacer(Modifier.height(16.dp))
-            
+
             if (onApartar != null && carrito.isNotEmpty()) {
                 OutlinedButton(
                     onClick = onApartar,
@@ -225,5 +370,3 @@ fun CarritoPanelV2(
         }
     }
 }
-
-

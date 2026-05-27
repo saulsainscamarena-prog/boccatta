@@ -3,7 +3,9 @@ package com.bocatta.pos.presentation.viewmodel
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.data.repository.StockAllocationRepository
+import com.bocatta.pos.domain.model.Usuario
 import com.bocatta.pos.domain.model.TurnoCajaV2
+import com.bocatta.pos.domain.usecase.AccionSensible
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.google.firebase.firestore.SetOptions
@@ -15,7 +17,9 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
-class CajaViewModel : BaseViewModel() {
+class CajaViewModel(
+    private val authManager: com.bocatta.pos.domain.usecase.AuthorizationManager
+) : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
     private val allocationRepo = StockAllocationRepository()
 
@@ -39,13 +43,17 @@ class CajaViewModel : BaseViewModel() {
         private set
 
     fun verificarPendientes() {
+        val sucursal = sucursalFiltro
         listenerCancelaciones?.remove()
-        listenerCancelaciones = db.collection(FirestoreCollections.CANCELACIONES)
+        var query = db.collection(FirestoreCollections.CANCELACIONES)
             .whereEqualTo("estado", "pendiente_revision")
-            .addSnapshotListener { snap, _ ->
-                numCancelacionesPendientes = snap?.size() ?: 0
-                tieneCancelacionesPendientes = numCancelacionesPendientes > 0
-            }
+        if (sucursal != null) {
+            query = query.whereEqualTo("sucursal", sucursal.lowercase())
+        }
+        listenerCancelaciones = query.addSnapshotListener { snap, _ ->
+            numCancelacionesPendientes = snap?.size() ?: 0
+            tieneCancelacionesPendientes = numCancelacionesPendientes > 0
+        }
     }
 
     // Totales del día calculados en tiempo real
@@ -101,6 +109,7 @@ class CajaViewModel : BaseViewModel() {
         sucursalFiltro = normalizarSucursal(sucursal)
         escucharTurnoActivo()
         escucharTotalesDia()
+        verificarPendientes()
     }
 
     private fun escucharTurnoActivo() {
@@ -189,7 +198,7 @@ class CajaViewModel : BaseViewModel() {
     fun abrirTurno(
         fondoInicial: Double,
         sucursal: String,
-        usuarioNombre: String,
+        usuario: Usuario?,
         onResult: ((Boolean) -> Unit)? = null
     ) {
         val turnoLocal = turnoActivo
@@ -210,6 +219,22 @@ class CajaViewModel : BaseViewModel() {
             cargando = true
             var exito = false
             try {
+                if (usuario == null) {
+                    mensajeError = "Usuario de sesión no válido."
+                    onResult?.invoke(false)
+                    cargando = false
+                    return@launch
+                }
+
+                // VALIDACIÓN DE PERMISOS DINÁMICOS
+                val tienePermiso = authManager.verificarPermiso(usuario, AccionSensible.ABRIR_TURNO)
+                if (!tienePermiso) {
+                    mensajeError = "No tienes permiso para abrir turno. Requiere rol de encargado o administrador."
+                    onResult?.invoke(false)
+                    cargando = false
+                    return@launch
+                }
+
                 val sucursalId = normalizarSucursal(sucursal)
                 val id = "${sucursalId}_${SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())}"
                 val turnoRef = db.collection(FirestoreCollections.TURNOS_CAJA).document(id)
@@ -219,7 +244,7 @@ class CajaViewModel : BaseViewModel() {
                     sucursal = sucursalId,
                     fechaApertura = System.currentTimeMillis(),
                     fondoInicial = fondoInicial,
-                    usuarioResponsable = usuarioNombre,
+                    usuarioResponsable = usuario.nombre,
                     estado = "abierto"
                 )
                 val turnoFinal = db.runTransaction { tx ->
@@ -237,7 +262,18 @@ class CajaViewModel : BaseViewModel() {
                     }
                 }.await()
                 turnoActivo = turnoFinal
-                allocationRepo.redistribuirSucursalesAbiertas(usuarioNombre)
+                allocationRepo.redistribuirSucursalesAbiertas(usuario.nombre)
+
+                // Registramos en la bitácora de auditoría
+                authManager.registrarAuditoria(
+                    empleadoId = usuario.uid,
+                    empleadoNombre = usuario.nombre,
+                    accion = AccionSensible.ABRIR_TURNO.name,
+                    responsable = usuario.nombre,
+                    sucursal = sucursalId,
+                    detalles = "Apertura de turno exitosa con fondo inicial: $$fondoInicial"
+                )
+
                 mensajeExito = "Turno abierto"
                 exito = true
             } catch (e: Exception) {
@@ -285,6 +321,27 @@ class CajaViewModel : BaseViewModel() {
                 // Forzar que la sucursal ya no queda abierta en su configuración
                 db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(normalizarSucursal(turno.sucursal))
                     .update("abierta", false).await()
+
+                // Auditoría de cierre de turno
+                if (!cadraCaja) {
+                    authManager.registrarAuditoria(
+                        empleadoId = "",
+                        empleadoNombre = usuarioNombre,
+                        accion = AccionSensible.CERRAR_CAJA.name,
+                        responsable = usuarioNombre,
+                        sucursal = turno.sucursal,
+                        detalles = "Cierre FORZADO de caja (discrepancia detectada). Diferencia efectivo: $diferenciaCaja, diferencia tarjeta: $diferenciaTarjeta"
+                    )
+                } else {
+                    authManager.registrarAuditoria(
+                        empleadoId = "",
+                        empleadoNombre = usuarioNombre,
+                        accion = "CERRAR_CAJA",
+                        responsable = usuarioNombre,
+                        sucursal = turno.sucursal,
+                        detalles = "Cierre de caja exitoso. Diferencia efectivo: $diferenciaCaja, diferencia tarjeta: $diferenciaTarjeta"
+                    )
+                }
 
                 val texto = generarTextoCierre(turno, efectivoEsperado)
                 mensajeExito = "Turno cerrado"

@@ -13,11 +13,16 @@ object PricingEngine {
         val base = BigDecimal.valueOf(precioBase)
         val toppings = (config["toppings"] ?: emptyList()).map { it.lowercase() }
         val bases = (config["base"] ?: emptyList()).map { it.lowercase() }
-        val totalItems = bases.size + toppings.size
 
-        val extraPorCantidad = if (totalItems >= 3) PRECIO_EXTRA_TRES_MAS else BigDecimal.ZERO
-        val extraPremium = toppings.fold(BigDecimal.ZERO) { acc, t ->
-            val v = preciosExtra.entries.find { it.key.lowercase() == t }?.value ?: 0.0
+        val premiumToppings = toppings.filter { t ->
+            preciosExtra.keys.any { k -> k.lowercase() == t } || t.contains("oreo") || t.contains("nuez") || t.contains("bombon")
+        }
+        val normalToppingsCount = toppings.size - premiumToppings.size
+        val normalIngredientsCount = bases.size + normalToppingsCount
+
+        val extraPorCantidad = if (normalIngredientsCount >= 3) PRECIO_EXTRA_TRES_MAS else BigDecimal.ZERO
+        val extraPremium = premiumToppings.fold(BigDecimal.ZERO) { acc, t ->
+            val v = preciosExtra.entries.find { it.key.lowercase() == t }?.value ?: 10.0
             acc + BigDecimal.valueOf(v)
         }
 

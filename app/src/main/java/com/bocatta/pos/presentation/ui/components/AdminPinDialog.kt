@@ -18,7 +18,10 @@ import com.bocatta.pos.presentation.ui.theme.*
 @Composable
 fun AdminPinDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String) -> Unit,
+    titulo: String = "AUTORIZACIÓN REQUERIDA",
+    mensaje: String = "Ingresa tu PIN de Administrador para proceder.",
+    error: String? = null
 ) {
     var pin by remember { mutableStateOf("") }
     
@@ -38,11 +41,11 @@ fun AdminPinDialog(
             }
         },
         title = {
-            Text("AUTORIZACIÓN REQUERIDA", fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Text(titulo.uppercase(), fontWeight = FontWeight.Black, fontSize = 18.sp)
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Ingresa tu PIN de Administrador para proceder.", fontSize = 14.sp, color = Color.White.copy(0.7f))
+                Text(mensaje, fontSize = 14.sp, color = Color.White.copy(0.7f))
                 Spacer(Modifier.height(20.dp))
                 OutlinedTextField(
                     value = pin,
@@ -58,6 +61,10 @@ fun AdminPinDialog(
                         unfocusedTextColor = Color.White
                     )
                 )
+                if (error != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(error, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,

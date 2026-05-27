@@ -227,7 +227,8 @@ class InventoryDeductionsTest {
         val item = ItemCarritoV2(
             producto = SalesInventoryProductV2(id = "p1", nombre = "Combo", esCombo = true),
             precioFinal = BigDecimal.valueOf(100),
-            esSeparado = true
+            esSeparado = true,
+            paraLlevar = true
         )
         val ded = InventoryDeductions.calcularParaItem(item, emptyList())
         assertEquals(1.0, ded["charola"]!!, 0.01)
@@ -266,8 +267,77 @@ class InventoryDeductionsTest {
             toppings = listOf("desconocido_xyz")
         )
         val ded = InventoryDeductions.calcularParaItem(item, emptyList())
-        assertTrue(ded.isEmpty())
+        assertEquals(1, ded.size)
+        assertEquals(1.0, ded["servilletas"]!!, 0.01)
     }
+
+    @Test
+    fun calcularParaItem_paraLlevarCrepa_descuentaCajaYServilletasExtra() {
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "p1", nombre = "Crepa", categoria = "crepas", esCombo = false),
+            precioFinal = BigDecimal.valueOf(100),
+            paraLlevar = true,
+            cantidad = 1
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, emptyList())
+        assertEquals(1.0, ded["papel_hamburguesero"]!!, 0.01)
+        assertEquals(2.0, ded["servilletas"]!!, 0.01)
+    }
+
+    @Test
+    fun calcularParaItem_localCrepa_noDescuentaCajaNiServilletasExtra() {
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "p1", nombre = "Crepa", categoria = "crepas", esCombo = false),
+            precioFinal = BigDecimal.valueOf(100),
+            paraLlevar = false,
+            cantidad = 1
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, emptyList())
+        assertNull(ded["papel_hamburguesero"])
+        assertEquals(1.0, ded["servilletas"]!!, 0.01)
+    }
+
+    @Test
+    fun calcularParaItem_paraLlevarBebida_descuentaVasoTapaPopote() {
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "p1", nombre = "Frappé", categoria = "bebida", esCombo = false),
+            precioFinal = BigDecimal.valueOf(80),
+            paraLlevar = true,
+            cantidad = 1
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, emptyList())
+        assertEquals(1.0, ded["vaso"]!!, 0.01)
+        assertEquals(1.0, ded["domo"]!!, 0.01)
+    }
+
+    @Test
+    fun calcularParaItem_comboAqui_noDeduceCharolaYPapel() {
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "p1", nombre = "Combo", esCombo = true),
+            precioFinal = BigDecimal.valueOf(250),
+            esSeparado = true,
+            paraLlevar = false,
+            cantidad = 1
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, emptyList())
+        assertNull(ded["charola"])
+        assertNull(ded["papel_hamburguesero"])
+    }
+
+    @Test
+    fun calcularParaItem_comboParaLlevar_deduceCharolaYPapel() {
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "p1", nombre = "Combo", esCombo = true),
+            precioFinal = BigDecimal.valueOf(250),
+            esSeparado = true,
+            paraLlevar = true,
+            cantidad = 1
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, emptyList())
+        assertEquals(1.0, ded["charola"]!!, 0.01)
+        assertEquals(1.0, ded["papel_hamburguesero"]!!, 0.01)
+    }
+
 
     @Test
     fun normalizado_manejaTildes() {
@@ -302,5 +372,53 @@ class InventoryDeductionsTest {
     @Test
     fun convertirAUnidadBase_valorNegativo_devuelveNegativo() {
         assertEquals(-5.0, InventoryDeductions.convertirAUnidadBase(-5.0, "porciones"), 0.01)
+    }
+
+    @Test
+    fun calcularPrecioCrepa_multiplesToppingsPremium_cargosAcumulados() {
+        val precio = InventoryDeductions.calcularPrecioCrepa(100.0, "nutella", listOf("oreo", "nuez"))
+        assertEquals(120.0, precio, 0.01) // Nutella (1 base) + 2 Premium ($20)
+    }
+
+    // ── Tests: venta por peso (cantidadGramos) ──────────────────────────────
+
+    @Test
+    fun calcularParaItem_porPeso_250g_deduceProporcionalmente() {
+        // Un producto que se vende por peso (ej: boneless).
+        // La receta define insumos por kg (1000g).
+        // Si vendemos 250g, debemos deducir exactamente 0.25x la receta.
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "boneless", nombre = "Boneless 250g", esCombo = false),
+            precioFinal = BigDecimal.valueOf(50.0),
+            cantidad = 1,
+            cantidadGramos = 250.0   // 250g
+        )
+        val ingredientes = listOf(
+            IngredienteReceta(insumoId = "pollo_kg", nombreInsumo = "Pollo", cantidad = 1.0, unidad = "kg"),
+            IngredienteReceta(insumoId = "aceite_lt", nombreInsumo = "Aceite", cantidad = 0.1, unidad = "lt")
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, ingredientes)
+        // pollo_kg: 1 kg = 1000 g base. 250/1000 = 0.25 * 1000 = 250 g
+        assertEquals(250.0, ded["pollo_kg"]!!, 0.01)
+        // aceite_lt: 0.1 lt = 100 ml base. 250/1000 = 0.25 * 100 = 25 ml
+        assertEquals(25.0, ded["aceite_lt"]!!, 0.01)
+    }
+
+    @Test
+    fun calcularParaItem_porUnidad_cantidadGramosNull_noAfectaDeduccion() {
+        // Producto normal (crepa, waffle) con cantidadGramos = null.
+        // La deducción debe ser idéntica al comportamiento anterior.
+        val item = ItemCarritoV2(
+            producto = SalesInventoryProductV2(id = "crepa1", nombre = "Crepa Fresa", esCombo = false),
+            precioFinal = BigDecimal.valueOf(100.0),
+            cantidad = 2,
+            cantidadGramos = null  // venta por unidad — comportamiento normal
+        )
+        val ingredientes = listOf(
+            IngredienteReceta(insumoId = "harina_kg", nombreInsumo = "Harina", cantidad = 0.1, unidad = "kg")
+        )
+        val ded = InventoryDeductions.calcularParaItem(item, ingredientes)
+        // 0.1 kg = 100 g por unidad, x2 unidades = 200 g
+        assertEquals(200.0, ded["harina_kg"]!!, 0.01)
     }
 }

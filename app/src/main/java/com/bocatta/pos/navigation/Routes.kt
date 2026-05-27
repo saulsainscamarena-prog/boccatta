@@ -21,4 +21,5 @@ import kotlinx.serialization.Serializable
     @Serializable data object ReportesInventario : Routes()
     @Serializable data object SyncInventario : Routes()
     @Serializable data object GestionarSucursales : Routes()
+    @Serializable data object Actividad : Routes()
 }

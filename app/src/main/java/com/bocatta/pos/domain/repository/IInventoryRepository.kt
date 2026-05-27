@@ -96,6 +96,19 @@ interface IInventoryRepository {
      * para los campos que no están presentes en la tabla SQLite.
      */
     suspend fun syncOfflineAdjustment(adjustment: StockAdjustmentEntity): Boolean
+
+    /**
+     * Registra una compra con presentación incrementando el stock del insumo y actualizando costos.
+     */
+    suspend fun registrarCompraConPresentacion(
+        branchId: String,
+        insumoId: String,
+        presentacionNombre: String,
+        cantidadComprada: Double,
+        contenidoEquivalente: Double,
+        costoTotal: Double,
+        userId: String
+    ): Boolean
 }
 
 data class StockDeduction(

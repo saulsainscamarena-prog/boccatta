@@ -29,6 +29,10 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
 import java.io.IOException
+import com.bocatta.pos.domain.model.ItemCarritoV2
+import com.bocatta.pos.domain.model.SalesInventoryProductV2
+import com.bocatta.pos.domain.model.IngredienteReceta
+import com.bocatta.pos.data.repository.InventoryDeductions
 
 class SyncWorker(
     context: Context,
@@ -118,9 +122,10 @@ class SyncWorker(
                             database.registrarIntentoVentaFallido(venta.id, ahora)
                             Timber.tag("SYNC_WORKER").w(
                                 e,
-                                "Transient sale sync failure for ${venta.id}. Attempt $nextAttempt/${VentaOffline.MAX_INTENTOS}"
+                                "Transient sale sync failure for ${venta.id}. Attempt $nextAttempt/${VentaOffline.MAX_INTENTOS}. Stopping queue sync."
                             )
                         }
+                        break // Interrupt the loop immediately to avoid burning other sales
                     }
                 }
             }
@@ -190,81 +195,45 @@ class SyncWorker(
         val sucursalId = venta.sucursal.lowercase()
 
         db.runTransaction { transaction ->
-            val recetas = mutableMapOf<Int, List<Map<String, Any?>>>()
+            // --- IDEMPOTENCY CHECK ---
+            val ventaRef = db.collection(FirestoreCollections.VENTAS).document(venta.id)
+            val existingSnap = transaction.get(ventaRef)
+            if (existingSnap.exists()) {
+                Timber.tag("SYNC_WORKER").w("Sale ${venta.id} already exists in Firestore. Skipping stock deduction to ensure idempotency.")
+                return@runTransaction null
+            }
+
             val deducciones = linkedMapOf<String, Double>()
             val deduccionesPorLinea = mutableMapOf<Int, Map<String, Double>>()
+            val parsedItems = mutableListOf<ItemCarritoV2>()
 
             for (i in 0 until items.length()) {
-                val item = items.getJSONObject(i)
-                val linea = linkedMapOf<String, Double>()
-                fun addDeduccion(insumoId: String, cantidad: Double) {
-                    linea[insumoId] = (linea[insumoId] ?: 0.0) + cantidad
-                    deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad
-                }
-                val recetaId = item.optString("recetaId").takeIf { it.isNotBlank() }
-                val ingredientes = recetaId?.let {
+                val jsonItem = items.getJSONObject(i)
+                val item = parseItemCarrito(jsonItem)
+                parsedItems.add(item)
+
+                val recetaId = item.producto.recetaId
+                val ingredientesMapList = recetaId?.let {
                     val recetaSnap = transaction.get(db.collection(FirestoreCollections.RECETAS).document(it))
                     @Suppress("UNCHECKED_CAST")
                     recetaSnap.get("ingredientes") as? List<Map<String, Any?>> ?: emptyList()
                 } ?: emptyList()
-                recetas[i] = ingredientes
-                val qty = item.optDouble("cantidad", 1.0)
-                ingredientes.forEach { ing ->
-                    val insumoId = ing["insumoId"] as? String ?: return@forEach
-                    val cantidad = (ing["cantidad"] as? Number)?.toDouble() ?: 0.0
-                    addDeduccion(insumoId, cantidad * qty)
+
+                val recetaIngredientes = ingredientesMapList.map { ing ->
+                    IngredienteReceta(
+                        insumoId = ing["insumoId"] as? String ?: "",
+                        nombreInsumo = ing["nombreInsumo"] as? String ?: "",
+                        cantidad = (ing["cantidad"] as? Number)?.toDouble() ?: 0.0,
+                        unidad = ing["unidad"] as? String ?: "g"
+                    )
                 }
-                item.optString("base").takeIf { it.isNotBlank() && it != "null" }?.let { base ->
-                    base.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { baseIndividual ->
-                        com.bocatta.pos.data.repository.InventoryDeductions.mapearBaseAInsumo(baseIndividual)?.let { (id, cant) ->
-                            addDeduccion(id, cant * qty)
-                        }
-                    }
+
+                val lineDeductions = InventoryDeductions.calcularParaItem(item, recetaIngredientes)
+                deduccionesPorLinea[i] = lineDeductions
+
+                lineDeductions.forEach { (insumoId, cantidad) ->
+                    deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad
                 }
-                val toppings = item.optJSONArray("toppings")
-                if (toppings != null) {
-                    for (t in 0 until toppings.length()) {
-                        com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(toppings.optString(t))?.let { (id, cant) ->
-                            addDeduccion(id, cant * qty)
-                        }
-                    }
-                }
-                val aderezos = item.optJSONArray("aderezos")
-                if (aderezos != null) {
-                    for (a in 0 until aderezos.length()) {
-                        com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(aderezos.optString(a))?.let { (id, cant) ->
-                            addDeduccion(id, cant * qty)
-                        }
-                    }
-                }
-                item.optString("aderezo").takeIf { it.isNotBlank() && it != "null" }?.let { aderezo ->
-                    com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(aderezo)?.let { (id, cant) -> addDeduccion(id, cant * qty) }
-                }
-                val componentes = item.optJSONArray("componentesCombo")
-                if (componentes != null) {
-                    for (c in 0 until componentes.length()) {
-                        val componente = componentes.getJSONObject(c)
-                        val compQty = componente.optDouble("cantidad", 1.0) * qty
-                        componente.optString("base").takeIf { it.isNotBlank() && it != "null" }?.let { base ->
-                            base.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { baseIndividual ->
-                                com.bocatta.pos.data.repository.InventoryDeductions.mapearBaseAInsumo(baseIndividual)?.let { (id, cant) -> addDeduccion(id, cant * compQty) }
-                            }
-                        }
-                        val compToppings = componente.optJSONArray("toppings")
-                        if (compToppings != null) {
-                            for (t in 0 until compToppings.length()) {
-                                com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(compToppings.optString(t))?.let { (id, cant) -> addDeduccion(id, cant * compQty) }
-                            }
-                        }
-                        val compAderezos = componente.optJSONArray("aderezos")
-                        if (compAderezos != null) {
-                            for (a in 0 until compAderezos.length()) {
-                                com.bocatta.pos.data.repository.InventoryDeductions.mapearToppingOAderezoAInsumo(compAderezos.optString(a))?.let { (id, cant) -> addDeduccion(id, cant * compQty) }
-                            }
-                        }
-                    }
-                }
-                deduccionesPorLinea[i] = linea
             }
 
             val idsConCuotaSucursal = allocationRepo.itemsVendibles.toSet()
@@ -285,35 +254,46 @@ class SyncWorker(
                 if (insumoId in idsConCuotaSucursal) {
                     val snap = branchDocs[insumoId]
                     val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
-                    if (actual < requerido) throw IllegalStateException("Stock insuficiente para $insumoId en sucursal")
+                    if (actual < requerido) {
+                        Timber.tag("SYNC_WORKER").w("Stock insuficiente en nube para $insumoId en sucursal. Disponible: $actual, Requerido: $requerido. Registrando venta igualmente.")
+                    }
                 }
                 if (insumoId !in idsFisicosSucursal) {
                     val snap = globalDocs[insumoId]
                     val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
-                    if (actual < requerido) throw IllegalStateException("Stock insuficiente para $insumoId en bodega central")
+                    if (actual < requerido) {
+                        Timber.tag("SYNC_WORKER").w("Stock insuficiente en nube para $insumoId en bodega central. Disponible: $actual, Requerido: $requerido. Registrando venta igualmente.")
+                    }
                 }
             }
 
             val productos = mutableListOf<Map<String, Any?>>()
             val productosIds = mutableListOf<String>()
-            for (i in 0 until items.length()) {
-                val item = items.getJSONObject(i)
-                val productoId = item.optString("productoId")
-                val cantidad = item.optDouble("cantidad", 1.0).toInt().coerceAtLeast(1)
-                productosIds.addAll(List(cantidad) { productoId })
-                productos.add(
-                    mapOf(
-                        "productoId" to productoId,
-                        "nombre" to item.optString("nombre"),
-                        "cantidad" to cantidad,
-                        "precioUnitario" to item.optDouble("precio", 0.0),
-                        "base" to item.optString("base").takeIf { it.isNotBlank() && it != "null" },
-                        "aderezos" to (0 until (item.optJSONArray("aderezos")?.length() ?: 0)).map { idx -> item.optJSONArray("aderezos")?.optString(idx).orEmpty() },
-                        "separadas" to item.optBoolean("esSeparado", false),
-                        "recetaId" to item.optString("recetaId").takeIf { it.isNotBlank() },
-                        "deducciones" to (deduccionesPorLinea[i] ?: emptyMap<String, Double>())
-                    )
+
+            fun itemToMap(item: ItemCarritoV2, lineDeductions: Map<String, Double>): Map<String, Any?> {
+                return mapOf(
+                    "productoId" to item.producto.id,
+                    "nombre" to item.nombre,
+                    "cantidad" to item.cantidad,
+                    "precioUnitario" to item.precioFinal.toDouble(),
+                    "base" to item.base,
+                    "aderezos" to item.aderezos,
+                    "toppings" to item.toppings,
+                    "separadas" to item.esSeparado,
+                    "paraLlevar" to item.paraLlevar,
+                    "cantidadGramos" to item.cantidadGramos,
+                    "recetaId" to item.producto.recetaId,
+                    "deducciones" to lineDeductions,
+                    "componentesCombo" to item.componentesCombo.map { comp ->
+                        itemToMap(comp, emptyMap())
+                    }
                 )
+            }
+
+            for (i in parsedItems.indices) {
+                val item = parsedItems[i]
+                productosIds.addAll(List(item.cantidad) { item.producto.id })
+                productos.add(itemToMap(item, deduccionesPorLinea[i] ?: emptyMap()))
             }
 
             transaction.set(db.collection(FirestoreCollections.VENTAS).document(venta.id), ventaData + mapOf("productos" to productos, "productosIds" to productosIds))
@@ -326,6 +306,7 @@ class SyncWorker(
                             "insumoId" to insumoId,
                             "sucursal" to sucursalId,
                             "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "currentQty" to FieldValue.increment(-cantidad), // Escritura dual para compatibilidad
                             "ultimaActualizacion" to System.currentTimeMillis()
                         ),
                         SetOptions.merge()
@@ -338,12 +319,14 @@ class SyncWorker(
                             "id" to insumoId,
                             "insumoId" to insumoId,
                             "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "currentQty" to FieldValue.increment(-cantidad), // Escritura dual para compatibilidad
                             "ultimaActualizacion" to System.currentTimeMillis()
                         ),
                         SetOptions.merge()
                     )
                 }
             }
+            null
         }.await()
     }
 
@@ -412,6 +395,69 @@ class SyncWorker(
 
             else -> SaleSyncFailure.TRANSIENT
         }
+    }
+
+    private fun parseItemCarrito(json: org.json.JSONObject): ItemCarritoV2 {
+        val productoId = json.optString("productoId")
+        val nombre = json.optString("nombre")
+        val categoria = json.optString("categoria")
+        val recetaId = json.optString("recetaId").takeIf { it.isNotBlank() }
+
+        val componentesArray = json.optJSONArray("componentesCombo")
+        val componentesList = mutableListOf<ItemCarritoV2>()
+        if (componentesArray != null) {
+            for (i in 0 until componentesArray.length()) {
+                val compJson = componentesArray.getJSONObject(i)
+                componentesList.add(parseItemCarrito(compJson))
+            }
+        }
+
+        val producto = SalesInventoryProductV2(
+            id = productoId,
+            nombre = nombre,
+            categoria = categoria,
+            recetaId = recetaId,
+            esCombo = componentesList.isNotEmpty()
+        )
+
+        val aderezosArray = json.optJSONArray("aderezos")
+        val aderezosList = mutableListOf<String>()
+        if (aderezosArray != null) {
+            for (i in 0 until aderezosArray.length()) {
+                aderezosList.add(aderezosArray.optString(i))
+            }
+        }
+
+        val toppingsArray = json.optJSONArray("toppings")
+        val toppingsList = mutableListOf<String>()
+        if (toppingsArray != null) {
+            for (i in 0 until toppingsArray.length()) {
+                toppingsList.add(toppingsArray.optString(i))
+            }
+        }
+
+        val base = json.optString("base").takeIf { it.isNotBlank() && it != "null" }
+        val precio = java.math.BigDecimal.valueOf(json.optDouble("precio", 0.0))
+        val cantidad = json.optDouble("cantidad", 1.0).toInt().coerceAtLeast(1)
+        val esSeparado = json.optBoolean("esSeparado", false)
+        val paraLlevar = json.optBoolean("paraLlevar", false)
+        // -1.0 como sentinel: campo ausente en ventas antiguas -> null
+        val cantidadGramosRaw = json.optDouble("cantidadGramos", -1.0)
+        val cantidadGramos = if (cantidadGramosRaw > 0) cantidadGramosRaw else null
+
+        return ItemCarritoV2(
+            producto = producto,
+            precioFinal = precio,
+            cantidad = cantidad,
+            nombre = nombre,
+            base = base,
+            aderezos = aderezosList,
+            toppings = toppingsList,
+            esSeparado = esSeparado,
+            componentesCombo = componentesList,
+            paraLlevar = paraLlevar,
+            cantidadGramos = cantidadGramos
+        )
     }
 
     private suspend fun reportCriticalSaleSyncError(

@@ -1,4 +1,4 @@
-package com.bocatta.pos.presentation.viewmodel
+﻿package com.bocatta.pos.presentation.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
@@ -14,6 +14,10 @@ import com.bocatta.pos.domain.model.ClienteV2
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import com.bocatta.pos.data.repository.MesaRepository
 
 class HeldOrderViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -35,7 +39,9 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
         cliente: ClienteV2?,
         nota: String,
         sucursal: String,
-        total: Double
+        total: Double,
+        modalidad: String = "LOCAL",
+        mesaId: String? = null
     ) {
         val id = "held_${System.currentTimeMillis()}_${sucursal}"
         val order = HeldOrder(
@@ -44,17 +50,32 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
             clienteJson = cliente?.let { json.encodeToString(it) },
             nota = nota,
             sucursal = sucursal,
-            total = total
+            total = total,
+            modalidad = modalidad,
+            mesaId = mesaId
         )
         repository.save(order)
         orders.add(0, order)
-        mensajeFeedback = "✅ Orden apartada"
+        mensajeFeedback = "Orden apartada"
+
+        if (mesaId != null) {
+            viewModelScope.launch {
+                MesaRepository().vincularOrden(mesaId, "OCUPADA", id)
+            }
+        }
     }
 
-    fun deleteOrder(id: String) {
+    fun deleteOrder(id: String, liberarMesa: Boolean = true) {
+        val order = repository.getById(id)
         repository.delete(id)
         orders.removeAll { it.id == id }
-        mensajeFeedback = "🗑️ Orden eliminada"
+        mensajeFeedback = "Orden eliminada"
+
+        if (liberarMesa && order?.mesaId != null) {
+            viewModelScope.launch {
+                MesaRepository().vincularOrden(order.mesaId, "LIBRE", null)
+            }
+        }
     }
 
     fun getOrder(id: String): HeldOrder? = repository.getById(id)
@@ -76,4 +97,3 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 }
-

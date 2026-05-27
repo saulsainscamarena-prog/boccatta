@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
         try {
             FirebaseFirestoreProvider.db.firestoreSettings = FirebaseFirestoreSettings.Builder()
                 .setLocalCacheSettings(PersistentCacheSettings.newBuilder()
-                    .setSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED).build())
+                    .setSizeBytes(100L * 1024L * 1024L).build())
                 .build()
         } catch (e: Exception) {
             android.util.Log.w("MainActivity", "Firestore settings ya configurados", e)
@@ -208,6 +208,7 @@ class MainActivity : ComponentActivity() {
                             onVerAdmin = { if (sessionVm.esAdmin) navController.navigate(Routes.Admin) },
                             onVerCaja = { navController.navigate(Routes.Caja) },
                             onVerDevoluciones = { navController.navigate(Routes.Devoluciones) },
+                            onVerActividad = { navController.navigate(Routes.Actividad) },
                             onLogout = { sessionVm.cerrarSesion(); authVm.logout() }
                         )
                     }
@@ -293,6 +294,10 @@ class MainActivity : ComponentActivity() {
                         ReportesInventarioScreen(onBack = { navController.popBackStack() })
                     }
 
+                    composable<Routes.ReportesInventario> {
+                        ReportesInventarioScreen(onBack = { navController.popBackStack() })
+                    }
+
                     composable<Routes.SyncInventario> {
                         SyncInventarioScreen(onBack = { navController.popBackStack() })
                     }
@@ -303,6 +308,23 @@ class MainActivity : ComponentActivity() {
                         GestionSucursalesScreen(
                             vm = sucursalesVm,
                             onBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable<Routes.Actividad> {
+                        val mesaVm: MesaViewModel = koinViewModel()
+                        val heldOrderVm: HeldOrderViewModel = koinViewModel()
+                        com.bocatta.pos.presentation.ui.screens.ventas.ActividadScreen(
+                            mesaVm = mesaVm,
+                            heldOrderVm = heldOrderVm,
+                            salesVm = salesVmV2,
+                            sessionVm = sessionVm,
+                            onBack = { navController.popBackStack() },
+                            onNavigateToSales = {
+                                navController.navigate(Routes.Ventas) {
+                                    popUpTo<Routes.Actividad> { inclusive = true }
+                                }
+                            }
                         )
                     }
                 }

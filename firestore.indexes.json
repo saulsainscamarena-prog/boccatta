@@ -1,0 +1,118 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sucursal", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sucursal", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gastos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sucursal", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "gastos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sucursal", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cancelaciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "sucursal", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "turnos_caja",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sucursal", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "movements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "branchId", "order": "ASCENDING" },
+        { "fieldPath": "productId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "v2_jornadas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empleadoId", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "v2_horarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empleadoId", "order": "ASCENDING" },
+        { "fieldPath": "diaSemana", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "v2_pagos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empleadoId", "order": "ASCENDING" },
+        { "fieldPath": "periodoInicio", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "v2_registros_jornada",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "usuario", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mesas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "zonaId", "order": "ASCENDING" },
+        { "fieldPath": "numero", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "productos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "productos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "giro", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

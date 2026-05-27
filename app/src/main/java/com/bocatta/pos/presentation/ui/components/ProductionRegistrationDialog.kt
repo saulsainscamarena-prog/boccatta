@@ -27,6 +27,7 @@ import kotlinx.coroutines.tasks.await
 fun ProductionRegistrationDialog(
     vm: InventoryViewModel,
     sucursal: String,
+    usuarioId: String = "cajero",
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -42,19 +43,25 @@ fun ProductionRegistrationDialog(
     var presentaciones by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var presentacionSeleccionada by remember { mutableStateOf<Map<String, Any>?>(null) }
     var cantidadPresentacionText by remember { mutableStateOf("") }
+    var costoTotalText by remember { mutableStateOf("") }
+
+    val insumosDisponibles = vm.maestroInsumos.values.toList().filter { it.id.isNotBlank() }
 
     // Cargar presentaciones cuando cambia el insumo
     LaunchedEffect(insumoSeleccionado) {
         if (insumoSeleccionado.isNotBlank()) {
-            try {
-                val db = com.bocatta.pos.network.firebase.FirebaseFirestoreProvider.db
-                val snap = db.collection(com.bocatta.pos.core.constants.FirestoreCollections.PRESENTACIONES)
-                    .whereEqualTo("insumoId", insumoSeleccionado)
-                    .get().await()
-                presentaciones = snap.documents.mapNotNull { it.data?.plus("id" to it.id) }
-                presentacionSeleccionada = null
-                cantidadPresentacionText = ""
-            } catch (_: Exception) { presentaciones = emptyList() }
+            val insumo = insumosDisponibles.find { it.id == insumoSeleccionado }
+            presentaciones = insumo?.presentacionesCompra?.map { pres ->
+                mapOf(
+                    "nombre" to pres.nombre,
+                    "descripcion" to pres.descripcion,
+                    "contenidoSugerido" to pres.contenidoSugerido,
+                    "precioSugerido" to pres.precioSugerido
+                )
+            } ?: emptyList()
+            presentacionSeleccionada = null
+            cantidadPresentacionText = ""
+            costoTotalText = ""
         } else {
             presentaciones = emptyList()
         }
@@ -65,8 +72,6 @@ fun ProductionRegistrationDialog(
             else if (insumoSeleccionado.contains("nuggets", true)) 210.0
             else if (insumoSeleccionado.contains("papas", true)) 200.0
             else 0.0)
-
-    val insumosDisponibles = vm.maestroInsumos.values.toList().filter { it.id.isNotBlank() }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -277,6 +282,83 @@ fun ProductionRegistrationDialog(
                     }
                 }
 
+                if (modo == "presentacion") {
+                    Text("PRESENTACIÓN DE COMPRA", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                    ExposedDropdownMenuBox(
+                        expanded = expandedPresMenu,
+                        onExpandedChange = { expandedPresMenu = it }
+                    ) {
+                        OutlinedTextField(
+                            value = presentacionSeleccionada?.get("nombre") as? String ?: "Seleccionar presentación...",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPresMenu) },
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedPresMenu,
+                            onDismissRequest = { expandedPresMenu = false }
+                        ) {
+                            presentaciones.forEach { pres ->
+                                val nombre = pres["nombre"] as? String ?: ""
+                                val desc = pres["descripcion"] as? String ?: ""
+                                DropdownMenuItem(
+                                    text = { Text("$nombre ($desc)") },
+                                    onClick = {
+                                        presentacionSeleccionada = pres
+                                        expandedPresMenu = false
+                                        val costoSug = pres["precioSugerido"] as? Double ?: 0.0
+                                        costoTotalText = if (costoSug > 0.0) costoSug.toString() else ""
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = cantidadPresentacionText,
+                        onValueChange = { cantidadPresentacionText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Cantidad comprada") },
+                        placeholder = { Text("Ej: 2") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = costoTotalText,
+                        onValueChange = { costoTotalText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Costo total de la compra ($)") },
+                        placeholder = { Text("Ej: 294.0") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    val pres = presentacionSeleccionada
+                    val cant = cantidadPresentacionText.toDoubleOrNull() ?: 0.0
+                    if (pres != null && cant > 0.0) {
+                        val contenido = (pres["contenidoSugerido"] as? Number)?.toDouble() ?: 1.0
+                        val totalUnidades = (cant * contenido).toInt()
+                        val desc = pres["descripcion"] as? String ?: ""
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondary.copy(0.1f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Calculate, "Calcular", tint = MaterialTheme.colorScheme.secondary)
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text("Unidades que ingresan al inventario:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("$totalUnidades unidades base ($desc)", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Spacer(Modifier.height(8.dp))
 
                 // Botón de acción
@@ -308,14 +390,17 @@ fun ProductionRegistrationDialog(
                                 )
                             } else if (modo == "presentacion") {
                                 val pres = presentacionSeleccionada
-                                val cant = cantidadPresentacionText.toIntOrNull() ?: 0
-                                if (pres != null && cant > 0) {
-                                    val totalUnidades = cant * (pres["contenido"] as? Number)?.toInt()!! * (pres["subunidades"] as? Number)?.toInt()!!
-                                    vm.registrarProduccion(
+                                val cant = cantidadPresentacionText.toDoubleOrNull() ?: 0.0
+                                val costoTotal = costoTotalText.toDoubleOrNull() ?: 0.0
+                                if (pres != null && cant > 0.0) {
+                                    val contenido = (pres["contenidoSugerido"] as? Number)?.toDouble() ?: 1.0
+                                    vm.registrarCompraConPresentacion(
                                         insumoId = insumoSeleccionado,
-                                        porcionesObtenidas = totalUnidades.toDouble(),
-                                        tandasPreparadas = 1.0,
-                                        sobranteAnterior = 0.0,
+                                        presentacionNombre = pres["nombre"] as? String ?: "",
+                                        cantidad = cant,
+                                        contenidoEquivalente = contenido,
+                                        costoTotal = costoTotal,
+                                        usuarioId = usuarioId,
                                         onResult = { if (it) onDismiss() }
                                     )
                                 }
@@ -333,7 +418,7 @@ fun ProductionRegistrationDialog(
                         enabled = insumoSeleccionado.isNotBlank() &&
                             ((modo == "producir" && (porcionesText.toIntOrNull() ?: 0) > 0) ||
                              (modo == "peso" && (compraPesoText.toDoubleOrNull() ?: 0.0) > 0 && (porcionPesoText.toDoubleOrNull() ?: 0.0) > 0) ||
-                             (modo == "presentacion" && presentacionSeleccionada != null && (cantidadPresentacionText.toIntOrNull() ?: 0) > 0))
+                             (modo == "presentacion" && presentacionSeleccionada != null && (cantidadPresentacionText.toDoubleOrNull() ?: 0.0) > 0.0 && (costoTotalText.toDoubleOrNull() ?: 0.0) > 0.0))
                     ) {
                         Icon(
                             when (modo) {

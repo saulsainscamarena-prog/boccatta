@@ -65,13 +65,16 @@ object OfflineManager {
                 "base" to item.base,
                 "aderezos" to item.aderezos,
                 "toppings" to item.toppings,
+                "paraLlevar" to item.paraLlevar,
+                "cantidadGramos" to item.cantidadGramos,
                 "componentesCombo" to item.componentesCombo.map { componente ->
                     mapOf(
                         "nombre" to componente.nombre,
                         "cantidad" to componente.cantidad.toDouble(),
                         "base" to componente.base,
                         "aderezos" to componente.aderezos,
-                        "toppings" to componente.toppings
+                        "toppings" to componente.toppings,
+                        "paraLlevar" to componente.paraLlevar
                     )
                 }
             )

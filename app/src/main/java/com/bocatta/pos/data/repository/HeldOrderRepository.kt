@@ -18,6 +18,8 @@ class HeldOrderRepository(private val dbHelper: OfflineDatabase) : IHeldOrderRep
             put("fecha", order.fecha)
             put("sucursal", order.sucursal)
             put("total", order.total)
+            put("modalidad", order.modalidad)
+            put("mesaId", order.mesaId)
         }
         db.insertWithOnConflict(TABLE, null, cv, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -52,15 +54,33 @@ class HeldOrderRepository(private val dbHelper: OfflineDatabase) : IHeldOrderRep
         db.delete(TABLE, null, null)
     }
 
-    private fun fromCursor(c: Cursor): HeldOrder = HeldOrder(
-        id = c.getString(c.getColumnIndexOrThrow("id")),
-        carritoJson = c.getString(c.getColumnIndexOrThrow("carritoJson")),
-        clienteJson = c.getString(c.getColumnIndexOrThrow("clienteJson")),
-        nota = c.getString(c.getColumnIndexOrThrow("nota")),
-        fecha = c.getLong(c.getColumnIndexOrThrow("fecha")),
-        sucursal = c.getString(c.getColumnIndexOrThrow("sucursal")),
-        total = c.getDouble(c.getColumnIndexOrThrow("total"))
-    )
+    private fun fromCursor(c: Cursor): HeldOrder {
+        val id = c.getString(c.getColumnIndexOrThrow("id"))
+        val carritoJson = c.getString(c.getColumnIndexOrThrow("carritoJson"))
+        val clienteJson = c.getString(c.getColumnIndexOrThrow("clienteJson"))
+        val nota = c.getString(c.getColumnIndexOrThrow("nota"))
+        val fecha = c.getLong(c.getColumnIndexOrThrow("fecha"))
+        val sucursal = c.getString(c.getColumnIndexOrThrow("sucursal"))
+        val total = c.getDouble(c.getColumnIndexOrThrow("total"))
+
+        val modIndex = c.getColumnIndex("modalidad")
+        val modalidad = if (modIndex >= 0) c.getString(modIndex) ?: "LOCAL" else "LOCAL"
+
+        val mesaIndex = c.getColumnIndex("mesaId")
+        val mesaId = if (mesaIndex >= 0) c.getString(mesaIndex) else null
+
+        return HeldOrder(
+            id = id,
+            carritoJson = carritoJson,
+            clienteJson = clienteJson,
+            nota = nota,
+            fecha = fecha,
+            sucursal = sucursal,
+            total = total,
+            modalidad = modalidad,
+            mesaId = mesaId
+        )
+    }
 
     companion object {
         private const val TABLE = OfflineDatabase.TABLE_HELD_ORDERS

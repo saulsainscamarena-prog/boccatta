@@ -48,7 +48,9 @@ data class ItemCarritoV2(
     val aderezos: List<String> = emptyList(),
     val toppings: List<String> = emptyList(),
     val esSeparado: Boolean = false,
-    val componentesCombo: List<ItemCarritoV2> = emptyList()
+    val componentesCombo: List<ItemCarritoV2> = emptyList(),
+    val paraLlevar: Boolean = false,
+    val cantidadGramos: Double? = null   // null = venta por unidad; valor > 0 = venta por peso
 ) {
     fun copyConCantidad(nuevaCantidad: Int) = copy(cantidad = nuevaCantidad)
 }

@@ -184,7 +184,11 @@ fun AdminScreen(
             // Contenido
             when (tabPrincipal) {
                 0 -> when (subTabSeleccionado) {
-                    0 -> TabDashboard(vm = vm, onComenzarConfiguracion = { tabPrincipal = 1; subTabSeleccionado = 0 })
+                    0 -> TabDashboard(
+                        vm = vm,
+                        onComenzarConfiguracion = { tabPrincipal = 1; subTabSeleccionado = 0 },
+                        onValidarPin = { pin, resultado -> session.validarPinAdmin(pin, resultado) }
+                    )
                     1 -> TabAuditoria(vm = vm)
                 }
                 1 -> when (subTabSeleccionado) {
@@ -237,7 +241,11 @@ private fun String.limpiarEtiquetaAdmin(): String {
 }
 
 @Composable
-private fun TabDashboard(vm: AdminViewModel, onComenzarConfiguracion: () -> Unit) {
+private fun TabDashboard(
+    vm: AdminViewModel,
+    onComenzarConfiguracion: () -> Unit,
+    onValidarPin: (String, (Boolean) -> Unit) -> Unit
+) {
     val context = LocalContext.current
     val hoy = remember {
         Calendar.getInstance().apply {
@@ -340,21 +348,53 @@ private fun TabDashboard(vm: AdminViewModel, onComenzarConfiguracion: () -> Unit
 
         // Panel mantenimiento
         item {
-            var showDeleteConfirm by remember { mutableStateOf(false) }
-            if (showDeleteConfirm) {
+            // Estados de flujo: null=nada abierto, "borrar"=pin para borrar, "v2"=pin para cargar V2
+            var accionPendiente by remember { mutableStateOf<String?>(null) }
+            var showPinDialog by remember { mutableStateOf(false) }
+            var showBorrarConfirm by remember { mutableStateOf(false) }
+
+            // Dialogo PIN
+            if (showPinDialog) {
+                AdminPinDialog(
+                    onDismiss = { showPinDialog = false; accionPendiente = null },
+                    onConfirm = { pin ->
+                        onValidarPin(pin) { valido ->
+                            showPinDialog = false
+                            if (valido) {
+                                when (accionPendiente) {
+                                    "borrar" -> showBorrarConfirm = true
+                                    "v2" -> { vm.inicializarV2(); accionPendiente = null }
+                                }
+                            } else {
+                                accionPendiente = null
+                            }
+                        }
+                    }
+                )
+            }
+
+            // Dialogo confirmacion borrado (solo alcanzable tras PIN valido)
+            if (showBorrarConfirm) {
                 AlertDialog(
-                    onDismissRequest = { showDeleteConfirm = false },
+                    onDismissRequest = { showBorrarConfirm = false; accionPendiente = null },
                     title = { Text("Accion irreversible") },
                     text = { Text("Estas seguro de borrar TODOS los datos del sistema? Esta accion no se puede deshacer.") },
                     confirmButton = {
-                        Button(onClick = { vm.realizarLimpiezaTotal(); showDeleteConfirm = false },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+                        Button(
+                            onClick = { vm.realizarLimpiezaTotal(); showBorrarConfirm = false; accionPendiente = null },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
                             Text("Si, borrar todo")
                         }
                     },
-                    dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") } }
+                    dismissButton = {
+                        TextButton(onClick = { showBorrarConfirm = false; accionPendiente = null }) {
+                            Text("Cancelar")
+                        }
+                    }
                 )
             }
+
             ElevatedCard(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
@@ -365,16 +405,16 @@ private fun TabDashboard(vm: AdminViewModel, onComenzarConfiguracion: () -> Unit
                         Spacer(Modifier.width(8.dp))
                         Text("Mantenimiento del sistema", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                     }
-                    Text("Solo usar en casos de reinicio total.", style = MaterialTheme.typography.bodySmall,
+                    Text("Requiere PIN de administrador.", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer.copy(0.7f))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
-                            onClick = { showDeleteConfirm = true },
+                            onClick = { accionPendiente = "borrar"; showPinDialog = true },
                             modifier = Modifier.weight(1f),
                             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
                         ) { Text("Borrar todo", fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
                         Button(
-                            onClick = { vm.inicializarV2() },
+                            onClick = { accionPendiente = "v2"; showPinDialog = true },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) { Text("Cargar V2", fontSize = 12.sp) }

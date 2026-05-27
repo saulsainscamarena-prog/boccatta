@@ -6,8 +6,8 @@ import com.bocatta.pos.domain.repository.IProductRepository
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
@@ -16,45 +16,58 @@ class ProductRepositoryImpl : IProductRepository {
     private val db = FirebaseFirestoreProvider.db
     private val collection = db.collection(FirestoreCollections.PRODUCTOS)
 
-    private val _allProducts = MutableStateFlow<List<InventoryProductV2>>(emptyList())
-    override fun getAllProducts(): Flow<List<InventoryProductV2>> {
-        collection.addSnapshotListener { snapshot, error ->
+    override fun getAllProducts(): Flow<List<InventoryProductV2>> = callbackFlow {
+        val subscription = collection.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 Timber.tag("PRODUCT_REPO").e(error, "Error listening products")
+                close(error)
                 return@addSnapshotListener
             }
             val products = snapshot?.documents?.mapNotNull { doc ->
                 val p = doc.toObject(InventoryProductV2::class.java)
                 p?.copy(id = doc.id)
             } ?: emptyList()
-            _allProducts.value = products.sortedBy { it.name }
+            trySend(products.sortedBy { it.name })
         }
-        return _allProducts.asStateFlow()
+        awaitClose {
+            subscription.remove()
+            Timber.tag("PRODUCT_REPO").d("All products snapshot listener removed successfully.")
+        }
     }
 
-    override fun getProductById(id: String): Flow<InventoryProductV2?> {
-        val result = MutableStateFlow<InventoryProductV2?>(null)
-        collection.document(id).addSnapshotListener { snapshot, error ->
-            if (error != null) return@addSnapshotListener
+    override fun getProductById(id: String): Flow<InventoryProductV2?> = callbackFlow {
+        val subscription = collection.document(id).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
             val product = snapshot?.toObject(InventoryProductV2::class.java)?.copy(id = snapshot.id)
-            result.value = product
+            trySend(product)
         }
-        return result.asStateFlow()
+        awaitClose {
+            subscription.remove()
+            Timber.tag("PRODUCT_REPO").d("ProductById snapshot listener removed successfully.")
+        }
     }
 
-    override fun getProductsByFilter(category: String?, giro: String?): Flow<List<InventoryProductV2>> {
-        val result = MutableStateFlow<List<InventoryProductV2>>(emptyList())
+    override fun getProductsByFilter(category: String?, giro: String?): Flow<List<InventoryProductV2>> = callbackFlow {
         var query = collection.whereEqualTo("status", "ACTIVE")
         if (category != null) query = query.whereEqualTo("category", category)
         if (giro != null) query = query.whereEqualTo("giro", giro)
-        query.addSnapshotListener { snapshot, error ->
-            if (error != null) return@addSnapshotListener
+        val subscription = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
             val products = snapshot?.documents?.mapNotNull { doc ->
                 doc.toObject(InventoryProductV2::class.java)?.copy(id = doc.id)
             } ?: emptyList()
-            result.value = products
+            trySend(products)
         }
-        return result.asStateFlow()
+        awaitClose {
+            subscription.remove()
+            Timber.tag("PRODUCT_REPO").d("ProductsByFilter snapshot listener removed successfully.")
+        }
     }
 
     override suspend fun saveProduct(product: InventoryProductV2): Boolean {

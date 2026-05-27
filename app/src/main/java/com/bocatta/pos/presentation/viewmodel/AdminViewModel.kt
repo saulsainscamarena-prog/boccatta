@@ -327,7 +327,7 @@ class AdminViewModel(
                 .get().await()
             historialVentasV2.clear()
             snap.documents.forEach { doc ->
-                doc.toObject(VentaV2::class.java)?.let { historialVentasV2.add(it.copy(id = doc.id)) }
+doc.toObject(VentaV2::class.java)?.let { historialVentasV2.add(it.copy(id = doc.id)) }
             }
         }
     }
@@ -335,23 +335,35 @@ class AdminViewModel(
     fun agregarProducto(producto: SalesInventoryProductV2) {
         viewModelScope.launch(safeHandler) {
             db.collection(FirestoreCollections.PRODUCTOS).document(producto.id).set(producto).await()
-            mensajeExito = "Producto agregado ?"
+            mensajeExito = "Producto agregado ✓"
         }
     }
 
     fun editarProducto(producto: SalesInventoryProductV2) {
         viewModelScope.launch(safeHandler) {
             db.collection(FirestoreCollections.PRODUCTOS).document(producto.id).set(producto).await()
-            mensajeExito = "Producto actualizado ?"
+            mensajeExito = "Producto actualizado ✓"
         }
     }
 
     fun eliminarProducto(producto: SalesInventoryProductV2) {
         viewModelScope.launch(safeHandler) {
             db.collection(FirestoreCollections.PRODUCTOS).document(producto.id).delete().await()
-            mensajeExito = "Producto eliminado ?"
+            mensajeExito = "Producto eliminado ✓"
         }
     }
+
+    fun actualizarUsuario(usuario: Usuario) {
+        if (usuario.uid.isBlank()) return
+        viewModelScope.launch(safeHandler) {
+            db.collection(FirestoreCollections.USUARIOS).document(usuario.uid)
+                .update(mapOf("nombre" to usuario.nombre, "rol" to usuario.rol?.name))
+                .await()
+            mensajeExito = "Empleado actualizado ✓"
+        }
+    }
+
+
 
     fun escucharCancelaciones() {
         listenerCancelaciones?.remove()

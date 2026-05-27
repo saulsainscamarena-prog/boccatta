@@ -473,7 +473,7 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
         }
         Button(
             onClick = { vm.abrirTurno(fondo.toDoubleOrNull() ?: 0.0,
-                session.sucursalActual, session.nombreUsuario) { if (it) onFinish() } },
+                session.sucursalActual, session.usuario) { if (it) onFinish() } },
             enabled = !vm.cargando && fondo.isNotBlank(),
             modifier = Modifier.fillMaxWidth().height(64.dp),
             shape = RoundedCornerShape(20.dp),

@@ -7,11 +7,16 @@ object InventoryDeductions {
     val TOPPINGS_SALADOS = listOf("Jamón", "Queso Manchego", "Pepperoni", "Piña", "Champiñones", "Bbq", "Buffalo", "Blue Cheese")
     val TOPPINGS_DULCES = listOf("Fresa", "Durazno", "Plátano", "Oreo", "Nuez", "Bombón", "Philadelphia", "Nutella", "Coco", "Chispas")
 
+    val CONSUMIBLES_EMPAQUE = setOf("charola", "domo", "papel_hamburguesero", "vaso", "tenedor", "cuchara")
+
     fun calcularParaItem(
         item: ItemCarritoV2,
         recetaIngredientes: List<IngredienteReceta>
     ): Map<String, Double> {
-        val qty = item.cantidad.toDouble()
+        // Si el producto se vende por peso, qty es la fraccion de kg vendida.
+        // Si es por unidades (cantidadGramos == null), qty es la cantidad entera normal.
+        val qty = if (item.cantidadGramos != null) item.cantidadGramos / 1000.0
+                  else item.cantidad.toDouble()
         val deducciones = linkedMapOf<String, Double>()
 
         recetaIngredientes.forEach { ing ->
@@ -39,7 +44,37 @@ object InventoryDeductions {
             ).forEach { (id, cantidad) -> deducciones.add(id, cantidad) }
         }
 
-        if (item.esSeparado && item.producto.esCombo) {
+        item.producto.consumiblesAsociados.forEach { consumible ->
+            if (item.paraLlevar || consumible.consumibleId !in CONSUMIBLES_EMPAQUE) {
+                deducciones.add(consumible.consumibleId, consumible.cantidad * qty)
+            }
+        }
+
+        if (item.paraLlevar) {
+            val cat = item.producto.categoria.lowercase()
+            when (cat) {
+                "crepas" -> {
+                    deducciones.add("servilletas", 2.0 * qty)
+                    deducciones.add("papel_hamburguesero", qty)
+                }
+                "waffles" -> {
+                    deducciones.add("tenedor", qty)
+                    deducciones.add("servilletas", 2.0 * qty)
+                    deducciones.add("charola", qty)
+                }
+                "frappes", "bebida" -> {
+                    deducciones.add("vaso", qty)
+                    deducciones.add("domo", qty)
+                }
+                else -> {
+                    deducciones.add("servilletas", qty)
+                }
+            }
+        } else {
+            deducciones.add("servilletas", qty)
+        }
+
+        if (item.paraLlevar && item.esSeparado && item.producto.esCombo) {
             deducciones.add("charola", qty)
             deducciones.add("papel_hamburguesero", qty)
         }
@@ -54,9 +89,10 @@ object InventoryDeductions {
             ?.count { it.isNotBlank() }
             ?: 0
         val normales = toppings.count { !esPremium(it) }
+        val premiumToppingsCount = toppings.count { esPremium(it) }
         val ingredientesNormales = normales + basesNormales
         val cargoNormal = if (ingredientesNormales >= 3) extra else 0.0
-        val cargoPremium = if (toppings.any { esPremium(it) }) extra else 0.0
+        val cargoPremium = premiumToppingsCount * extra
         return precioBase + cargoNormal + cargoPremium
     }
 

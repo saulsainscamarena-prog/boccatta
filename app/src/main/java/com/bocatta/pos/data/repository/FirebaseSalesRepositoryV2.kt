@@ -28,7 +28,8 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
         metodoPagoSeleccionado: String,
         esConsumoEmpleado: Boolean,
         descuentoPromociones: Double,
-        descuentoManual: Double
+        descuentoManual: Double,
+        splitPartes: List<com.bocatta.pos.domain.model.SplitParte>
     ): ResultadoVenta {
         val sucursalId = normalizarSucursal(sucursal)
         val subtotal = carrito.sumOf { it.precioFinal.toDouble() * it.cantidad }
@@ -145,27 +146,37 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                 ),
                 SetOptions.merge()
             )
+            val ventaDocMap = mutableMapOf<String, Any?>(
+                "id" to ventaId,
+                "ticket" to nextTicket,
+                "numeroTicket" to nextTicket,
+                "codigoTicket" to codigoTicket,
+                "total" to totalFinal,
+                "descuentoLealtad" to descuentoLealtad,
+                "descuentoPromociones" to descuentoPromociones,
+                "descuentoManual" to descuentoManual,
+                "fecha" to System.currentTimeMillis(),
+                "sucursal" to sucursalId,
+                "atendio" to usuarioNombre,
+                "metodoPago" to metodoPagoSeleccionado,
+                "esConsumoEmpleado" to esConsumoEmpleado,
+                "estado" to "completada",
+                "clienteId" to clienteSeleccionado?.telefono,
+                "productos" to lineasVenta,
+                "productosIds" to productosIds
+            )
+            if (splitPartes.isNotEmpty()) {
+                ventaDocMap["pagosDivididos"] = splitPartes.map {
+                    mapOf(
+                        "persona" to it.personaIndex + 1,
+                        "monto" to it.monto.toDouble(),
+                        "metodoPago" to it.metodoPago.valor
+                    )
+                }
+            }
             transaction.set(
                 db.collection(FirestoreCollections.VENTAS).document(ventaId),
-                mapOf(
-                    "id" to ventaId,
-                    "ticket" to nextTicket,
-                    "numeroTicket" to nextTicket,
-                    "codigoTicket" to codigoTicket,
-                    "total" to totalFinal,
-                    "descuentoLealtad" to descuentoLealtad,
-                    "descuentoPromociones" to descuentoPromociones,
-                    "descuentoManual" to descuentoManual,
-                    "fecha" to System.currentTimeMillis(),
-                    "sucursal" to sucursalId,
-                    "atendio" to usuarioNombre,
-                    "metodoPago" to metodoPagoSeleccionado,
-                    "esConsumoEmpleado" to esConsumoEmpleado,
-                    "estado" to "completada",
-                    "clienteId" to clienteSeleccionado?.telefono,
-                    "productos" to lineasVenta,
-                    "productosIds" to productosIds
-                )
+                ventaDocMap
             )
 
             if (clienteSeleccionado != null && !esConsumoEmpleado) {

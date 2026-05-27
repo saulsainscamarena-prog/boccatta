@@ -24,7 +24,12 @@ fun SplitPaymentDialog(
     onDismiss: () -> Unit
 ) {
     var personasText by remember { mutableStateOf(initialParts.size.coerceAtLeast(2).toString()) }
-    var partes by remember(initialParts) { mutableStateOf(initialParts) }
+    var partes by remember(initialParts) {
+        mutableStateOf(
+            if (initialParts.isNotEmpty()) initialParts
+            else calcularSplit(total, 2, MetodoPago.EFECTIVO)
+        )
+    }
 
     val personas = personasText.toIntOrNull()?.coerceIn(2, 20) ?: 2
 
@@ -51,8 +56,6 @@ fun SplitPaymentDialog(
                 Text("$personas personas — Total: $${"%.2f".format(total)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
 
                 if (personas > 1 && personas <= 20) {
-                    partes = calcularSplit(total, personas, MetodoPago.EFECTIVO)
-
                     partes.forEachIndexed { index, parte ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),

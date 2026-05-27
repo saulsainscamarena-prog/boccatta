@@ -137,6 +137,7 @@ fun InventoryScreen(
             ProductionRegistrationDialog(
                 vm = vm,
                 sucursal = session.sucursalActual,
+                usuarioId = session.uid,
                 onDismiss = { mostrarRegistroProduccion = false }
             )
         }

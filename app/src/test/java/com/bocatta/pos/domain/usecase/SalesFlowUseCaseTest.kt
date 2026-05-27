@@ -322,4 +322,17 @@ class FakeInventoryRepository : IInventoryRepository {
         branchId: String, productId: String, startDate: Long, endDate: Long
     ): Flow<List<com.bocatta.pos.domain.repository.InventoryMovement>> =
         MutableStateFlow<List<com.bocatta.pos.domain.repository.InventoryMovement>>(emptyList()).asStateFlow()
+
+    override suspend fun registrarCompraConPresentacion(
+        branchId: String,
+        insumoId: String,
+        presentacionNombre: String,
+        cantidadComprada: Double,
+        contenidoEquivalente: Double,
+        costoTotal: Double,
+        userId: String
+    ): Boolean {
+        movements.add(insumoId to (cantidadComprada * contenidoEquivalente))
+        return true
+    }
 }

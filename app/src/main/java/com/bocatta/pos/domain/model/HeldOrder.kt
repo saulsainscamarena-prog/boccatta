@@ -10,6 +10,8 @@ data class HeldOrder(
     val nota: String = "",
     val fecha: Long = 0L,
     val sucursal: String = "",
-    val total: Double = 0.0
+    val total: Double = 0.0,
+    val modalidad: String = "LOCAL",
+    val mesaId: String? = null
 )
 

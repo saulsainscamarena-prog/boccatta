@@ -8,5 +8,6 @@ interface IMesaRepository {
     suspend fun guardar(mesa: Mesa): Boolean
     suspend fun eliminar(id: String): Boolean
     suspend fun actualizarEstado(id: String, estado: String): Boolean
+    suspend fun vincularOrden(id: String, estado: String, ordenId: String?): Boolean
 }
 

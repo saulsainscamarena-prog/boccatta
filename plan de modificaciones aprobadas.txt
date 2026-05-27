@@ -1,0 +1,150 @@
+Plan de modificaciones aprobadas - Bocatta POS
+Fecha: 2026-05-26
+
+Objetivo:
+Corregir los bloqueos detectados en la revision Android antes de instalar para
+prueba real de mostrador.
+
+Alcance:
+- SalesScreen.
+- SalesViewModelV2.
+- HeldOrderViewModel.
+- HeldOrderRepository / OfflineDatabase si hace falta.
+- Pruebas relacionadas con catalogo, ordenes apartadas, mesas y cobro.
+
+
+1. Bloqueo: SalesScreen puede quedar sin productos
+
+Hallazgo:
+- SalesScreen depende de `vmV2.catalogoProcesado`.
+- `SalesViewModelV2` declara `catalogoProcesado`, pero no lo asigna.
+- `escucharMenu()` llena `_productos`, pero no llama a
+  `catalogoUseCase.clasificarYOrdenar(...)`.
+
+Riesgo:
+- La app compila.
+- Los tests pasan.
+- Pero SalesScreen puede abrir sin productos visibles.
+
+Modificacion aprobada:
+- En `SalesViewModelV2.escucharMenu()`, despues de cargar `_productos`, asignar:
+  `catalogoProcesado = catalogoUseCase.clasificarYOrdenar(...)`.
+- Usar la sucursal actual normalizada.
+- Mantener fallback seguro si no hay sucursal o si el catalogo aun esta nulo.
+
+Criterio de aceptacion:
+- Frecuentes muestra productos vendibles desde el primer dia.
+- Categorias muestran productos correctos.
+- Productos sin precio para la sucursal no aparecen.
+- Materia prima, toppings sueltos e inactivos no aparecen.
+
+
+2. Bloqueo: orden apartada o mesa puede quedar colgada despues de cobrar
+
+Hallazgo:
+- `SalesViewModelV2.aplicarResultadoVenta()` llama a `limpiarEstadoPostVenta()`.
+- `limpiarEstadoPostVenta()` borra `activeHeldOrderId`.
+- Luego SalesScreen intenta borrar la orden apartada usando `activeHeldOrderId`,
+  pero ya puede estar en null.
+
+Riesgo:
+- La venta se cobra.
+- La orden queda en `held_orders`.
+- La mesa puede quedar ocupada aunque ya pago.
+
+Modificacion aprobada:
+- Capturar `heldOrderId` y `mesaId` antes de limpiar estado post venta.
+- Emitirlos en un evento de venta completada o conservarlos hasta que la UI haga
+  limpieza.
+- Borrar orden apartada y liberar mesa solo despues de venta exitosa.
+
+Criterio de aceptacion:
+- Cobrar una venta rapida apartada elimina la orden apartada.
+- Cobrar una mesa elimina la orden asociada.
+- Cobrar una mesa libera la mesa.
+- Si el cobro falla, la orden no se borra.
+
+
+3. Bloqueo: dialogo viejo de ordenes apartadas borra antes de cobrar
+
+Hallazgo:
+- El dialogo de ordenes apartadas en SalesScreen carga items manualmente.
+- Luego borra la orden inmediatamente.
+- No preserva el contexto completo de orden activa.
+
+Riesgo:
+- Si falla el cobro, se apaga el telefono o falta stock, la orden ya se perdio.
+- Se pierde contexto como cliente, modalidad, mesa o heldOrderId.
+
+Modificacion aprobada:
+- Reutilizar `salesVm.cargarOrdenEnCarrito(...)`.
+- Pasar `heldOrderId`, cliente, modalidad y mesa.
+- No borrar la orden al cargarla.
+- Borrarla solo al cobrar correctamente o cancelar con autorizacion.
+
+Criterio de aceptacion:
+- Recuperar una orden apartada no la borra.
+- Si el usuario regresa sin cobrar, la orden sigue disponible.
+- Si cobra correctamente, se elimina.
+- Si cancela, pide autorizacion segun permiso.
+
+
+4. Bloqueo: re-apartar una mesa puede liberar la mesa por carrera asincrona
+
+Hallazgo:
+- El flujo guarda una nueva orden y luego borra la anterior.
+- `deleteOrder()` libera la mesa cuando la orden anterior tenia `mesaId`.
+- Esa liberacion puede correr despues del vinculo de la nueva orden.
+
+Riesgo:
+- La mesa puede quedar `LIBRE` aunque exista una orden real en esa mesa.
+- El empleado puede abrir otra orden sobre una mesa ocupada.
+
+Modificacion aprobada:
+- Crear un camino seguro para reemplazar/mover orden:
+  - borrar sin liberar mesa cuando sea reemplazo, o
+  - guardar y borrar dentro de un metodo coordinado, o
+  - liberar solo si la mesa sigue apuntando a la orden eliminada.
+
+Criterio de aceptacion:
+- Re-apartar una mesa mantiene la mesa ocupada.
+- La mesa apunta al ID de la orden vigente.
+- Borrar una orden sin reemplazo si libera la mesa.
+- Mover venta rapida a mesa no deja IDs huerfanos.
+
+
+5. Mejora obligatoria de pruebas
+
+Hallazgo:
+- Las pruebas actuales de actividad simulan modelos con `copy(...)`.
+- No cubren el flujo real de repositorio, SQLite, ViewModel y MesaRepository.
+
+Modificacion aprobada:
+- Agregar pruebas para:
+  - catalogo procesado asignado desde ViewModel o logica equivalente.
+  - cargar orden apartada sin borrarla.
+  - cobro exitoso elimina orden y libera mesa.
+  - fallo de cobro conserva orden.
+  - reemplazo de orden en mesa no libera mesa por accidente.
+
+Criterio de aceptacion:
+- `testDebugUnitTest` pasa.
+- Si se toca SQLite real, agregar prueba instrumentada o test con helper local
+  que cubra migracion/columnas.
+
+
+6. Verificacion obligatoria al terminar
+
+Comandos:
+- `git diff --check`
+- `.\gradlew.bat compileDebugKotlin --no-parallel --max-workers=1`
+- `.\gradlew.bat testDebugUnitTest --no-parallel --max-workers=1`
+
+Validacion manual posterior:
+- Instalar en dispositivo.
+- Probar venta rapida.
+- Probar venta rapida apartada.
+- Probar mesa.
+- Probar cobro de mesa.
+- Probar venta offline.
+- Probar sincronizacion posterior.

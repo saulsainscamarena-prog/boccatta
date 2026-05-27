@@ -19,6 +19,9 @@ import com.bocatta.pos.domain.usecase.PromocionesEngine
 import com.bocatta.pos.domain.usecase.PromotionsEngineV2
 import com.bocatta.pos.domain.usecase.ProductionBatchUseCase
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
+import com.bocatta.pos.domain.usecase.AuthorizationManager
+import com.bocatta.pos.domain.usecase.CatalogoOperativoUseCase
+import com.bocatta.pos.domain.usecase.impl.CatalogoOperativoUseCaseImpl
 import com.bocatta.pos.network.NetworkStateProvider
 import com.bocatta.pos.presentation.viewmodel.AdminViewModel
 import com.bocatta.pos.presentation.viewmodel.AperturaViewModelV2
@@ -75,7 +78,7 @@ val appModule = module {
 
     // ── V2 REPOSITORIOS (NUEVA ARQUITECTURA) ──────────────────────────────────
     single<IProductRepository> { ProductRepositoryImpl() }
-    single<IInventoryRepository> { InventoryRepositoryImpl(get(), get()) }
+    single<IInventoryRepository> { InventoryRepositoryImpl(get(), get(), get()) }
 
     // ── NETWORK ───────────────────────────────────────────────────────────────
     single { NetworkStateProvider(get()) }
@@ -86,6 +89,8 @@ val appModule = module {
     single { PromotionsEngineV2 }
     single { SalesFlowUseCase(get(), get(), get()) }
     single { ProductionBatchUseCase(get(), get()) }
+    single { AuthorizationManager() }
+    single<CatalogoOperativoUseCase> { CatalogoOperativoUseCaseImpl() }
 
     // ── SALES DEPENDENCIES ─────────────────────────────────────────────────────
     single {
@@ -101,9 +106,9 @@ val appModule = module {
     }
 
     // ── VIEWMODELS ────────────────────────────────────────────────────────────
-    viewModel { SessionViewModel(get()) }
-    viewModel { SalesViewModelV2(get(), get(), get()) }
-    viewModel { CajaViewModel() }
+    viewModel { SessionViewModel(get(), get()) }
+    viewModel { SalesViewModelV2(get(), get(), get(), get(), get()) }
+    viewModel { CajaViewModel(get()) }
     viewModel { AdminViewModel(get(), get()) }
     viewModel { InventoryViewModel(get()) }
     viewModel { ReportViewModelV2(get()) }
@@ -115,7 +120,7 @@ val appModule = module {
     viewModel { DashboardBodegaViewModel() }
     viewModel { ReportesInventarioViewModel() }
     viewModel { InventoryAdjustmentViewModelV2() }
-    viewModel { EmployeeViewModelV2(get()) }
+    viewModel { EmployeeViewModelV2(get(), get()) }
     viewModel { ComprasViewModel() }
     viewModel { SyncInventarioViewModel() }
     viewModel { MenuViewModel() }

@@ -10,6 +10,7 @@ Actua como un Android Senior Engineer trabajando en Bocatta POS. Antes de cambia
 - No hagas refactors amplios si una correccion quirurgica resuelve el problema.
 - Todo cambio debe ser pequeno, auditable y facil de revisar.
 - Antes de modificaciones complejas o estructurales, desglosa la solucion en un plan de accion de texto plano.
+- Si detectas mojibake o texto corrupto por codificacion, por ejemplo `Ã¡`, `Ã±`, `Â` o secuencias similares, corrigelo dentro del alcance tocado antes de cerrar la tarea.
 
 ## Kotlin y Arquitectura
 - Manten la logica de negocio fuera de Composables.

@@ -3,7 +3,6 @@ package com.bocatta.pos.presentation.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,8 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +40,8 @@ fun ProductCardV2(
 
 /**
  * Tarjeta de Producto Premium con efecto Glassmorphism y Elevación Dinámica.
+ * [personalizable] muestra un badge ⚙ en la esquina superior izquierda.
+ * [esPorPeso]      muestra un badge ⚖ en la esquina superior izquierda.
  */
 @Composable
 fun ProductCardPremium(
@@ -52,10 +51,12 @@ fun ProductCardPremium(
     categoria: String,
     agotado: Boolean,
     pocoStock: Boolean,
+    personalizable: Boolean = false,
+    esPorPeso: Boolean = false,
     onClick: () -> Unit
 ) {
     val colorCat = BocattaDesign.getColorPorCategoria(categoria)
-    
+
     Surface(
         onClick = onClick,
         enabled = !agotado,
@@ -69,7 +70,7 @@ fun ProductCardPremium(
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
-                    colors = if (agotado) listOf(Color.Transparent, Color.Transparent) 
+                    colors = if (agotado) listOf(Color.Transparent, Color.Transparent)
                              else listOf(colorCat.copy(0.4f), Color.Transparent)
                 ),
                 shape = RoundedCornerShape(20.dp)
@@ -92,7 +93,7 @@ fun ProductCardPremium(
                     ) { }
                     Text(text = emoji, fontSize = 28.sp)
                 }
-                
+
                 Text(
                     text = nombre.uppercase(),
                     style = MaterialTheme.typography.labelMedium,
@@ -105,29 +106,65 @@ fun ProductCardPremium(
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.weight(1f))
-                
+
                 // Badge de Precio - Estilo Meridian Neon
                 Surface(
                     color = if (agotado) MaterialTheme.colorScheme.outlineVariant.copy(0.3f) else colorCat.copy(0.2f),
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, if(agotado) Color.Transparent else colorCat.copy(0.5f))
+                    border = BorderStroke(1.dp, if (agotado) Color.Transparent else colorCat.copy(0.5f))
                 ) {
                     Text(
-                        text = "$${"%.0f".format(precio)}",
+                        text = "$${"%,.0f".format(precio)}",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = if(agotado) MaterialTheme.colorScheme.onSurface.copy(0.3f) else colorCat,
+                        color = if (agotado) MaterialTheme.colorScheme.onSurface.copy(0.3f) else colorCat,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Black
                     )
                 }
             }
-            
+
+            // Badge de estado (esquina superior derecha)
             if (agotado) {
                 StatusBadgePremium("AGOTADO", MaterialTheme.colorScheme.error, Modifier.align(Alignment.TopEnd))
             } else if (pocoStock) {
                 StatusBadgePremium("BAJO", MaterialTheme.colorScheme.error, Modifier.align(Alignment.TopEnd))
+            }
+
+            // Badges de tipo: personalizable ⚙ y por peso ⚖ (esquina superior izquierda)
+            if (!agotado && (personalizable || esPorPeso)) {
+                Row(
+                    modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    if (personalizable) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.tertiary.copy(0.18f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(0.4f))
+                        ) {
+                            Text(
+                                "⚙",
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    if (esPorPeso) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondary.copy(0.18f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(0.4f))
+                        ) {
+                            Text(
+                                "⚖",
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -260,11 +297,11 @@ fun GastoCard(
                     Text(categoria.uppercase(), fontWeight = FontWeight.Black, color = color, fontSize = 14.sp, letterSpacing = 1.sp)
                     Text(fecha, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), fontWeight = FontWeight.Bold)
                 }
-                Text("$${"%.2f".format(monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp)
+                Text("${"$"}${"%.2f".format(monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp)
             }
-            
+
             Text(descripcion.uppercase(), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(0.7f), lineHeight = 16.sp)
-            
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(6.dp).background(color, CircleShape))
                 Spacer(Modifier.width(8.dp))
@@ -273,4 +310,3 @@ fun GastoCard(
         }
     }
 }
-

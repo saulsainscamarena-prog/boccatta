@@ -19,6 +19,19 @@ import com.bocatta.pos.presentation.viewmodel.AdminViewModel
 @Composable
 fun TabEmpleados(vm: AdminViewModel) {
     var searchQuery by remember { mutableStateOf("") }
+    var empleadoEditar by remember { mutableStateOf<Usuario?>(null) }
+
+    // Dialogo de edicion — conectado a vm.actualizarUsuario
+    empleadoEditar?.let { usuario ->
+        DialogEmpleado(
+            user = usuario,
+            onDismiss = { empleadoEditar = null },
+            onSave = { actualizado ->
+                vm.actualizarUsuario(actualizado)
+                empleadoEditar = null
+            }
+        )
+    }
 
     val empleados = vm.usuarios.filter {
         searchQuery.isBlank() || it.nombre.lowercase().contains(searchQuery.lowercase())
@@ -37,19 +50,51 @@ fun TabEmpleados(vm: AdminViewModel) {
         if (empleados.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.People, "Personas", Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurface.copy(0.2f))
+                    Icon(
+                        Icons.Default.People, "Personas",
+                        Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(0.2f)
+                    )
                     Spacer(Modifier.height(8.dp))
-                    Text("No hay empleados registrados", color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                    Text(
+                        if (vm.usuarios.isEmpty()) "No hay empleados registrados"
+                        else "Sin resultados para \"$searchQuery\"",
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
+                    )
                 }
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(empleados, key = { it.uid }) { user ->
-                    ElevatedCard(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    ElevatedCard(
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            Modifier.padding(start = 14.dp, top = 10.dp, bottom = 10.dp, end = 4.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Column(Modifier.weight(1f)) {
                                 Text(user.nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(user.rol?.name ?: "Sin rol", color = MaterialTheme.colorScheme.outline, fontSize = 12.sp)
+                                Text(
+                                    user.rol?.name ?: "Sin rol",
+                                    color = MaterialTheme.colorScheme.outline,
+                                    fontSize = 12.sp
+                                )
+                                if (user.correo.isNotBlank()) {
+                                    Text(
+                                        user.correo,
+                                        color = MaterialTheme.colorScheme.outline.copy(0.7f),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { empleadoEditar = user }) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "Editar empleado",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
                     }
@@ -58,5 +103,3 @@ fun TabEmpleados(vm: AdminViewModel) {
         }
     }
 }
-
-

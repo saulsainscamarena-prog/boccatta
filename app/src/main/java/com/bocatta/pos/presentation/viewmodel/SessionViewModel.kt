@@ -15,8 +15,12 @@ import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
+import com.bocatta.pos.domain.usecase.AuthorizationManager
 
-class SessionViewModel(application: Application) : BaseAndroidViewModel(application) {
+class SessionViewModel(
+    application: Application,
+    private val authManager: AuthorizationManager
+) : BaseAndroidViewModel(application) {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestoreProvider.db
     private val prefs = application.getSharedPreferences("bocatta_session", android.content.Context.MODE_PRIVATE)
@@ -121,20 +125,8 @@ class SessionViewModel(application: Application) : BaseAndroidViewModel(applicat
 
     fun validarPinAdmin(pin: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            try {
-                // Buscamos empleados con rol ADMIN o DUEÑO que tengan ese PIN
-                val snap = db.collection(FirestoreCollections.USUARIOS)
-                    .whereIn("rol", listOf("ADMIN", "DUEÑO"))
-                    .get().await()
-                
-                val valido = snap.documents.any { doc ->
-                    val pinDoc = doc.getString("pinAcceso") ?: "NO_PIN"
-                    pinDoc == pin
-                }
-                onResult(valido)
-            } catch (e: Exception) {
-                onResult(false)
-            }
+            val esValido = authManager.validarPinAdmin(pin)
+            onResult(esValido)
         }
     }
 

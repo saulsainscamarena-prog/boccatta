@@ -8,8 +8,12 @@ import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
+import com.bocatta.pos.domain.usecase.AuthorizationManager
 
-class EmployeeViewModelV2(private val authRepo: AuthRepository = AuthRepository()) : BaseViewModel() {
+class EmployeeViewModelV2(
+    private val authRepo: AuthRepository,
+    private val authManager: AuthorizationManager
+) : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
 
     var listaEmpleados = mutableStateListOf<EmpleadoV2>()
@@ -43,7 +47,7 @@ class EmployeeViewModelV2(private val authRepo: AuthRepository = AuthRepository(
             try {
                 db.collection(FirestoreCollections.EMPLEADOS).document(empleadoId)
                     .update("rol", nuevoRol).await()
-                mensajeExito = "Rol actualizado ?"
+                mensajeExito = "Rol actualizado con éxito"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -65,7 +69,7 @@ class EmployeeViewModelV2(private val authRepo: AuthRepository = AuthRepository(
                 )
                 db.collection(FirestoreCollections.AUDITORIA_EMPLEADOS).document(historialId).set(historial).await()
                 db.collection(FirestoreCollections.EMPLEADOS).document(empleadoId).delete().await()
-                mensajeExito = "Empleado despedido ?"
+                mensajeExito = "Empleado despedido con éxito"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -76,13 +80,9 @@ class EmployeeViewModelV2(private val authRepo: AuthRepository = AuthRepository(
         viewModelScope.launch {
             cargando = true
             try {
-                val snap = db.collection(FirestoreCollections.EMPLEADOS)
-                    .whereEqualTo("pinAcceso", pin)
-                    .get().await()
-                
-                if (!snap.isEmpty) {
-                    val emp = snap.documents.first().toObject(EmpleadoV2::class.java)
-                    if (emp != null) onSuccess(emp) else onError("Error al leer datos")
+                val emp = authManager.verificarPinEmpleado(pin)
+                if (emp != null) {
+                    onSuccess(emp)
                 } else {
                     onError("PIN Incorrecto")
                 }
@@ -95,7 +95,7 @@ class EmployeeViewModelV2(private val authRepo: AuthRepository = AuthRepository(
     }
 
     /**
-     * LÑgica de registro con llaves maestras
+     * Lógica de registro con llaves maestras
      */
     fun registrarNuevoUsuario(nombre: String, codigoInput: String, sucursal: String) {
         viewModelScope.launch {
@@ -103,14 +103,14 @@ class EmployeeViewModelV2(private val authRepo: AuthRepository = AuthRepository(
             try {
                 val rol = authRepo.validarCodigoYObtenerRol(codigoInput)
                 if (rol == null) {
-                    mensajeError = "CÑdigo de autorizaciÑn invÑlido"
+                    mensajeError = "Código de autorización inválido"
                     return@launch
                 }
                 
                 val id = db.collection(FirestoreCollections.EMPLEADOS).document().id
                 val nuevo = EmpleadoV2(id = id, nombre = nombre, rol = rol.name, pinAcceso = "0000", sucursalAsignada = sucursal)
                 db.collection(FirestoreCollections.EMPLEADOS).document(id).set(nuevo).await()
-                mensajeExito = "Empleado registrado ?"
+                mensajeExito = "Empleado registrado con éxito"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             } finally {

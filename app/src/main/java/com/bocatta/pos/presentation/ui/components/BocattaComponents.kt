@@ -340,6 +340,7 @@ fun BocattaCartItemRow(
     item: ItemCarritoV2,
     onEliminar: () -> Unit,
     onEditar: (() -> Unit)? = null,
+    onToggleParaLlevar: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -367,6 +368,25 @@ fun BocattaCartItemRow(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         lineHeight = 12.sp
+                    )
+                }
+                if (onToggleParaLlevar != null) {
+                    Spacer(Modifier.height(4.dp))
+                    SuggestionChip(
+                        onClick = onToggleParaLlevar,
+                        label = {
+                            Text(
+                                if (item.paraLlevar) "LLEVAR" else "AQUÍ",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 0.5.sp
+                            )
+                        },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = if (item.paraLlevar) MaterialTheme.colorScheme.tertiary.copy(0.12f) else MaterialTheme.colorScheme.primary.copy(0.12f),
+                            labelColor = if (item.paraLlevar) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                        ),
+                        border = null
                     )
                 }
             }

@@ -7,12 +7,16 @@ import com.bocatta.pos.domain.model.InsumoV2
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.data.repository.InventoryRepository
+import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlinx.coroutines.tasks.await
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class InventoryViewModel(private val repo: InventoryRepository = InventoryRepository()) : BaseViewModel() {
+class InventoryViewModel(private val repo: InventoryRepository = InventoryRepository()) : BaseViewModel(), KoinComponent {
+    private val cloudInventoryRepo: IInventoryRepository by inject()
     private val db = FirebaseFirestoreProvider.db
 
     private var listenerInventario: ListenerRegistration? = null
@@ -108,6 +112,34 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
         viewModelScope.launch {
             try {
                 val exito = repo.registrarProduccion(insumoId, porcionesObtenidas, tandasPreparadas, sobranteAnterior, sucursalActiva ?: "global")
+                onResult(exito)
+            } catch (e: Exception) {
+                mensajeError = "Error: ${e.message}"
+                onResult(false)
+            }
+        }
+    }
+
+    fun registrarCompraConPresentacion(
+        insumoId: String,
+        presentacionNombre: String,
+        cantidad: Double,
+        contenidoEquivalente: Double,
+        costoTotal: Double,
+        usuarioId: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val exito = cloudInventoryRepo.registrarCompraConPresentacion(
+                    branchId = sucursalActiva ?: "global",
+                    insumoId = insumoId,
+                    presentacionNombre = presentacionNombre,
+                    cantidadComprada = cantidad,
+                    contenidoEquivalente = contenidoEquivalente,
+                    costoTotal = costoTotal,
+                    userId = usuarioId
+                )
                 onResult(exito)
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"

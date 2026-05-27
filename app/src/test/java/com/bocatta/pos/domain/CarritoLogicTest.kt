@@ -127,10 +127,10 @@ class CarritoLogicTest {
     @Test
     fun combo_conToppings_recibeExtra() {
         val precio = calcularPrecioProducto(120.0, "Combos", null, listOf("oreo", "nuez"), 10.0)
-        // calcularPrecioCrepa(120, null, [oreo, nuez], 10) = 120 + 0 + 10 = 130 (solo premium)
+        // calcularPrecioCrepa(120, null, [oreo, nuez], 10) = 120 + 0 + 20 = 140 (cumulative premium)
         // extraToppings: premium → +10
-        // Total: 140
-        assertEquals(140.0, precio, 0.01)
+        // Total: 150
+        assertEquals(150.0, precio, 0.01)
     }
 
     @Test
