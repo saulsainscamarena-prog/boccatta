@@ -7,6 +7,7 @@ import com.bocatta.pos.data.repository.DataSeederV2
 import com.bocatta.pos.data.repository.FirebaseSalesRepositoryV2
 import com.bocatta.pos.data.repository.InventoryRepository
 import com.bocatta.pos.data.repository.MaintenanceRepository
+import com.bocatta.pos.data.repository.OperationalCatalogSyncRepository
 import com.bocatta.pos.data.repository.PromocionesRepository
 import com.bocatta.pos.data.repository.ReportRepository
 import com.bocatta.pos.data.repository.ThemeRepository
@@ -71,6 +72,7 @@ val appModule = module {
     single { ProductoRepository() }
     single { DataSeederV2(get()) }       // recibe ProductoRepository inyectado
     single { ConfiguracionRepository() }
+    single { OperationalCatalogSyncRepository(get()) }
 
     // ── QUEUE BINDING ────────────────────────────────────────────────────────
     single<IStockAdjustmentQueue> { SQLiteStockAdjustmentQueue(androidApplication()) }
@@ -107,7 +109,7 @@ val appModule = module {
 
     // ── VIEWMODELS ────────────────────────────────────────────────────────────
     viewModel { SessionViewModel(get(), get()) }
-    viewModel { SalesViewModelV2(get(), get(), get(), get(), get()) }
+    viewModel { SalesViewModelV2(get(), get(), get(), get(), get(), get()) }
     viewModel { CajaViewModel(get()) }
     viewModel { AdminViewModel(get(), get()) }
     viewModel { InventoryViewModel(get()) }

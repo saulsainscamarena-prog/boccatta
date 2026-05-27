@@ -118,6 +118,36 @@ class ProductoRepository {
     /**
      * Elimina producto y su receta asociada en una sola operación.
      */
+    /**
+     * Crea productos/recetas semilla solo cuando faltan.
+     * No actualiza documentos existentes para evitar que "Cargar V2" pise catalogo real.
+     */
+    suspend fun crearProductoConRecetaSiFalta(producto: SalesInventoryProductV2, receta: RecetaV2?): Boolean {
+        return try {
+            val productRef = db.collection(FirestoreCollections.PRODUCTOS).document(producto.id)
+            val productExists = productRef.get().await().exists()
+
+            if (!productExists) {
+                return guardarProductoConReceta(producto, receta)
+            }
+
+            if (receta != null) {
+                val recetaConProductoId = receta.copy(productoId = producto.id)
+                val recetaRef = db.collection(FirestoreCollections.RECETAS).document(recetaConProductoId.id)
+                if (!recetaRef.get().await().exists()) {
+                    recetaRef.set(recetaConProductoId, SetOptions.merge()).await()
+                    Timber.tag("PRODUCTO_REPO").i("Receta semilla creada sin tocar producto existente: ${recetaConProductoId.id}")
+                }
+            }
+
+            Timber.tag("PRODUCTO_REPO").i("Producto existente preservado: ${producto.id}")
+            true
+        } catch (e: Exception) {
+            Timber.tag("PRODUCTO_REPO").e(e, "Error creando producto semilla si faltaba: ${producto.id}")
+            false
+        }
+    }
+
     suspend fun eliminarProducto(productoId: String): Boolean {
         return try {
             val batch = db.batch()

@@ -18,6 +18,8 @@ import com.bocatta.pos.network.NetworkStateProvider
 
 import kotlinx.coroutines.Dispatchers
 
+import kotlinx.coroutines.Job
+
 import kotlinx.coroutines.launch
 
 import kotlinx.coroutines.tasks.await
@@ -45,6 +47,8 @@ import com.bocatta.pos.data.sync.OfflineManager
 import com.bocatta.pos.data.sync.SyncScheduler
 
 import com.bocatta.pos.data.repository.InventoryDeductions
+
+import com.bocatta.pos.data.repository.OperationalCatalogSyncRepository
 
 import com.bocatta.pos.data.repository.PromocionesRepository
 
@@ -80,7 +84,9 @@ class SalesViewModelV2(
 
    private val catalogoUseCase: com.bocatta.pos.domain.usecase.CatalogoOperativoUseCase,
 
-   private val authManager: com.bocatta.pos.domain.usecase.AuthorizationManager
+   private val authManager: com.bocatta.pos.domain.usecase.AuthorizationManager,
+
+   private val catalogSyncRepository: OperationalCatalogSyncRepository
 
 ) : BaseAndroidViewModel(application) {
 
@@ -115,6 +121,8 @@ class SalesViewModelV2(
 
 
     private var ventasHistorial = emptyMap<String, Int>()
+
+    private var catalogSyncJob: Job? = null
 
 
 
@@ -503,11 +511,19 @@ class SalesViewModelV2(
                 ventasHistorial = ventasHistorial,
                 sucursal = sucursalActual
              )
+             sincronizarCatalogoOperativoLocal(_productos.toList())
 
           }
 
        }
 
+    }
+
+    private fun sincronizarCatalogoOperativoLocal(productos: List<SalesInventoryProductV2>) {
+       catalogSyncJob?.cancel()
+       catalogSyncJob = viewModelScope.launch(Dispatchers.IO) {
+          catalogSyncRepository.sincronizarCatalogoSucursal(sucursalActual, productos)
+       }
     }
 
 

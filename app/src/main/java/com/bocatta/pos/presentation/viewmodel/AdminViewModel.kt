@@ -126,7 +126,7 @@ class AdminViewModel(
                     seederEjecutado = true
                     seederEnProgreso = true
                     viewModelScope.launch(safeHandler) {
-                        dataSeeder.inicializarTodoV2()
+                        dataSeeder.inicializarSiNecesario()
                         seederEnProgreso = false
                     }
                 } else if (!snap.isEmpty) {
@@ -429,9 +429,13 @@ doc.toObject(VentaV2::class.java)?.let { historialVentasV2.add(it.copy(id = doc.
         }
         viewModelScope.launch(safeHandler) {
             cargando = true
-            mensajeExito = "Cargando catálogo V2..."
-            dataSeeder.inicializarTodoV2().onSuccess {
-                mensajeExito = "Sistema V2 listo"
+            mensajeExito = "Verificando catalogo V2..."
+            dataSeeder.inicializarSiNecesario().onSuccess { inicializado ->
+                mensajeExito = if (inicializado) {
+                    "Sistema V2 inicializado"
+                } else {
+                    "Catalogo existente preservado. No se reescribieron productos ni stock."
+                }
             }.onFailure {
                 mensajeError = "Error al inyectar V2: ${it.message}"
             }

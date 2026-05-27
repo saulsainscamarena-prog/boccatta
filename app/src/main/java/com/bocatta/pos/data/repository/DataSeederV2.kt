@@ -62,28 +62,36 @@ class DataSeederV2(
             if (insumos.isEmpty) {
                 return Result.failure(Exception("No hay insumos maestros. Ejecuta inicializarTodoV2 primero."))
             }
-            db.collection(FirestoreCollections.SUCURSALES).document(branchId)
-                .set(mapOf(
+            val sucursalRef = db.collection(FirestoreCollections.SUCURSALES).document(branchId)
+            if (!sucursalRef.get().await().exists()) {
+                sucursalRef.set(mapOf(
                     "id" to branchId,
                     "nombre" to branchId.replaceFirstChar { it.uppercase() },
                     "activa" to true,
                     "creadaEn" to System.currentTimeMillis()
                 ), SetOptions.merge()).await()
-            db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(branchId)
-                .set(mapOf(
+            }
+            val configSucursalRef = db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(branchId)
+            if (!configSucursalRef.get().await().exists()) {
+                configSucursalRef.set(mapOf(
                     "abierta" to false,
                     "turnoActivoId" to "",
                     "ultimaActualizacion" to System.currentTimeMillis()
                 ), SetOptions.merge()).await()
+            }
             // Batches de máximo 500 operaciones por límite de Firestore
-            val chunks = insumos.documents.chunked(400)
+            val inventarioExistente = cargarInventarioSucursalExistente(branchId)
+            val insumosParaInicializar = insumos.documents.filter { doc ->
+                "${branchId}_${doc.id}" !in inventarioExistente
+            }
+            val chunks = insumosParaInicializar.chunked(400)
             chunks.forEach { chunk ->
                 val batch = db.batch()
                 chunk.forEach { doc ->
                     val insumoId = doc.id
                     val ref = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
                         .document("${branchId}_$insumoId")
-                    // SetOptions.merge() — no sobreescribe si ya tiene stock real
+                    // Solo se crean insumos faltantes; los existentes conservan su stock real.
                     batch.set(ref, mapOf(
                         "id" to "${branchId}_$insumoId",
                         "insumoId" to insumoId,
@@ -96,15 +104,17 @@ class DataSeederV2(
                 batch.commit().await()
             }
             // Crear contador de tickets para la sucursal
-            db.collection(FirestoreCollections.CONFIGURACION)
+            val contadorRef = db.collection(FirestoreCollections.CONFIGURACION)
                 .document("contadores_$branchId")
-                .set(mapOf(
+            if (!contadorRef.get().await().exists()) {
+                contadorRef.set(mapOf(
                     "ultimo_ticket" to 0L,
                     "sucursal" to branchId,
                     "creado" to System.currentTimeMillis()
                 ), SetOptions.merge()).await()
+            }
 
-            Timber.tag("SEEDER").i("Sucursal $branchId inicializada con ${insumos.size()} insumos")
+            Timber.tag("SEEDER").i("Sucursal $branchId inicializada con ${insumosParaInicializar.size} insumos nuevos")
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.tag("SEEDER").e(e, "Error inicializando sucursal $sucursalId")
@@ -119,6 +129,13 @@ class DataSeederV2(
      * y recetas de venta. Usar solo en primera configuración o en modo desarrollo.
      * En producción, preferir [inicializarSiNecesario].
      */
+    private suspend fun cargarInventarioSucursalExistente(branchId: String): Set<String> {
+        val collection = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
+        val porSucursal = collection.whereEqualTo("sucursal", branchId).get().await().documents
+        val porBranch = collection.whereEqualTo("branchId", branchId).get().await().documents
+        return (porSucursal + porBranch).map { it.id }.toSet()
+    }
+
     suspend fun inicializarTodoV2(): Result<Unit> {
         return try {
             Timber.tag("SEEDER").i("Iniciando inicialización completa V2...")
@@ -140,7 +157,17 @@ class DataSeederV2(
     // ── INSUMOS MAESTROS ──────────────────────────────────────────────────────
 
     private suspend fun inicializarInsumos() {
-        val insumos = buildInsumos()
+        val existentes = db.collection(FirestoreCollections.INSUMOS)
+            .get()
+            .await()
+            .documents
+            .map { it.id }
+            .toSet()
+        val insumos = buildInsumos().filterNot { it.id in existentes }
+        if (insumos.isEmpty()) {
+            Timber.tag("SEEDER").i("Insumos maestros existentes preservados")
+            return
+        }
         val chunks = insumos.chunked(400)
         chunks.forEach { chunk ->
             val batch = db.batch()
@@ -168,13 +195,23 @@ class DataSeederV2(
     private suspend fun inicializarProductosYRecetasVenta() {
         val pares = buildProductosConRecetas()
         pares.forEach { (producto, receta) ->
-            productoRepo.guardarProductoConReceta(producto, receta)
+            productoRepo.crearProductoConRecetaSiFalta(producto, receta)
         }
         Timber.tag("SEEDER").i("${pares.size} productos con recetas inicializados")
     }
 
     private suspend fun inicializarRecetasProduccion() {
-        val recetas = buildRecetasProduccion()
+        val existentes = db.collection(FirestoreCollections.RECETAS_PRODUCCION)
+            .get()
+            .await()
+            .documents
+            .map { it.id }
+            .toSet()
+        val recetas = buildRecetasProduccion().filterNot { it.id in existentes }
+        if (recetas.isEmpty()) {
+            Timber.tag("SEEDER").i("Recetas de produccion existentes preservadas")
+            return
+        }
         val batch = db.batch()
         recetas.forEach { receta ->
             batch.set(
@@ -187,7 +224,18 @@ class DataSeederV2(
     }
 
     private suspend fun inicializarCategorias() {
+        val existentes = db.collection(FirestoreCollections.CATEGORIAS)
+            .get()
+            .await()
+            .documents
+            .map { it.id }
+            .toSet()
         val categorias = listOf("CREPAS_DULCES", "CREPAS_SALADAS", "COMBOS", "POSTRES", "SNACKS", "BEBIDAS")
+            .filterNot { it in existentes }
+        if (categorias.isEmpty()) {
+            Timber.tag("SEEDER").i("Categorias existentes preservadas")
+            return
+        }
         val batch = db.batch()
         categorias.forEach { categoria ->
             batch.set(
@@ -254,7 +302,17 @@ class DataSeederV2(
     }
 
     private suspend fun inicializarCatalogoOpciones() {
-        val opciones = buildCatalogoOpciones()
+        val existentes = db.collection(FirestoreCollections.CATALOGO_OPCIONES)
+            .get()
+            .await()
+            .documents
+            .map { it.id }
+            .toSet()
+        val opciones = buildCatalogoOpciones().filterNot { it.id in existentes }
+        if (opciones.isEmpty()) {
+            Timber.tag("SEEDER").i("Opciones de catalogo existentes preservadas")
+            return
+        }
         val batch = db.batch()
         opciones.forEach { opcion ->
             batch.set(

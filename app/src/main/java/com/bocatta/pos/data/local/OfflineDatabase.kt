@@ -645,13 +645,36 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun guardarReceta(receta: RecetaV2) {
         val db = writableDatabase
-        val values = ContentValues().apply {
-            put("id", receta.id)
-            put("nombre", receta.nombre)
-            put("productoId", receta.productoId)
-            put("rendimientoPorcion", receta.rendimientoPorcion)
+        db.beginTransaction()
+        try {
+            val values = ContentValues().apply {
+                put("id", receta.id)
+                put("nombre", receta.nombre)
+                put("productoId", receta.productoId)
+                put("rendimientoPorcion", receta.rendimientoPorcion)
+            }
+            db.insertWithOnConflict(TABLE_RECETAS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            db.delete(TABLE_INGREDIENTES_RECETA, "recetaId = ?", arrayOf(receta.id))
+            receta.ingredientes.forEachIndexed { index, ingrediente ->
+                val ingredienteValues = ContentValues().apply {
+                    put("id", "${receta.id}_${ingrediente.insumoId}_$index")
+                    put("recetaId", receta.id)
+                    put("insumoId", ingrediente.insumoId)
+                    put("nombreInsumo", ingrediente.nombreInsumo)
+                    put("cantidad", ingrediente.cantidad)
+                    put("unidad", ingrediente.unidad)
+                }
+                db.insertWithOnConflict(
+                    TABLE_INGREDIENTES_RECETA,
+                    null,
+                    ingredienteValues,
+                    SQLiteDatabase.CONFLICT_REPLACE
+                )
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
         }
-        db.insertWithOnConflict(TABLE_RECETAS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun guardarIngredienteReceta(ingrediente: IngredienteReceta, recetaId: String) {

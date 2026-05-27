@@ -70,7 +70,7 @@ class InventarioAdminViewModel(private val dataSeeder: DataSeederV2 = DataSeeder
                     seederEnProgreso = true
                     viewModelScope.launch(safeHandler) {
                         try {
-                            dataSeeder.inicializarTodoV2()
+                            dataSeeder.inicializarSiNecesario()
                             seederEnProgreso = false
                         } catch (e: Exception) {
                             mensajeError = "Error en seed: ${e.message}"
