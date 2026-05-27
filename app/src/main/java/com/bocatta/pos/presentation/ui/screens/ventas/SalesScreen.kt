@@ -175,7 +175,7 @@ fun SalesScreen(
                     message = "Venta registrada",
                     duration = SnackbarDuration.Short
                 )
-                val orderIdToDelete = vmV2.activeHeldOrderId
+                val orderIdToDelete = vmV2.lastCompletedHeldOrderId
                 if (orderIdToDelete != null) {
                     heldOrderVm.deleteOrder(orderIdToDelete)
                 }

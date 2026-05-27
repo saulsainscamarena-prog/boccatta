@@ -27,8 +27,8 @@ class AuthorizationManager {
      * o granular (por su registro de PermisoEmpleado).
      */
     suspend fun verificarPermiso(usuario: Usuario, accion: AccionSensible): Boolean {
-        // ADMIN y DUEÃ‘O son superusuarios autorizados nativamente
-        if (usuario.rol == Rol.ADMIN || usuario.rol == Rol.DUEÃ‘O) {
+        // ADMIN y DUENO son superusuarios autorizados nativamente
+        if (usuario.rol == Rol.ADMIN || usuario.rol == Rol.DUEÑO) {
             return true
         }
 
@@ -47,14 +47,14 @@ class AuthorizationManager {
             }
             false
         } catch (e: Exception) {
-            Timber.tag("AUTH").e(e, "Error al verificar permisos para la acciÃ³n %s", accion.name)
+            Timber.tag("AUTH").e(e, "Error al verificar permisos para la accion %s", accion.name)
             false
         }
     }
 
     /**
-     * Valida el pin presencial de un administrador o dueÃ±o y, si es correcto,
-     * registra la acciÃ³n en la bitÃ¡cora de auditorÃ­a firmada por el administrador autorizante.
+     * Valida el pin presencial de un administrador o dueno y, si es correcto,
+     * registra la accion en la bitacora de auditoria firmada por el administrador autorizante.
      */
     suspend fun validarConPinYAuditar(
         pin: String,
@@ -65,8 +65,8 @@ class AuthorizationManager {
         onResult: (Boolean) -> Unit
     ) {
         try {
-            // AuditorÃ­a de Seguridad: Consulta por PIN en servidor, validaciÃ³n de Rol en memoria del Ãºnico documento retornado.
-            // Esto evita la necesidad de configurar Ã­ndices compuestos y previene brechas de seguridad.
+            // Auditoria de seguridad: consulta por PIN en servidor y valida el rol del unico documento retornado.
+            // Esto evita la necesidad de configurar indices compuestos y previene brechas de seguridad.
             val snap = db.collection(FirestoreCollections.USUARIOS)
                 .whereEqualTo("pinAcceso", pin)
                 .limit(1)
@@ -77,11 +77,11 @@ class AuthorizationManager {
                 val adminDoc = snap.documents.first()
                 val rolDoc = adminDoc.getString("rol") ?: ""
 
-                if (rolDoc == "ADMIN" || rolDoc == "DUEÃ‘O") {
-                    val adminNombre = adminDoc.getString("nombre") ?: "ADMIN/DUEÃ‘O"
+                if (rolDoc == "ADMIN" || rolDoc == "DUEÑO") {
+                    val adminNombre = adminDoc.getString("nombre") ?: "ADMIN/DUENO"
                     val adminUid = adminDoc.id
 
-                    // Registramos en la bitÃ¡cora
+                    // Registramos en la bitacora
                     registrarAuditoria(
                         empleadoId = adminUid,
                         empleadoNombre = adminNombre,
@@ -103,7 +103,7 @@ class AuthorizationManager {
     }
 
     /**
-     * Registra un evento en la colecciÃ³n v2_auditoria_empleados de forma atÃ³mica.
+     * Registra un evento en la coleccion v2_auditoria_empleados de forma atomica.
      */
     suspend fun registrarAuditoria(
         empleadoId: String,
@@ -128,9 +128,9 @@ class AuthorizationManager {
                 "autorizoConPin" to (autorizoConPin ?: "")
             )
             db.collection(FirestoreCollections.AUDITORIA_EMPLEADOS).document(auditoriaId).set(registro).await()
-            Timber.tag("AUTH").i("AuditorÃ­a registrada: $auditoriaId para acciÃ³n $accion")
+            Timber.tag("AUTH").i("Auditoria registrada: $auditoriaId para accion $accion")
         } catch (e: Exception) {
-            Timber.tag("AUTH").e(e, "Error al escribir en bitÃ¡cora de auditorÃ­a")
+            Timber.tag("AUTH").e(e, "Error al escribir en bitacora de auditoria")
         }
     }
 
@@ -147,9 +147,9 @@ class AuthorizationManager {
     }
 
     /**
-     * Valida el pin presencial de un administrador o dueÃ±o en la colecciÃ³n de usuarios
-     * y retorna true si es vÃ¡lido y tiene el rol correspondiente en memoria.
-     * Esta versiÃ³n ligera no genera bitÃ¡cora de auditorÃ­a.
+     * Valida el pin presencial de un administrador o dueno en la coleccion de usuarios
+     * y retorna true si es valido y tiene el rol correspondiente en memoria.
+     * Esta version ligera no genera bitacora de auditoria.
      */
     suspend fun validarPinAdmin(pin: String): Boolean {
         return try {
@@ -162,7 +162,7 @@ class AuthorizationManager {
             if (!snap.isEmpty) {
                 val adminDoc = snap.documents.first()
                 val rolDoc = adminDoc.getString("rol") ?: ""
-                rolDoc == "ADMIN" || rolDoc == "DUEÃ‘O"
+                rolDoc == "ADMIN" || rolDoc == "DUEÑO"
             } else {
                 false
             }
@@ -173,8 +173,8 @@ class AuthorizationManager {
     }
 
     /**
-     * Verifica un pin de acceso de un empleado en la colecciÃ³n de empleados.
-     * Retorna el objeto EmpleadoV2 si es vÃ¡lido, de lo contrario null.
+     * Verifica un pin de acceso de un empleado en la coleccion de empleados.
+     * Retorna el objeto EmpleadoV2 si es valido, de lo contrario null.
      */
     suspend fun verificarPinEmpleado(pin: String): EmpleadoV2? {
         return try {

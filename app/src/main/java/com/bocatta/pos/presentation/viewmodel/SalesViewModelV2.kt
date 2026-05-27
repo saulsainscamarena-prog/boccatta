@@ -122,6 +122,10 @@ class SalesViewModelV2(
 
     val activeHeldOrderId: String? get() = _activeHeldOrderId
 
+    private var _lastCompletedHeldOrderId by mutableStateOf<String?>(null)
+
+    val lastCompletedHeldOrderId: String? get() = _lastCompletedHeldOrderId
+
 
 
     private var _modalidadOrden by mutableStateOf(ModalidadOrden.LOCAL)
@@ -1520,6 +1524,8 @@ class SalesViewModelV2(
 
         mostrarConfirmacionVenta = true
 
+        _lastCompletedHeldOrderId = _activeHeldOrderId
+
         limpiarEstadoPostVenta()
 
     }
@@ -1693,6 +1699,8 @@ class SalesViewModelV2(
 
 
     fun onSuccessShown() {
+
+        _lastCompletedHeldOrderId = null
 
         _uiState.update { it.copy(showSuccess = false) }
 
