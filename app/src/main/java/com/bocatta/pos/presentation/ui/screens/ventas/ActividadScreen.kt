@@ -395,7 +395,7 @@ fun ActividadScreen(
                                                 style = MaterialTheme.typography.bodyLarge
                                             )
                                             Text(
-                                                "Zona: ${zona.uppercase()}",
+                                                "Zona: ${zona.uppercase(Locale.ROOT)}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -514,17 +514,24 @@ fun MesaCard(
     onClick: () -> Unit
 ) {
     val statusColor = when (mesa.estado) {
-        EstadoMesa.LIBRE -> Color(0xFF2E7D32)
-        EstadoMesa.OCUPADA -> Color(0xFFE65100)
-        EstadoMesa.RESERVADA -> Color(0xFF006064)
-        EstadoMesa.INACTIVA -> Color(0xFF616161)
+        EstadoMesa.LIBRE -> MaterialTheme.colorScheme.primary
+        EstadoMesa.OCUPADA -> MaterialTheme.colorScheme.tertiary
+        EstadoMesa.RESERVADA -> MaterialTheme.colorScheme.secondary
+        EstadoMesa.INACTIVA -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val statusBg = when (mesa.estado) {
-        EstadoMesa.LIBRE -> Color(0xFFE8F5E9)
-        EstadoMesa.OCUPADA -> Color(0xFFFFF3E0)
-        EstadoMesa.RESERVADA -> Color(0xFFE0F7FA)
-        EstadoMesa.INACTIVA -> Color(0xFFF5F5F5)
+        EstadoMesa.LIBRE -> MaterialTheme.colorScheme.primaryContainer
+        EstadoMesa.OCUPADA -> MaterialTheme.colorScheme.tertiaryContainer
+        EstadoMesa.RESERVADA -> MaterialTheme.colorScheme.secondaryContainer
+        EstadoMesa.INACTIVA -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val statusBadgeContentColor = when (mesa.estado) {
+        EstadoMesa.LIBRE -> MaterialTheme.colorScheme.onPrimary
+        EstadoMesa.OCUPADA -> MaterialTheme.colorScheme.onTertiary
+        EstadoMesa.RESERVADA -> MaterialTheme.colorScheme.onSecondary
+        EstadoMesa.INACTIVA -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
@@ -554,7 +561,7 @@ fun MesaCard(
                 ) {
                     Text(
                         mesa.estado.name,
-                        color = Color.White,
+                        color = statusBadgeContentColor,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)

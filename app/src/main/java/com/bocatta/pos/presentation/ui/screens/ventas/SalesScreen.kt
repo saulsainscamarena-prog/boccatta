@@ -126,7 +126,7 @@ fun SalesScreen(
         val baseProducts = if (categoriaSeleccionada == "FRECUENTES") {
             catalogo.frecuentes
         } else {
-            catalogo.vendibles.filter { it.categoria.trim().uppercase() == categoriaSeleccionada }
+            catalogo.vendibles.filter { it.categoria.trim().uppercase(Locale.ROOT) == categoriaSeleccionada }
         }
         baseProducts.filter { prod ->
             searchQuery.isEmpty() || prod.nombre.contains(searchQuery, ignoreCase = true)
@@ -415,7 +415,7 @@ fun SalesScreen(
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 containerColor = Color.Transparent,
                 topBar = {
-                    LargeTopAppBar(
+                    TopAppBar(
                         title = {
                             Column {
                                 Text("BOCATTA POS", fontWeight = FontWeight.Black, fontSize = 21.sp, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onBackground)
@@ -423,7 +423,7 @@ fun SalesScreen(
                                     Box(Modifier.size(8.dp).background(if (isOnline) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error, CircleShape))
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        "${if (isOnline) "SISTEMA ONLINE" else "SISTEMA OFFLINE"} - ${session.sucursalActual.uppercase()}",
+                                        "${if (isOnline) "SISTEMA ONLINE" else "SISTEMA OFFLINE"} - ${session.sucursalActual.uppercase(Locale.ROOT)}",
                                         style = MaterialTheme.typography.labelSmall, 
                                         color = (if (isOnline) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error).copy(0.8f),
                                         fontWeight = FontWeight.Bold,
@@ -486,7 +486,7 @@ fun SalesScreen(
                         ) {
                             Row(Modifier.padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
-                                    Text("ORDEN - ${vmV2.carrito.sumOf { it.cantidad }} items".uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                                    Text("ORDEN - ${vmV2.carrito.sumOf { it.cantidad }} ITEMS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                                     val total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones).coerceAtLeast(0.0)
                                     Text("$${"%.2f".format(total)}", fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
                                 }
@@ -511,7 +511,7 @@ fun SalesScreen(
                                 cajaVm.cargandoTurno -> SalesStatusBanner(
                                     icon = Icons.Default.Schedule,
                                     title = "Validando turno",
-                                    message = "Revisando la apertura activa de ${session.sucursalActual.uppercase()}.",
+                                    message = "Revisando la apertura activa de ${session.sucursalActual.uppercase(Locale.ROOT)}.",
                                     actionText = null,
                                     onAction = null
                                 )
@@ -594,7 +594,7 @@ fun SalesScreen(
                                         modifier = Modifier.fillMaxSize()
                                     ) {
                                         items(filteredProducts, key = { it.id }) { prod ->
-                                            val precio = prod.precioVenta[session.sucursalActual.lowercase()] ?: 0.0
+                                            val precio = prod.precioVenta[session.sucursalActual.lowercase(Locale.ROOT)] ?: 0.0
                                             ProductCardPremium(
                                                 nombre = prod.nombre,
                                                 precio = precio,
@@ -639,7 +639,7 @@ fun SalesScreen(
                                        carrito = vmV2.carrito,
                                        cliente = vmV2.clienteSeleccionado,
                                        nota = "",
-                                       sucursal = session.sucursalActual.lowercase(),
+                                       sucursal = session.sucursalActual.lowercase(Locale.ROOT),
                                        total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones - vmV2.descuentoManual).coerceAtLeast(0.0),
                                        modalidad = vmV2.modalidadOrden.name,
                                        mesaId = vmV2.mesaIdSeleccionada
@@ -660,7 +660,7 @@ fun SalesScreen(
               }
               if (uiState.isLoading) {
                  Box(
-                     modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
+                     modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
                      contentAlignment = Alignment.Center
                  ) {
                      CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -690,7 +690,7 @@ fun SalesScreen(
                                  carrito = vmV2.carrito,
                                  cliente = vmV2.clienteSeleccionado,
                                  nota = "",
-                                 sucursal = session.sucursalActual.lowercase(),
+                                 sucursal = session.sucursalActual.lowercase(Locale.ROOT),
                                  total = (vmV2.totalCarrito.toDouble() - vmV2.descuentoLealtad - vmV2.descuentoPromociones - vmV2.descuentoManual).coerceAtLeast(0.0),
                                  modalidad = vmV2.modalidadOrden.name,
                                  mesaId = vmV2.mesaIdSeleccionada
@@ -753,7 +753,7 @@ private fun BocattaSalesDrawer(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "${session.sucursalActual.uppercase()} - ${if (isOnline) "online" else "offline"}",
+                    "${session.sucursalActual.uppercase(Locale.ROOT)} - ${if (isOnline) "online" else "offline"}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -789,7 +789,7 @@ private fun BocattaSalesDrawer(
 @Composable
 private fun DrawerGroup(label: String) {
     Text(
-        label.uppercase(),
+        label.uppercase(Locale.ROOT),
         modifier = Modifier.padding(top = 10.dp, start = 12.dp, bottom = 2.dp),
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Black,

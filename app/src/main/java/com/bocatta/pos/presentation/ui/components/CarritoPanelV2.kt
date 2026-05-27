@@ -1,7 +1,6 @@
 package com.bocatta.pos.presentation.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +31,7 @@ import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.model.ModalidadOrden
 import com.bocatta.pos.presentation.ui.theme.*
 import java.math.BigDecimal
+import java.util.Locale
 
 @Composable
 fun CarritoPanelV2(
@@ -126,7 +125,7 @@ fun CarritoPanelV2(
                         color = containerColor,
                         contentColor = contentColor,
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.5f))
                     ) {
                         Box(
@@ -162,21 +161,24 @@ fun CarritoPanelV2(
                         Icon(Icons.Default.Person, "Usuario", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            clienteSeleccionado.nombre.uppercase(),
+                            clienteSeleccionado.nombre.uppercase(Locale.ROOT),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.tertiary,
                             letterSpacing = 0.5.sp
                         )
                         Spacer(Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Desasociar cliente",
-                            tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clickable { onEliminarCliente?.invoke() }
-                        )
+                        IconButton(
+                            onClick = { onEliminarCliente?.invoke() },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Desasociar cliente",
+                                tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             } else {

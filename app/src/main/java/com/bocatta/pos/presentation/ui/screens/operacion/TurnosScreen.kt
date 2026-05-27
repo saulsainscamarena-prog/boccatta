@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,7 +35,8 @@ fun TurnosScreen(
 ) {
     val turno = cajaVm.turnoActivo
     val cargandoTurno = cajaVm.cargandoTurno
-    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+    val locale = LocalLocale.current.platformLocale
+    val dateFormat = remember(locale) { SimpleDateFormat("dd/MM/yyyy", locale) }
     val hayTurno = turno != null
     val participantesVisibles = if (sessionVm.esAdmin) participantes else participantes.filter { it.rol != "ADMIN" }
     val errorTurno = cajaVm.errorTurno?.let { error ->
@@ -72,7 +74,7 @@ fun TurnosScreen(
                     letterSpacing = 2.sp
                 )
                 Text(
-                    "${sessionVm.sucursalActual.uppercase()} · ${dateFormat.format(Date())}",
+                    "${sessionVm.sucursalActual.uppercase(Locale.ROOT)} - ${dateFormat.format(Date())}",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
                 )
@@ -81,7 +83,7 @@ fun TurnosScreen(
 
                 if (sessionVm.esAdmin) {
                     Text(
-                        sessionVm.usuario?.nombre?.uppercase() ?: "ADMIN",
+                        sessionVm.usuario?.nombre?.uppercase(Locale.ROOT) ?: "ADMIN",
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                         color = MaterialTheme.colorScheme.primary
@@ -115,10 +117,10 @@ fun TurnosScreen(
                                 Spacer(Modifier.height(8.dp))
                                 Text("Participantes:", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                                 participantesVisibles.forEach { p ->
-                                    Text("• ${p.usuario} (${p.rol})", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
+                                    Text("- ${p.usuario} (${p.rol})", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
                                 }
                                 if (participantesVisibles.none { it.usuario == sessionVm.usuario?.nombre }) {
-                                    Text("• Tú (${sessionVm.rol.name})", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                    Text("- Tu (${sessionVm.rol.name})", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                             else -> {
@@ -200,7 +202,7 @@ fun TurnosScreen(
 
                 Spacer(Modifier.height(24.dp))
                 TextButton(onClick = onLogout) {
-                    Text("CERRAR SESIÓN", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("CERRAR SESION", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }
