@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 import java.math.BigDecimal
+import java.util.Locale
 
 import com.bocatta.pos.domain.repository.IInventoryRepository
 
@@ -412,7 +413,7 @@ class SalesViewModelV2(
 
        _rolUsuario = rol
 
-       sucursalActual = sucursal.lowercase()
+       sucursalActual = sucursal.lowercase(Locale.ROOT)
 
        escucharMenu()
 
@@ -592,6 +593,8 @@ class SalesViewModelV2(
 
       super.onCleared()
 
+      catalogSyncJob?.cancel()
+
       menuListener?.remove()
 
       stockListener?.remove()
@@ -718,9 +721,9 @@ class SalesViewModelV2(
 
 
 
-        val precioBase = producto.precioVenta[sucursal.lowercase()] ?: 0.0
+        val precioBase = producto.precioVenta[sucursal.lowercase(Locale.ROOT)] ?: 0.0
 
-        val esCrepaOCombo = producto.categoria.uppercase().contains("CREPA") ||
+        val esCrepaOCombo = producto.categoria.uppercase(Locale.ROOT).contains("CREPA") ||
 
                             producto.categoria.equals("Combos", true)
 
@@ -734,11 +737,11 @@ class SalesViewModelV2(
 
            val premiumToppings = listOf("oreo", "nuez", "bombon")
 
-           val tienePremium = toppings.any { t -> premiumToppings.any { p -> t.lowercase().contains(p) } }
+           val tienePremium = toppings.any { t -> premiumToppings.any { p -> t.lowercase(Locale.ROOT).contains(p) } }
 
            val totalIngredientesNormales = toppings.count { t ->
 
-              !premiumToppings.any { p -> t.lowercase().contains(p) }
+              !premiumToppings.any { p -> t.lowercase(Locale.ROOT).contains(p) }
 
            }
 
@@ -884,7 +887,7 @@ class SalesViewModelV2(
 
 
 
-         val precioBase = producto.precioVenta[sucursal.lowercase()] ?: 0.0
+         val precioBase = producto.precioVenta[sucursal.lowercase(Locale.ROOT)] ?: 0.0
 
          val preciosExtra = producto.configSchema.flatMap { it.preciosExtra.entries }.associate { it.key to it.value }
 
@@ -964,7 +967,7 @@ class SalesViewModelV2(
 
                 "usuario" to usuarioNombre,
 
-                "sucursal" to sucursal.lowercase(),
+                "sucursal" to sucursal.lowercase(Locale.ROOT),
 
                 "estado" to "pendiente_revision",
 
@@ -1012,7 +1015,7 @@ class SalesViewModelV2(
 
     suspend fun validarStockCarrito(sucursal: String): Pair<Boolean, String> {
 
-       val sucursalId = sucursal.lowercase()
+       val sucursalId = sucursal.lowercase(Locale.ROOT)
 
        val offlineDb = OfflineDatabase.getInstance(getApplication())
 
@@ -1052,7 +1055,7 @@ class SalesViewModelV2(
 
              if (item.producto.id.contains("crepa", ignoreCase = true) ||
 
-                 item.producto.categoria.uppercase().contains("COMBO")) {
+                  item.producto.categoria.uppercase(Locale.ROOT).contains("COMBO")) {
 
                 if (!consolidado.containsKey("masa_crepa")) {
 
@@ -1066,7 +1069,7 @@ class SalesViewModelV2(
 
              val insumoId = if (item.producto.id.contains("crepa", ignoreCase = true) ||
 
-                                item.producto.categoria.uppercase().contains("COMBO")) {
+                                 item.producto.categoria.uppercase(Locale.ROOT).contains("COMBO")) {
 
                 "masa_crepa"
 

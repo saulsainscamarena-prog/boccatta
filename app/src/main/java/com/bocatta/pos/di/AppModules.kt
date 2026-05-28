@@ -59,11 +59,11 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
-    // ── REPOSITORIOS ─────────────────────────────────────────────────────────
+    // REPOSITORIOS
     single { AuthRepository() }
     single<com.bocatta.pos.domain.repository.SalesRepository> { FirebaseSalesRepositoryV2() }
     single { OfflineDatabase.getInstance(get()) }
-    // Removed AppDatabase binding (Room) – using native SQLite queue instead
+    // Removed AppDatabase binding (Room); using native SQLite queue instead.
     single { InventoryRepository(get()) }
     single { MaintenanceRepository() }
     single { ReportRepository() }
@@ -72,20 +72,20 @@ val appModule = module {
     single { ProductoRepository() }
     single { DataSeederV2(get()) }       // recibe ProductoRepository inyectado
     single { ConfiguracionRepository() }
-    single { OperationalCatalogSyncRepository(get()) }
+    single { OperationalCatalogSyncRepository(androidApplication(), get()) }
 
-    // ── QUEUE BINDING ────────────────────────────────────────────────────────
+    // QUEUE BINDING
     single<IStockAdjustmentQueue> { SQLiteStockAdjustmentQueue(androidApplication()) }
     single<ISyncErrorRepository> { SyncErrorRepositoryImpl() }
 
-    // ── V2 REPOSITORIOS (NUEVA ARQUITECTURA) ──────────────────────────────────
+    // V2 REPOSITORIOS (NUEVA ARQUITECTURA)
     single<IProductRepository> { ProductRepositoryImpl() }
     single<IInventoryRepository> { InventoryRepositoryImpl(get(), get(), get()) }
 
-    // ── NETWORK ───────────────────────────────────────────────────────────────
+    // NETWORK
     single { NetworkStateProvider(get()) }
 
-    // ── USE CASES ─────────────────────────────────────────────────────────────
+    // USE CASES
     single { GenerarTicketWhatsAppUseCase() }
     single { PromocionesEngine() }
     single { PromotionsEngineV2 }
@@ -94,7 +94,7 @@ val appModule = module {
     single { AuthorizationManager() }
     single<CatalogoOperativoUseCase> { CatalogoOperativoUseCaseImpl() }
 
-    // ── SALES DEPENDENCIES ─────────────────────────────────────────────────────
+    // SALES DEPENDENCIES
     single {
         SalesDependencies(
             productRepo = get(),
@@ -107,7 +107,7 @@ val appModule = module {
         )
     }
 
-    // ── VIEWMODELS ────────────────────────────────────────────────────────────
+    // VIEWMODELS
     viewModel { SessionViewModel(get(), get()) }
     viewModel { SalesViewModelV2(get(), get(), get(), get(), get(), get()) }
     viewModel { CajaViewModel(get()) }

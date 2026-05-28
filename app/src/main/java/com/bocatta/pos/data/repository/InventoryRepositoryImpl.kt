@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import java.util.Locale
 
 class InventoryRepositoryImpl(
     private val networkStateProvider: NetworkStateProvider,
@@ -111,7 +112,7 @@ class InventoryRepositoryImpl(
             batch.set(movementRef, MovementV2(
                 id = movementRef.id,
                 branchId = branchId,
-                type = reason.uppercase(),
+                type = reason.uppercase(Locale.ROOT),
                 referenceId = referenceId,
                 productId = productId,
                 quantity = baseQty,
@@ -168,7 +169,7 @@ class InventoryRepositoryImpl(
                             MovementV2(
                                 id = movRef.id,
                                 branchId = branchId,
-                                type = deduction.reason.uppercase(),
+                                type = deduction.reason.uppercase(Locale.ROOT),
                                 referenceId = referenceId,
                                 productId = deduction.productId,
                                 quantity = baseQty,
@@ -206,7 +207,7 @@ class InventoryRepositoryImpl(
     }
 
     override suspend fun syncOfflineAdjustment(adjustment: StockAdjustmentEntity): Boolean {
-        // Re‑use the existing adjustStock logic with placeholder reference/user IDs
+        // Reuse the existing adjustStock logic with placeholder reference/user IDs.
         return adjustStock(
             branchId = adjustment.branchId,
             productId = adjustment.productId,
@@ -240,8 +241,8 @@ class InventoryRepositoryImpl(
                 validarStockLocal(productId, requiredBase)
             }
         } catch (e: Exception) {
-            Timber.tag("INV_REPO").e(e, "Error validating stock, defaulting to true for offline resiliency")
-            true
+            Timber.tag("INV_REPO").e(e, "Error validating stock; checking local SQLite before allowing sale")
+            validarStockLocal(productId, UnitConverter.toBase(requiredQty, unit))
         }
     }
 
@@ -249,16 +250,23 @@ class InventoryRepositoryImpl(
         return try {
             val localInsumo = offlineDb.obtenerInsumos().find { it.id == productId }
             if (localInsumo == null) {
-                // Si el producto o insumo no está catalogado localmente (ej: venta directa o bebida libre),
-                // no bloqueamos la venta para mantener resiliencia en mostrador
-                Timber.tag("INV_REPO").d("Product $productId is not in local SQLite insumos. Permitting sale.")
-                true
+                val idNormalizado = productId.lowercase(Locale.ROOT)
+                val pareceInsumoControlado = idNormalizado.contains("_") || idNormalizado in CONTROLLED_STOCK_IDS
+                if (pareceInsumoControlado) {
+                    Timber.tag("INV_REPO").w(
+                        "Controlled stock item $productId is missing from local SQLite. Blocking sale until catalog sync is complete."
+                    )
+                    false
+                } else {
+                    Timber.tag("INV_REPO").d("Product $productId is not in local SQLite insumos. Permitting direct sale.")
+                    true
+                }
             } else {
                 val stockLocal = localInsumo.cantidadEnBase
                 stockLocal >= requiredBase
             }
         } catch (localEx: Exception) {
-            Timber.tag("INV_REPO").e(localEx, "Error reading local SQLite stock. Permitting sale for robustness.")
+            Timber.tag("INV_REPO").e(localEx, "Error reading local SQLite stock. Permitting sale for offline robustness.")
             true
         }
     }
@@ -377,9 +385,9 @@ class InventoryRepositoryImpl(
             ))
 
             batch.commit().await()
-            Timber.tag("INV_REPO").i("Compra registrada con presentación: $insumoId, $totalUnidades unidades")
+            Timber.tag("INV_REPO").i("Compra registrada con presentacion: $insumoId, $totalUnidades unidades")
 
-            // Actualizar SQLite local si está disponible para consistencia offline inmediata
+            // Actualizar SQLite local si esta disponible para consistencia offline inmediata.
             try {
                 offlineDb.actualizarStockInsumo(insumoId, offlineDb.obtenerStockInsumo(insumoId) + totalUnidades)
             } catch (sqle: Exception) {
@@ -388,9 +396,20 @@ class InventoryRepositoryImpl(
 
             true
         } catch (e: Exception) {
-            Timber.tag("INV_REPO").e(e, "Error al registrar compra con presentación para $insumoId")
+            Timber.tag("INV_REPO").e(e, "Error al registrar compra con presentacion para $insumoId")
             false
         }
     }
-}
 
+    companion object {
+        private val CONTROLLED_STOCK_IDS = setOf(
+            "masa_crepa",
+            "servilletas",
+            "charola",
+            "vaso",
+            "domo",
+            "tenedor",
+            "cuchara"
+        )
+    }
+}

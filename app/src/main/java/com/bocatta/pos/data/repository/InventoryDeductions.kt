@@ -2,6 +2,7 @@ package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.domain.model.IngredienteReceta
 import com.bocatta.pos.domain.model.ItemCarritoV2
+import java.util.Locale
 
 object InventoryDeductions {
     val TOPPINGS_SALADOS = listOf("Jamón", "Queso Manchego", "Pepperoni", "Piña", "Champiñones", "Bbq", "Buffalo", "Blue Cheese")
@@ -51,7 +52,7 @@ object InventoryDeductions {
         }
 
         if (item.paraLlevar) {
-            val cat = item.producto.categoria.lowercase()
+            val cat = item.producto.categoria.lowercase(Locale.ROOT)
             when (cat) {
                 "crepas" -> {
                     deducciones.add("servilletas", 2.0 * qty)
@@ -126,7 +127,7 @@ object InventoryDeductions {
             t.contains("colores") -> "granillo_colores" to 20.0
             t.contains("granillo") || t.contains("chocolate") -> "granillo_chocolate" to 20.0
             t.contains("jamon") -> "jamon_kg" to 50.0
-            t.contains("pina", true) || t.contains("piña", true) || t.contains("hawaiana", true) -> "pina_kg" to 40.0
+            t.contains("pina") || t.contains("hawaiana") -> "pina_kg" to 40.0
             t.contains("pepperoni") || t.contains("peperoni") -> "peperoni_kg" to 40.0
             t.contains("bbq") || t.contains("bqq") -> "bbq" to 20.0
             t.contains("buffalo") -> "buffalo" to 20.0
@@ -140,7 +141,7 @@ object InventoryDeductions {
     }
 
     fun convertirAUnidadBase(cantidad: Double, unidad: String): Double {
-        return when (unidad.lowercase()) {
+        return when (unidad.lowercase(Locale.ROOT)) {
             "kg" -> cantidad * 1000.0
             "l", "lt" -> cantidad * 1000.0
             "tz" -> cantidad * 240.0
@@ -176,7 +177,7 @@ object InventoryDeductions {
     private fun String.normalizado(): String {
         return java.text.Normalizer.normalize(this, java.text.Normalizer.Form.NFD)
             .replace("\\p{InCombiningDiacriticalMarks}".toRegex(), "")
-            .lowercase()
+            .lowercase(Locale.ROOT)
     }
 }
 
