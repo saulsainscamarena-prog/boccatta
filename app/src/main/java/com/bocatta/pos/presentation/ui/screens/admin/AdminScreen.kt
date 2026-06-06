@@ -198,30 +198,34 @@ fun AdminScreen(
                         ) {
                             item {
                                 DashboardCardPremium(
-                                    title = stringResource(R.string.admin_card_menu),
+                                    title = vm.businessFeatures.labelCatalogo,
                                     subtitle = stringResource(R.string.admin_card_sub_productos, vm.productos.size),
                                     icon = Icons.Default.MenuBook,
                                     color = MaterialTheme.colorScheme.primary,
                                     onClick = { seccionActiva = "menu" }
                                 )
                             }
-                            item {
-                                DashboardCardPremium(
-                                    title = stringResource(R.string.admin_card_recetas),
-                                    subtitle = stringResource(R.string.admin_card_sub_config),
-                                    icon = Icons.Default.ReceiptLong,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    onClick = { seccionActiva = "recetas" }
-                                )
+                            if (vm.businessFeatures.usaRecetas) {
+                                item {
+                                    DashboardCardPremium(
+                                        title = stringResource(R.string.admin_card_recetas),
+                                        subtitle = stringResource(R.string.admin_card_sub_config),
+                                        icon = Icons.Default.ReceiptLong,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        onClick = { seccionActiva = "recetas" }
+                                    )
+                                }
                             }
-                            item {
-                                DashboardCardPremium(
-                                    title = stringResource(R.string.admin_card_inventario),
-                                    subtitle = stringResource(R.string.admin_card_sub_insumos, vm.insumosMaestros.size),
-                                    icon = Icons.Default.Warehouse,
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    onClick = { seccionActiva = "inventario" }
-                                )
+                            if (vm.businessFeatures.usaRecetas || vm.businessFeatures.usaVariantesRetail) {
+                                item {
+                                    DashboardCardPremium(
+                                        title = stringResource(R.string.admin_card_inventario),
+                                        subtitle = if (vm.businessFeatures.usaRecetas) stringResource(R.string.admin_card_sub_insumos, vm.insumosMaestros.size) else "Stock disponible",
+                                        icon = Icons.Default.Warehouse,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        onClick = { seccionActiva = "inventario" }
+                                    )
+                                }
                             }
                             item {
                                 DashboardCardPremium(

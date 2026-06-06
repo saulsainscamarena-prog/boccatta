@@ -25,6 +25,9 @@ data class SalesInventoryProductV2(
     val pesoPorcion: Double? = null,
     val porPeso: Boolean = false,
     val overrideGrupos: OverrideGrupos = OverrideGrupos(),
-    val activo: Boolean = true
+    val activo: Boolean = true,
+    val requiresStock: Boolean = true,
+    val hasVariants: Boolean = false,
+    val barcode: String = ""
 )
 

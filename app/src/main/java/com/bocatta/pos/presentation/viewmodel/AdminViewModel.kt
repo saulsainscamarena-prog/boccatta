@@ -40,15 +40,18 @@ import java.util.UUID
 
 
 
+import com.bocatta.pos.domain.engine.BusinessLogicProvider
+import com.bocatta.pos.domain.usecase.TenantSessionManager
+
 class AdminViewModel(
-
     private val maintRepo: MaintenanceRepository = MaintenanceRepository(),
-
     private val dataSeeder: DataSeederV2 = DataSeederV2(),
-
-    private val gestionEmpleadosUseCase: GestionEmpleadosUseCase
-
+    private val gestionEmpleadosUseCase: GestionEmpleadosUseCase,
+    private val tenantSessionManager: TenantSessionManager
 ) : BaseViewModel() {
+
+    val businessFeatures = BusinessLogicProvider.getFeaturesForType(tenantSessionManager.getBusinessType())
+
 
     // Listener for dynamic categories
 
