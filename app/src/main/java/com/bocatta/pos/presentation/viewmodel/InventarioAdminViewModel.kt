@@ -9,7 +9,7 @@ import com.bocatta.pos.core.constants.FirestoreCollections
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 
-class InventarioAdminViewModel(private val dataSeeder: DataSeederV2 = DataSeederV2()) : BaseViewModel() {
+class InventarioAdminViewModel(private val dataSeeder: DataSeederV2) : BaseViewModel() {
 
     private val db = FirebaseFirestoreProvider.db
     private var listenerInsumos: ListenerRegistration? = null

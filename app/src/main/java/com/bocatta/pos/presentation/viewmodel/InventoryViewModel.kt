@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.domain.model.InsumoV2
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
+import com.bocatta.pos.data.repository.DataSeederV2
 import com.bocatta.pos.data.repository.InventoryRepository
 import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.google.firebase.firestore.ListenerRegistration
@@ -17,6 +18,7 @@ import org.koin.core.component.inject
 
 class InventoryViewModel(private val repo: InventoryRepository = InventoryRepository()) : BaseViewModel(), KoinComponent {
     private val cloudInventoryRepo: IInventoryRepository by inject()
+    private val dataSeeder: DataSeederV2 by inject()
     private val db = FirebaseFirestoreProvider.db
 
     private var listenerInventario: ListenerRegistration? = null
@@ -152,9 +154,7 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
         viewModelScope.launch {
             cargando = true
             try {
-                // Usamos el seeder para resetear inventario con valores base
-                val seeder = com.bocatta.pos.data.repository.DataSeederV2()
-                seeder.cargarStockEmergencia(sucursal.lowercase())
+                dataSeeder.cargarStockEmergencia(sucursal.lowercase())
                     .onSuccess { 
                         mensajeExito = "✅ Stock de emergencia cargado para ${sucursal.uppercase()}"
                         configurarSucursal(sucursal)

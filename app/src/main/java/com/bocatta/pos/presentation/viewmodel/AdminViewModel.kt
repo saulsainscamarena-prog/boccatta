@@ -45,7 +45,7 @@ import com.bocatta.pos.domain.usecase.TenantSessionManager
 
 class AdminViewModel(
     private val maintRepo: MaintenanceRepository = MaintenanceRepository(),
-    private val dataSeeder: DataSeederV2 = DataSeederV2(),
+    private val dataSeeder: DataSeederV2,
     private val gestionEmpleadosUseCase: GestionEmpleadosUseCase,
     private val tenantSessionManager: TenantSessionManager
 ) : BaseViewModel() {
