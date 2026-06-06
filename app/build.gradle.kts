@@ -98,7 +98,6 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
 
     // Jacoco for code coverage
     jacoco

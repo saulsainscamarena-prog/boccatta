@@ -60,6 +60,105 @@ service cloud.firestore {
                 && request.resource.data.currentQty <= 0))));
     }
 
+    function openingAllocationItems() {
+      return [
+        'masa_crepa',
+        'carlota_unidad',
+        'tiramisu_unidad',
+        'fresas_crema_unidad',
+        'duraznos_crema_unidad'
+      ];
+    }
+
+    function branchOpeningAllocationFields() {
+      return [
+        'id', 'insumoId', 'productId', 'sucursal', 'branchId',
+        'cantidadEnBase', 'cantidadDisponible', 'currentQty',
+        'ultimaActualizacion', 'lastUpdated', 'asignacionVirtual'
+      ];
+    }
+
+    function sellerCreatesOpeningBranchAllocation(docId) {
+      return request.resource.data.keys().hasAll(['insumoId', 'sucursal', 'cantidadEnBase'])
+        && request.resource.data.keys().hasOnly(branchOpeningAllocationFields())
+        && request.resource.data.insumoId in openingAllocationItems()
+        && request.resource.data.sucursal is string
+        && request.resource.data.cantidadEnBase is number
+        && request.resource.data.cantidadEnBase >= 0
+        && (!request.resource.data.keys().hasAny(['id']) || request.resource.data.id == docId)
+        && (!request.resource.data.keys().hasAny(['cantidadDisponible'])
+          || (request.resource.data.cantidadDisponible is number && request.resource.data.cantidadDisponible >= 0))
+        && (!request.resource.data.keys().hasAny(['currentQty'])
+          || (request.resource.data.currentQty is number && request.resource.data.currentQty >= 0))
+        && (!request.resource.data.keys().hasAny(['asignacionVirtual'])
+          || request.resource.data.asignacionVirtual is bool);
+    }
+
+    function sellerUpdatesOpeningBranchAllocation(docId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(branchOpeningAllocationFields())
+        && request.resource.data.keys().hasAll(['insumoId', 'sucursal', 'cantidadEnBase'])
+        && request.resource.data.insumoId in openingAllocationItems()
+        && request.resource.data.sucursal is string
+        && request.resource.data.cantidadEnBase is number
+        && request.resource.data.cantidadEnBase >= 0
+        && (!request.resource.data.keys().hasAny(['id']) || request.resource.data.id == docId)
+        && (!request.resource.data.keys().hasAny(['cantidadDisponible'])
+          || (request.resource.data.cantidadDisponible is number && request.resource.data.cantidadDisponible >= 0))
+        && (!request.resource.data.keys().hasAny(['currentQty'])
+          || (request.resource.data.currentQty is number && request.resource.data.currentQty >= 0))
+        && (!request.resource.data.keys().hasAny(['asignacionVirtual'])
+          || request.resource.data.asignacionVirtual is bool);
+    }
+
+    function sellerCreatesInventoryMovement() {
+      return (
+          request.resource.data.keys().hasAll(['id', 'branchId', 'type', 'productId', 'quantity', 'timestamp'])
+          && request.resource.data.quantity is number
+        )
+        || (
+          request.resource.data.keys().hasAll(['id', 'tipo', 'insumoId', 'cantidadEnBase', 'sucursal', 'usuarioId', 'fecha'])
+          && request.resource.data.insumoId in openingAllocationItems()
+          && request.resource.data.cantidadEnBase is number
+          && request.resource.data.fecha is number
+        );
+    }
+
+    function sucursalOperationalFields() {
+      return [
+        'abierta', 'turnoActivoId', 'ultimaApertura',
+        'fondoCaja', 'hayHielo', 'hayChantilly', 'hayPopotes', 'hayBaseFresas'
+      ];
+    }
+
+    function validSucursalOperationalConfig() {
+      return request.resource.data.keys().hasAny(['abierta'])
+        && request.resource.data.abierta is bool
+        && (!request.resource.data.keys().hasAny(['turnoActivoId'])
+          || request.resource.data.turnoActivoId is string)
+        && (!request.resource.data.keys().hasAny(['ultimaApertura'])
+          || request.resource.data.ultimaApertura is number)
+        && (!request.resource.data.keys().hasAny(['fondoCaja'])
+          || request.resource.data.fondoCaja is number)
+        && (!request.resource.data.keys().hasAny(['hayHielo'])
+          || request.resource.data.hayHielo is bool)
+        && (!request.resource.data.keys().hasAny(['hayChantilly'])
+          || request.resource.data.hayChantilly is bool)
+        && (!request.resource.data.keys().hasAny(['hayPopotes'])
+          || request.resource.data.hayPopotes is bool)
+        && (!request.resource.data.keys().hasAny(['hayBaseFresas'])
+          || request.resource.data.hayBaseFresas is bool);
+    }
+
+    function sellerCreatesSucursalOperationalConfig() {
+      return request.resource.data.keys().hasOnly(sucursalOperationalFields())
+        && validSucursalOperationalConfig();
+    }
+
+    function sellerUpdatesSucursalOperationalConfig() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(sucursalOperationalFields())
+        && validSucursalOperationalConfig();
+    }
+
     // ── Usuarios ─────────────────────────────────────────────
     match /v2_users/{uid} {
       allow read: if esAutenticado() && (request.auth.uid == uid || esAdmin());
@@ -194,7 +293,12 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['ultimo_ticket', 'sucursal', 'creado']));
       allow delete: if esAdmin();
     }
-    match /v2_sucursal_config/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_sucursal_config/{docId} {
+      allow read: if esAutenticado();
+      allow create: if esAdmin() || (esVendedor() && sellerCreatesSucursalOperationalConfig());
+      allow update: if esAdmin() || (esVendedor() && sellerUpdatesSucursalOperationalConfig());
+      allow delete: if esAdmin();
+    }
     match /v2_units_catalog/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
     match /v2_discounts/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
     match /v2_recipes/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
@@ -209,16 +313,18 @@ service cloud.firestore {
 
     match /v2_inventory_branch_portions/{docId} {
       allow read: if esVendedor();
-      allow create: if esAdmin() || (esVendedor() && sellerCreatesStockDeduction(['id', 'insumoId', 'productId', 'sucursal', 'branchId', 'cantidadEnBase', 'cantidadDisponible', 'currentQty', 'ultimaActualizacion', 'lastUpdated']));
-      allow update: if esAdmin() || (esVendedor() && sellerUpdatesStockDownOnly());
+      allow create: if esAdmin()
+        || (esVendedor() && sellerCreatesStockDeduction(['id', 'insumoId', 'productId', 'sucursal', 'branchId', 'cantidadEnBase', 'cantidadDisponible', 'currentQty', 'ultimaActualizacion', 'lastUpdated']))
+        || (esVendedor() && sellerCreatesOpeningBranchAllocation(docId));
+      allow update: if esAdmin()
+        || (esVendedor() && sellerUpdatesStockDownOnly())
+        || (esVendedor() && sellerUpdatesOpeningBranchAllocation(docId));
       allow delete: if esAdmin();
     }
 
     match /v2_inventory_movements/{docId} {
       allow read: if esVendedor();
-      allow create: if esVendedor()
-        && request.resource.data.keys().hasAll(['id', 'branchId', 'type', 'productId', 'quantity', 'timestamp'])
-        && request.resource.data.quantity is number;
+      allow create: if esVendedor() && sellerCreatesInventoryMovement();
       allow update, delete: if false;
     }
 

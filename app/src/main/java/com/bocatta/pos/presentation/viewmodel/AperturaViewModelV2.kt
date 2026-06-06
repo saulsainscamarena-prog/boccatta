@@ -106,7 +106,6 @@ class AperturaViewModelV2 : BaseViewModel() {
                 onComplete()
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
-                onComplete()
             } finally {
                 cargando = false
                 transferenciaEnProceso = false

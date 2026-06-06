@@ -11,6 +11,7 @@ import timber.log.Timber
 
 data class VentaOffline(
     val id: String,
+    val tenantId: String = "tenant_pionero",
     val ticket: Long,
     val codigoTicket: String,
     val total: Double,
@@ -41,6 +42,7 @@ data class VentaOffline(
 
 data class OperacionOffline(
     val id: String,
+    val tenantId: String = "tenant_pionero",
     val tipo: String,
     val ventaId: String?,
     val motivo: String,
@@ -65,6 +67,7 @@ data class OperacionOffline(
 
 data class TurnoContingenciaLocal(
     val id: String,
+    val tenantId: String = "tenant_pionero",
     val sucursal: String,
     val usuarioId: String,
     val usuarioNombre: String,
@@ -87,7 +90,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 9
+        private const val DATABASE_VERSION = 10
 
         const val TABLE_VENTAS = "ventas_pendientes"
         const val TABLE_FOLIOS = "folios_offline"
@@ -128,6 +131,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("""
             CREATE TABLE $TABLE_VENTAS (
                 id TEXT PRIMARY KEY,
+                tenantId TEXT NOT NULL DEFAULT 'tenant_pionero',
                 ticket INTEGER NOT NULL,
                 codigoTicket TEXT NOT NULL,
                 total REAL NOT NULL,
@@ -153,6 +157,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("""
             CREATE TABLE $TABLE_OPS (
                 id TEXT PRIMARY KEY,
+                tenantId TEXT NOT NULL DEFAULT 'tenant_pionero',
                 tipo TEXT NOT NULL,
                 ventaId TEXT,
                 motivo TEXT NOT NULL,
@@ -285,6 +290,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS $TABLE_TURNOS_CONTINGENCIA (
                 id TEXT PRIMARY KEY,
+                tenantId TEXT NOT NULL DEFAULT 'tenant_pionero',
                 sucursal TEXT NOT NULL,
                 usuarioId TEXT NOT NULL,
                 usuarioNombre TEXT NOT NULL,
@@ -347,6 +353,12 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         if (oldVersion < 9) {
             addColumnIfMissing(db, TABLE_VENTAS, "descuentoPromociones", "REAL NOT NULL DEFAULT 0.0")
             addColumnIfMissing(db, TABLE_VENTAS, "descuentoManual", "REAL NOT NULL DEFAULT 0.0")
+        }
+        if (oldVersion < 10) {
+            addColumnIfMissing(db, TABLE_VENTAS, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+            addColumnIfMissing(db, TABLE_OPS, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+            addColumnIfMissing(db, TABLE_TURNOS_CONTINGENCIA, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+            addColumnIfMissing(db, TABLE_FOLIOS, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
         }
     }
 
@@ -485,6 +497,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     private fun VentaOffline.toContentValues(): ContentValues {
         return ContentValues().apply {
             put("id", id)
+            put("tenantId", tenantId)
             put("ticket", ticket)
             put("codigoTicket", codigoTicket)
             put("total", total)
@@ -520,6 +533,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             list.add(
                 VentaOffline(
                     id = getString(getColumnIndexOrThrow("id")),
+                    tenantId = getOptionalString("tenantId") ?: "tenant_pionero",
                     ticket = getLong(getColumnIndexOrThrow("ticket")),
                     codigoTicket = getString(getColumnIndexOrThrow("codigoTicket")),
                     total = getDouble(getColumnIndexOrThrow("total")),
@@ -707,6 +721,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     private fun TurnoContingenciaLocal.toContentValues(): ContentValues {
         return ContentValues().apply {
             put("id", id)
+            put("tenantId", tenantId)
             put("sucursal", sucursal)
             put("usuarioId", usuarioId)
             put("usuarioNombre", usuarioNombre)
@@ -726,6 +741,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val fechaCierre = fechaCierreIndex.takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
         return TurnoContingenciaLocal(
             id = getString(getColumnIndexOrThrow("id")),
+            tenantId = getOptionalString("tenantId") ?: "tenant_pionero",
             sucursal = getString(getColumnIndexOrThrow("sucursal")),
             usuarioId = getString(getColumnIndexOrThrow("usuarioId")),
             usuarioNombre = getString(getColumnIndexOrThrow("usuarioNombre")),
@@ -744,6 +760,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val db = writableDatabase
         val values = ContentValues().apply {
             put("id", op.id)
+            put("tenantId", op.tenantId)
             put("tipo", op.tipo)
             put("ventaId", op.ventaId)
             put("motivo", op.motivo)
@@ -772,6 +789,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             list.add(
                 OperacionOffline(
                     id = getString(getColumnIndexOrThrow("id")),
+                    tenantId = getOptionalString("tenantId") ?: "tenant_pionero",
                     tipo = getString(getColumnIndexOrThrow("tipo")),
                     ventaId = getString(getColumnIndexOrThrow("ventaId")),
                     motivo = getString(getColumnIndexOrThrow("motivo")),
@@ -874,6 +892,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.query(TABLE_INSUMOS, arrayOf("id"), "id = ?", arrayOf(insumoId), null, null, null).use { cursor ->
             return cursor.moveToFirst()
         }
+    }
+
+    fun existeInsumo(insumoId: String): Boolean {
+        return insumoExiste(readableDatabase, insumoId)
     }
 
     fun guardarReceta(receta: RecetaV2) {

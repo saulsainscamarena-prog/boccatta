@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 data class VentaPendienteEntity(
     @PrimaryKey
     val id: String,
+    val tenantId: String,
     val ticket: Long,
     @ColumnInfo(name = "codigoTicket")
     val codigoTicket: String,

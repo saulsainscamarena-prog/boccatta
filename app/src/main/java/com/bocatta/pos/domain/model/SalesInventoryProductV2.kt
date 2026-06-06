@@ -2,6 +2,8 @@ package com.bocatta.pos.domain.model
 
 data class SalesInventoryProductV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val nombre: String = "",
     val emoji: String = "🍩",
     val categoria: String = "",

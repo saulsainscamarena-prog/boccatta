@@ -16,8 +16,12 @@ import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.util.Locale
 import com.bocatta.pos.data.local.OfflineDatabase
+import com.bocatta.pos.domain.usecase.TenantSessionManager
 
-class FirebaseSalesRepositoryV2(private val offlineDb: OfflineDatabase) : SalesRepository {
+class FirebaseSalesRepositoryV2(
+    private val offlineDb: OfflineDatabase,
+    private val tenantManager: TenantSessionManager
+) : SalesRepository {
     private val db = FirebaseFirestoreProvider.db
     private val allocationRepo = StockAllocationRepository()
 
@@ -125,6 +129,8 @@ class FirebaseSalesRepositoryV2(private val offlineDb: OfflineDatabase) : SalesR
 
             val ventaDocMap = mutableMapOf<String, Any?>(
                 "id" to ventaId,
+                "tenantId" to tenantManager.getTenantId(),
+                "businessType" to tenantManager.getBusinessType(),
                 "ticket" to nextTicket,
                 "numeroTicket" to nextTicket,
                 "codigoTicket" to codigoTicket,
@@ -255,6 +261,8 @@ class FirebaseSalesRepositoryV2(private val offlineDb: OfflineDatabase) : SalesR
             db.collection(FirestoreCollections.GASTOS).document(id).set(
                 mapOf(
                     "id" to gasto.id,
+                    "tenantId" to tenantManager.getTenantId(),
+                    "businessType" to tenantManager.getBusinessType(),
                     "descripcion" to gasto.descripcion,
                     "concepto" to gasto.descripcion,
                     "monto" to gasto.monto,

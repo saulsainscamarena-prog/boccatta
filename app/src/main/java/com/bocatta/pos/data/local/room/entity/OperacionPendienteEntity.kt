@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 data class OperacionPendienteEntity(
     @PrimaryKey
     val id: String,
+    val tenantId: String,
     val tipo: String,
     @ColumnInfo(name = "ventaId")
     val ventaId: String? = null,

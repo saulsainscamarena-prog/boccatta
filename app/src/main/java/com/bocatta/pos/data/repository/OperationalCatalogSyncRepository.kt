@@ -40,6 +40,7 @@ class OperationalCatalogSyncRepository(
 
             val fingerprint = calcularFingerprint(sucursalId, productos)
             if (!requiereSincronizacion(sucursalId, fingerprint)) {
+                refrescarStockLocalSucursal(sucursalId, productos)
                 Timber.tag("CATALOG_SYNC").d("Catalogo local vigente para $sucursalId; se omite sync completo")
                 return@withContext Result.success(Unit)
             }
@@ -172,6 +173,33 @@ class OperationalCatalogSyncRepository(
             "domo"
         )
         return ids
+    }
+
+    private suspend fun refrescarStockLocalSucursal(
+        sucursalId: String,
+        productos: List<SalesInventoryProductV2>
+    ) {
+        val insumoIds = linkedSetOf<String>()
+        insumoIds += offlineDb.obtenerInsumos().map { it.id }
+        insumoIds += productos.flatMap { producto -> producto.consumiblesAsociados.map { it.consumibleId } }
+            .filter { it.isNotBlank() }
+        insumoIds += productos.map { it.id }.filter { it.isNotBlank() }
+        insumoIds += setOf(
+            "masa_crepa",
+            "servilletas",
+            "papel_hamburguesero",
+            "tenedor",
+            "cuchara",
+            "charola",
+            "vaso",
+            "domo"
+        )
+
+        cargarStockSucursal(sucursalId, insumoIds).forEach { (insumoId, cantidad) ->
+            if (offlineDb.existeInsumo(insumoId)) {
+                offlineDb.actualizarStockInsumo(insumoId, cantidad)
+            }
+        }
     }
 
     private fun requiereSincronizacion(sucursalId: String, fingerprint: String): Boolean {

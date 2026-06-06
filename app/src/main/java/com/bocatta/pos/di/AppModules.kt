@@ -70,7 +70,7 @@ import org.koin.dsl.module
 val appModule = module {
     // REPOSITORIOS
     single { AuthRepository() }
-    single<com.bocatta.pos.domain.repository.SalesRepository> { FirebaseSalesRepositoryV2(get()) }
+    single<com.bocatta.pos.domain.repository.SalesRepository> { FirebaseSalesRepositoryV2(get(), get()) }
     single { OfflineDatabase.getInstance(get()) }
     // Room database (Phase 1: ventas, operaciones, folios)
     single { BocattaRoomDatabase.getInstance(get()) }
@@ -111,6 +111,7 @@ val appModule = module {
     single { GestionEmpleadosUseCase() }
     factory { CartManager() }
     single { CheckoutUseCase(androidApplication(), get(), get(), get(), get()) }
+    single { com.bocatta.pos.domain.usecase.TenantSessionManager() }
 
     // SALES DEPENDENCIES
     single {

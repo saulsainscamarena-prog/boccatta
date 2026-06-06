@@ -27,7 +27,7 @@ import com.bocatta.pos.data.local.room.entity.VentaPendienteEntity
         OperacionPendienteEntity::class,
         FolioEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class BocattaRoomDatabase : RoomDatabase() {

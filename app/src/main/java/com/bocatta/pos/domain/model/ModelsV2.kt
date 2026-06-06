@@ -57,6 +57,8 @@ data class ItemCarritoV2(
 
 data class ClienteV2(
     val idDocumento: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val nombre: String = "",
     val telefono: String = "",
     val visitasCicloActual: Int = 0,
@@ -67,6 +69,8 @@ data class ClienteV2(
 @Immutable
 data class InsumoV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val nombre: String = "",
     val categoria: String = "",
     val unidadBase: String = "g",
@@ -119,6 +123,8 @@ data class CompraRegistro(
 
 data class VentaV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val ticket: Long = 0L,
     val numeroTicket: Long = 0L,
     val codigoTicket: String = "",
@@ -139,6 +145,8 @@ data class VentaV2(
 
 data class GastoV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val descripcion: String = "",
     val monto: Double = 0.0,
     val categoria: String = "",
@@ -157,6 +165,8 @@ data class RecetaTandaV2(
 
 data class TurnoCajaV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val sucursal: String = "",
     val usuarioResponsable: String = "",
     val fechaApertura: Long = 0L,
@@ -176,6 +186,8 @@ enum class Rol { ADMIN, VENDEDOR, DUEÑO }
 
 data class Usuario(
     val uid: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val nombre: String = "",
     val correo: String = "",
     val rol: Rol = Rol.VENDEDOR
@@ -183,6 +195,8 @@ data class Usuario(
 
 data class MermaV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val insumoId: String = "",
     val cantidad: Double = 0.0,
     val costo: Double = 0.0,
@@ -196,6 +210,8 @@ data class MermaV2(
 
 data class EmpleadoV2(
     val id: String = "",
+    val tenantId: String = "",
+    val businessType: String = "",
     val nombre: String = "",
     val rol: String = "VENDEDOR",
     val pinAcceso: String = "",
