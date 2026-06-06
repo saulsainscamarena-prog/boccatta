@@ -265,57 +265,44 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                         }
                     }
                     if (countFallidas > 0) {
-                        Surface(
-                            onClick = {
-                                if (session.esAdmin) {
-                                    vm.abrirDialogoVentasFallidas()
-                                }
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFFFB300).copy(0.1f),
-                            border = BorderStroke(1.dp, Color(0xFFFFB300).copy(0.3f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        if (session.esAdmin) {
+                            TextButton(
+                                onClick = { vm.abrirDialogoVentasFallidas() },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = stringResource(R.string.cierre_alerta_advertencia),
                                     tint = Color(0xFFFFB300),
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(Modifier.width(10.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "${stringResource(R.string.cierre_fallidas, countFallidas)} · ${stringResource(R.string.cierre_gestionar)}",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFFB300),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = stringResource(R.string.cierre_alerta_advertencia),
+                                    tint = Color(0xFFFFB300).copy(0.7f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = stringResource(R.string.cierre_fallidas, countFallidas),
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFFB300),
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.weight(1f)
+                                    color = Color(0xFFFFB300).copy(0.7f),
+                                    fontSize = 11.sp
                                 )
-                                if (session.esAdmin) {
-                                    Text(
-                                        text = stringResource(R.string.cierre_gestionar),
-                                        fontWeight = FontWeight.Black,
-                                        color = Color(0xFFFFB300),
-                                        fontSize = 11.sp
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.ChevronRight,
-                                        contentDescription = stringResource(R.string.cierre_admin_content),
-                                        tint = Color(0xFFFFB300),
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                } else {
-                                    Text(
-                                        text = stringResource(R.string.cierre_admin_solo),
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFFFB300).copy(0.6f),
-                                        fontSize = 10.sp
-                                    )
-                                }
                             }
                         }
                     }

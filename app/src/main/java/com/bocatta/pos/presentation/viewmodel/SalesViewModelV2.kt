@@ -552,29 +552,39 @@ class SalesViewModelV2(
 
 
     private fun mapToConfigGroup(map: Map<String, Any?>): ConfigOptionGroup {
-
        val typeStr = (map["type"] as? String) ?: "SINGLE_CHIP"
+       val type = try { ConfigFieldType.valueOf(typeStr) } catch (e: Exception) { Timber.e(e, "Invalid ConfigFieldType: %s", typeStr); ConfigFieldType.SINGLE_CHIP }
 
-        val type = try { ConfigFieldType.valueOf(typeStr) } catch (e: Exception) { Timber.e(e, "Invalid ConfigFieldType: %s", typeStr); ConfigFieldType.SINGLE_CHIP }
+       val preciosExtraRaw = map["preciosExtra"] as? Map<*, *>
+       val preciosExtra = preciosExtraRaw?.entries?.mapNotNull { (k, v) ->
+          val key = k as? String
+          val value = (v as? Number)?.toDouble()
+          if (key != null && value != null) key to value else null
+       }?.toMap() ?: emptyMap()
+
+       val descuentosInsumoRaw = map["descuentosInsumo"] as? Map<*, *>
+       val descuentosInsumo = descuentosInsumoRaw?.entries?.mapNotNull { (k, v) ->
+          val key = k as? String
+          val valMap = v as? Map<*, *>
+          if (key != null && valMap != null) {
+             val insumoId = valMap["insumoId"] as? String ?: ""
+             val cantidad = (valMap["cantidad"] as? Number)?.toDouble() ?: 0.0
+             val unidad = valMap["unidad"] as? String ?: "g"
+             key to DescuentoOpcion(insumoId, cantidad, unidad)
+          } else null
+       }?.toMap() ?: emptyMap()
 
        return ConfigOptionGroup(
-
           key = map["key"] as? String ?: "",
-
           title = map["title"] as? String ?: "",
-
           type = type,
-
           options = (map["options"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-
           required = map["required"] as? Boolean ?: false,
-
           multiMax = (map["multiMax"] as? Number)?.toInt(),
-
-          defaultValue = map["defaultValue"] as? String
-
+          defaultValue = map["defaultValue"] as? String,
+          preciosExtra = preciosExtra,
+          descuentosInsumo = descuentosInsumo
        )
-
     }
 
 

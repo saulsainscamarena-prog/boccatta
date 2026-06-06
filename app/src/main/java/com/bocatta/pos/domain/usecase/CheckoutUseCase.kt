@@ -45,8 +45,9 @@ class CheckoutUseCase(
                 deds.forEach { (insumoId, cantidad) ->
                     consolidado[insumoId] = (consolidado[insumoId] ?: 0.0) + cantidad
                 }
-                if (item.producto.id.contains("crepa", ignoreCase = true) ||
-                    item.producto.categoria.uppercase(Locale.ROOT).contains("COMBO")) {
+                if ((item.producto.id.contains("crepa", ignoreCase = true) ||
+                    item.producto.categoria.uppercase(Locale.ROOT).contains("COMBO")) &&
+                    !deds.containsKey("masa_crepa")) {
                     consolidado["masa_crepa"] = (consolidado["masa_crepa"] ?: 0.0) + item.cantidad.toDouble()
                 }
             } else {

@@ -158,7 +158,7 @@ class CartManager {
         guardarEstadoParaUndo()
         val base = config["base"]?.firstOrNull()?.removeSuffix(" (Premium)")
         val aderezos = config["aderezos"] ?: emptyList()
-        val toppings = (config["toppings"] ?: emptyList()).map { it.removeSuffix(" (Premium)").removeSuffix(" (Premium)") }
+        val toppings = (config["toppings"] ?: emptyList()).map { it.removeSuffix(" (Premium)") }
         val extras = config.entries
             .filter { it.key !in setOf("base", "aderezos", "toppings") }
             .flatMap { (key, values) -> values.map { "$key: $it" } }
@@ -220,7 +220,7 @@ class CartManager {
 
         val base = config["base"]?.firstOrNull()?.removeSuffix(" (Premium)")
         val aderezos = config["aderezos"] ?: emptyList()
-        val toppings = (config["toppings"] ?: emptyList()).map { it.removeSuffix(" (Premium)").removeSuffix(" (Premium)") }
+        val toppings = (config["toppings"] ?: emptyList()).map { it.removeSuffix(" (Premium)") }
         val extras = config.entries
             .filter { it.key !in setOf("base", "aderezos", "toppings") }
             .flatMap { (key, values) -> values.map { "$key: $it" } }
