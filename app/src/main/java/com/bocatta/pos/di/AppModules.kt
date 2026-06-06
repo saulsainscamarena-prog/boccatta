@@ -83,7 +83,7 @@ val appModule = module {
     single { PromocionesRepository() }
     single { ThemeRepository() }
     single { ProductoRepository() }
-    single { DataSeederV2(get()) }       // recibe ProductoRepository inyectado
+    single { DataSeederV2(androidApplication(), get()) }       // recibe Context y ProductoRepository inyectado
     single { ConfiguracionRepository() }
     single { OperationalCatalogSyncRepository(androidApplication(), get()) }
 

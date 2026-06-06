@@ -22,4 +22,4 @@
 - [x] Crear archivos JSON en `assets/templates/` para los catálogos por defecto (ej. `template_restaurante.json`, `template_retail.json`).
 - [x] Modificar `DataSeederV2` para que lea y construya el inventario inicial de la BD local basándose en la plantilla elegida.
 - [x] Crear modelo de `PlanEntitlement` y asociarlo a la creación del Tenant.
-- [ ] Git commit de la Fase 3.
+- [x] Git commit de la Fase 3.

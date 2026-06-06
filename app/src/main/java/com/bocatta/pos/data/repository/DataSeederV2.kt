@@ -1,5 +1,7 @@
 package com.bocatta.pos.data.repository
 
+import android.content.Context
+
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
@@ -23,6 +25,7 @@ import timber.log.Timber
  * Para agregar/editar productos en producción usar [ProductoRepository].
  */
 class DataSeederV2(
+    private val context: Context,
     private val productoRepo: ProductoRepository = ProductoRepository()
 ) {
     private val db = FirebaseFirestoreProvider.db
@@ -150,6 +153,66 @@ class DataSeederV2(
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.tag("SEEDER").e(e, "Error en inicializarTodoV2")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun inicializarTenantNuevo(tenantId: String, businessType: String, sucursalId: String): Result<Unit> {
+        return try {
+            val fileName = when (businessType) {
+                "RETAIL" -> "template_retail.json"
+                "SERVICES" -> "template_servicios.json" // si no existe, luego haremos fallback
+                else -> "template_restaurante.json"
+            }
+            
+            Timber.tag("SEEDER").i("Iniciando seeder para tenant $tenantId con plantilla $fileName...")
+            
+            val jsonString = try {
+                context.assets.open("templates/$fileName").bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                // Fallback a restaurante si no existe el de servicios
+                context.assets.open("templates/template_restaurante.json").bufferedReader().use { it.readText() }
+            }
+            
+            val json = org.json.JSONObject(jsonString)
+            val productosArray = json.optJSONArray("productos")
+            
+            if (productosArray != null) {
+                val batch = db.batch()
+                for (i in 0 until productosArray.length()) {
+                    val prodObj = productosArray.getJSONObject(i)
+                    val nombre = prodObj.optString("nombre", "")
+                    val id = prodObj.optString("id", nombre.lowercase().replace(" ", "_"))
+                    val cat = prodObj.optString("categoria", "GENERAL")
+                    val precio = prodObj.optDouble("precio", 0.0)
+                    val reqStock = prodObj.optBoolean("requiresStock", false)
+                    val hasVar = prodObj.optBoolean("hasVariants", false)
+                    
+                    val p = SalesInventoryProductV2(
+                        id = id,
+                        tenantId = tenantId,
+                        businessType = businessType,
+                        nombre = nombre,
+                        categoria = cat,
+                        precioVenta = mapOf(sucursalId.lowercase() to precio),
+                        requiresStock = reqStock,
+                        hasVariants = hasVar,
+                        activo = true
+                    )
+                    
+                    val ref = db.collection(FirestoreCollections.PRODUCTOS).document(id)
+                    batch.set(ref, p)
+                }
+                batch.commit().await()
+                Timber.tag("SEEDER").i("Seeding completado con ${productosArray.length()} productos para $tenantId.")
+            }
+            
+            // Inicializar la sucursal vacia
+            inicializarSucursal(sucursalId).getOrThrow()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Timber.tag("SEEDER").e(e, "Error al inicializar tenant nuevo: $tenantId")
             Result.failure(e)
         }
     }

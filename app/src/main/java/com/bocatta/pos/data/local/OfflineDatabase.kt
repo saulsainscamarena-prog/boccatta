@@ -90,7 +90,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 10
+        private const val DATABASE_VERSION = 11
 
         const val TABLE_VENTAS = "ventas_pendientes"
         const val TABLE_FOLIOS = "folios_offline"
@@ -228,6 +228,8 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL("""
             CREATE TABLE $TABLE_PRODUCTOS (
                 id TEXT PRIMARY KEY,
+                tenantId TEXT NOT NULL DEFAULT '',
+                businessType TEXT NOT NULL DEFAULT 'RESTAURANT',
                 nombre TEXT NOT NULL,
                 emoji TEXT DEFAULT '??',
                 categoria TEXT,
@@ -237,7 +239,11 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 toppingsIncluidos INTEGER NOT NULL DEFAULT 2,
                 costoToppingExtra REAL NOT NULL DEFAULT 10.0,
                 esProductoTopping INTEGER NOT NULL DEFAULT 0,
-                consumiblesJson TEXT
+                consumiblesJson TEXT,
+                requiresStock INTEGER NOT NULL DEFAULT 0,
+                hasVariants INTEGER NOT NULL DEFAULT 0,
+                barcode TEXT,
+                activo INTEGER NOT NULL DEFAULT 1
             )
         """)
 
@@ -355,10 +361,18 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             addColumnIfMissing(db, TABLE_VENTAS, "descuentoManual", "REAL NOT NULL DEFAULT 0.0")
         }
         if (oldVersion < 10) {
-            addColumnIfMissing(db, TABLE_VENTAS, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
-            addColumnIfMissing(db, TABLE_OPS, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
-            addColumnIfMissing(db, TABLE_TURNOS_CONTINGENCIA, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+            db.execSQL("ALTER TABLE $TABLE_TURNOS_CONTINGENCIA ADD COLUMN tenantId TEXT NOT NULL DEFAULT 'tenant_pionero'")
+            db.execSQL("ALTER TABLE $TABLE_OPS ADD COLUMN tenantId TEXT NOT NULL DEFAULT 'tenant_pionero'")
+            db.execSQL("ALTER TABLE $TABLE_VENTAS ADD COLUMN tenantId TEXT NOT NULL DEFAULT 'tenant_pionero'")
             addColumnIfMissing(db, TABLE_FOLIOS, "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+        }
+        if (oldVersion < 11) {
+            db.execSQL("ALTER TABLE $TABLE_PRODUCTOS ADD COLUMN tenantId TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE $TABLE_PRODUCTOS ADD COLUMN businessType TEXT NOT NULL DEFAULT 'RESTAURANT'")
+            db.execSQL("ALTER TABLE $TABLE_PRODUCTOS ADD COLUMN requiresStock INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE $TABLE_PRODUCTOS ADD COLUMN hasVariants INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE $TABLE_PRODUCTOS ADD COLUMN barcode TEXT")
+            db.execSQL("ALTER TABLE $TABLE_PRODUCTOS ADD COLUMN activo INTEGER NOT NULL DEFAULT 1")
         }
     }
 
@@ -983,6 +997,8 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val db = writableDatabase
         val values = ContentValues().apply {
             put("id", producto.id)
+            put("tenantId", producto.tenantId)
+            put("businessType", producto.businessType)
             put("nombre", producto.nombre)
             put("emoji", producto.emoji)
             put("categoria", producto.categoria)
@@ -995,6 +1011,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             put("esProductoTopping", if (producto.esProductoTopping) 1 else 0)
             val consumiblesStr = producto.consumiblesAsociados.joinToString(";") { "${it.consumibleId},${it.cantidad},${it.unidad}" }
             put("consumiblesJson", consumiblesStr)
+            put("requiresStock", if (producto.requiresStock) 1 else 0)
+            put("hasVariants", if (producto.hasVariants) 1 else 0)
+            put("barcode", producto.barcode)
+            put("activo", if (producto.activo) 1 else 0)
         }
         db.insertWithOnConflict(TABLE_PRODUCTOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -1015,6 +1035,8 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 }
                 return SalesInventoryProductV2(
                     id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
+                    tenantId = cursor.getString(cursor.getColumnIndexOrThrow("tenantId")) ?: "",
+                    businessType = cursor.getString(cursor.getColumnIndexOrThrow("businessType")) ?: "RESTAURANT",
                     nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
                     emoji = cursor.getString(cursor.getColumnIndexOrThrow("emoji")),
                     categoria = cursor.getString(cursor.getColumnIndexOrThrow("categoria")),
@@ -1023,7 +1045,11 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                     recetaId = cursor.getString(cursor.getColumnIndexOrThrow("recetaId")),
                     toppingsIncluidos = cursor.getInt(cursor.getColumnIndexOrThrow("toppingsIncluidos")),
                     costoToppingExtra = cursor.getDouble(cursor.getColumnIndexOrThrow("costoToppingExtra")),
-                    esProductoTopping = cursor.getInt(cursor.getColumnIndexOrThrow("esProductoTopping")) == 1
+                    esProductoTopping = cursor.getInt(cursor.getColumnIndexOrThrow("esProductoTopping")) == 1,
+                    requiresStock = cursor.getInt(cursor.getColumnIndexOrThrow("requiresStock")) == 1,
+                    hasVariants = cursor.getInt(cursor.getColumnIndexOrThrow("hasVariants")) == 1,
+                    barcode = cursor.getString(cursor.getColumnIndexOrThrow("barcode")),
+                    activo = cursor.getInt(cursor.getColumnIndexOrThrow("activo")) == 1
                 )
             }
         }
