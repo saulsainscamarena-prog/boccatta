@@ -1,0 +1,21 @@
+{
+  "businessType": "RETAIL",
+  "categorias": ["CREPAS_DULCES", "BEBIDAS", "SNACKS"],
+  "productos": [
+    {
+      "nombre": "Crepa Dulce Individual",
+      "categoria": "CREPAS_DULCES",
+      "precio": 45.0,
+      "requiresStock": true,
+      "hasVariants": false,
+      "recetaId": "receta_cr_dulce"
+    },
+    {
+      "nombre": "Frappe Clásico",
+      "categoria": "BEBIDAS",
+      "precio": 55.0,
+      "requiresStock": true,
+      "hasVariants": false
+    }
+  ]
+}

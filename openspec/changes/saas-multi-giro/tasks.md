@@ -13,5 +13,13 @@
 - [x] Ocultar la pantalla de "Recetas" e "Insumos" en el AdminScreen si el giro no requiere recetas (Retail, Servicios).
 - [x] Refactorizar la etiqueta de los botones (ej. "Menú" vs "Productos") según el giro.
 - [x] Extender la clase `SalesInventoryProductV2` para soportar `tipoProducto`, `requiresStock`, `hasVariants` y `barcode`.
-- [ ] Compilar y verificar UI dinámicamente según el giro en TenantSessionManager.
-- [ ] Git commit de la Fase 2.
+- [x] Compilar y verificar UI dinámicamente según el giro en TenantSessionManager.
+- [x] Git commit de la Fase 2.
+
+## Fase 3: Onboarding y Autogestión
+- [x] Construir UI de Wizard de Registro (`OnboardingScreen`) con pasos: Registro de Tenant -> Elección de Giro -> Datos de Dueño.
+- [x] Crear el Repositorio de Onboarding (`TenantOnboardingRepository`) para interactuar con Firestore.
+- [x] Crear archivos JSON en `assets/templates/` para los catálogos por defecto (ej. `template_restaurante.json`, `template_retail.json`).
+- [x] Modificar `DataSeederV2` para que lea y construya el inventario inicial de la BD local basándose en la plantilla elegida.
+- [x] Crear modelo de `PlanEntitlement` y asociarlo a la creación del Tenant.
+- [ ] Git commit de la Fase 3.

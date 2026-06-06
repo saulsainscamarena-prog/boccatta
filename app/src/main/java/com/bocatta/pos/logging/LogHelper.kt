@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import com.bocatta.pos.BuildConfig
 import com.bocatta.pos.data.local.OfflineDatabase
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import timber.log.Timber
 import java.io.File
 import java.io.FileWriter
@@ -29,6 +30,8 @@ object LogHelper {
         pruneOldLogs(context)
         if (isDebug) {
             Timber.plant(Timber.DebugTree())
+        } else {
+            Timber.plant(CrashlyticsTree())
         }
         Timber.plant(FileLoggingTree(context.applicationContext))
         installCrashHandler(context.applicationContext)
@@ -164,6 +167,9 @@ object LogHelper {
                     }
                 )
             }
+            runCatching {
+                FirebaseCrashlytics.getInstance().setCustomKey("breadcrumbs", snapshotBreadcrumbs().joinToString("\n").take(1024))
+            }
             previous?.uncaughtException(thread, throwable) ?: kotlin.system.exitProcess(10)
         }
     }
@@ -200,6 +206,19 @@ object LogHelper {
                 FileWriter(logFile, true).use { writer ->
                     writer.appendLine(json)
                 }
+            }
+        }
+    }
+
+    private class CrashlyticsTree : Timber.Tree() {
+        override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+            if (priority == Log.VERBOSE || priority == Log.DEBUG || priority == Log.INFO) {
+                return
+            }
+            val crashlytics = FirebaseCrashlytics.getInstance()
+            crashlytics.log(message)
+            if (t != null) {
+                crashlytics.recordException(t)
             }
         }
     }

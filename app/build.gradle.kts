@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.ksp)
     // id("org.jetbrains.kotlin.kapt")
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
@@ -98,6 +99,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
 
     // Jacoco for code coverage
     jacoco
