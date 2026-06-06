@@ -17,7 +17,5 @@ data class SnapshotDiario(
     val stockApertura: Double = 0.0,
     val stockCierre: Double = 0.0,
     val ventasSistema: Int = 0,
-    val diferencia: Double = 0.0 // Discrepancia entre lo que dice el sistema y lo físico
+    val diferencia: Double = 0.0 // Discrepancia entre lo que dice el sistema y lo fÃ­sico
 )
-
-

@@ -124,6 +124,8 @@ data class VentaV2(
     val codigoTicket: String = "",
     val total: Double = 0.0,
     val descuentoLealtad: Double = 0.0,
+    val propina: Double = 0.0,
+    val notaOrden: String = "",
     val fecha: Long = 0L,
     val sucursal: String = "",
     val atendio: String = "",
@@ -196,8 +198,19 @@ data class EmpleadoV2(
     val id: String = "",
     val nombre: String = "",
     val rol: String = "VENDEDOR",
-    val pinAcceso: String = "0000",
-    val sucursalAsignada: String = ""
+    val pinAcceso: String = "",
+    val sucursalAsignada: String = "",
+    val authUid: String = ""
+)
+
+data class PinAuthorization(
+    val pinHash: String = "",
+    val userId: String = "",
+    val displayName: String = "",
+    val role: String = "VENDEDOR",
+    val branchId: String = "",
+    val active: Boolean = true,
+    val updatedAt: Long = 0L
 )
 
 data class ProveedorV2(
@@ -291,5 +304,3 @@ data class PromocionUniversal(
     val activa: Boolean = true,
     val etiquetas: List<String> = emptyList()
 )
-
-

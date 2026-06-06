@@ -70,10 +70,10 @@ fun GastosScreen(
                         Text("REGISTRO DE SALIDAS · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
-                navigationIcon = { 
-                    IconButton(onClick = onBack) { 
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
                         Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
                         }
                     }
                 },
@@ -173,8 +173,7 @@ fun GastosScreen(
                                 }
                             }
 
-                            if (insumoSeleccionado != null) {
-                                val insumo = insumoSeleccionado!!
+                            insumoSeleccionado?.let { insumo ->
                                 val presentaciones = insumo.presentacionesCompra
                                 if (presentaciones.isNotEmpty()) {
                                     ExposedDropdownMenuBox(expanded = expandedPresentacion, onExpandedChange = { expandedPresentacion = it }) {
@@ -392,6 +391,3 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
         }
     }
 }
-
-
-

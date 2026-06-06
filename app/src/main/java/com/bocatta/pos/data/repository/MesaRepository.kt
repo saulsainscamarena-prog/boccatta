@@ -19,7 +19,7 @@ class MesaRepository : IMesaRepository {
         col.whereEqualTo("zonaId", zonaId).orderBy("numero").get().await().documents.mapNotNull {
             it.toObject(Mesa::class.java)?.copy(id = it.id)
         }
-    } catch (e: Exception) { emptyList() }
+        } catch (e: Exception) { Timber.e(e, "Error getByZona"); emptyList() }
 
     override suspend fun guardar(mesa: Mesa): Boolean = try {
         val doc = if (mesa.id.isBlank()) col.document() else col.document(mesa.id)
@@ -28,11 +28,11 @@ class MesaRepository : IMesaRepository {
 
     override suspend fun eliminar(id: String): Boolean = try {
         col.document(id).delete().await(); true
-    } catch (e: Exception) { false }
+    } catch (e: Exception) { Timber.e(e, "Error eliminar mesa"); false }
 
     override suspend fun actualizarEstado(id: String, estado: String): Boolean = try {
         col.document(id).update("estado", estado).await(); true
-    } catch (e: Exception) { false }
+    } catch (e: Exception) { Timber.w(e, "Error actualizarEstado mesa %s", id); false }
 
     override suspend fun vincularOrden(id: String, estado: String, ordenId: String?): Boolean = try {
         col.document(id).update(
@@ -43,4 +43,3 @@ class MesaRepository : IMesaRepository {
         ).await(); true
     } catch (e: Exception) { Timber.e(e, "Error vincularOrden"); false }
 }
-

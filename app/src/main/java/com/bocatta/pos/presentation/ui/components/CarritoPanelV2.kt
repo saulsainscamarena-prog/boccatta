@@ -88,7 +88,7 @@ fun CarritoPanelV2(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(0.4f))
                     ) {
                         Text(
-                            "📍 $mesaId",
+                            "Mesa $mesaId",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.tertiary,
@@ -134,7 +134,7 @@ fun CarritoPanelV2(
                         ) {
                             Text(
                                 text = when (mod) {
-                                    ModalidadOrden.LOCAL -> "AQUÍ"
+                                    ModalidadOrden.LOCAL -> "AQUI"
                                     ModalidadOrden.PARA_LLEVAR -> "LLEVAR"
                                     ModalidadOrden.DELIVERY -> "DELIVERY"
                                 },
@@ -212,8 +212,8 @@ fun CarritoPanelV2(
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     BocattaEmptyState(
                         icono = Icons.Default.Receipt,
-                        titulo = "ORDEN VACÍA",
-                        descripcion = "Agrega productos del menú para comenzar",
+                        titulo = "ORDEN VACIA",
+                        descripcion = "Agrega productos del menu para comenzar",
                         modifier = Modifier.alpha(0.5f)
                     )
                 }
@@ -296,7 +296,7 @@ fun CarritoPanelV2(
                 if (mostrarPinDescuento) {
                     AdminPinDialog(
                         titulo = "Autorizar descuento",
-                        mensaje = "El descuento manual requiere autorización de administrador.",
+                        mensaje = "El descuento manual requiere autorizacion de administrador.",
                         error = if (pinDescuentoError) "PIN incorrecto" else null,
                         onDismiss = { mostrarPinDescuento = false; pinDescuentoError = false },
                         onConfirm = { pin ->

@@ -36,11 +36,13 @@ class SessionViewModel(
         private set
     var cargandoSesion by mutableStateOf(false)
         private set
+    var errorSesion by mutableStateOf<String?>(null)
+        private set
 
     var esAtlixco by mutableStateOf(prefs.getBoolean("es_atlixco_manual", com.bocatta.pos.presentation.utils.BocattaUtilsV2.sucursalSugeridaPorDia() == "Atlixco"))
     var sucursalManual by mutableStateOf(prefs.getBoolean("sucursal_manual", false))
     var modoOscuroManual by mutableStateOf<Boolean?>(if (prefs.contains("modo_oscuro")) prefs.getBoolean("modo_oscuro", false) else null)
-    
+
     // Nueva propiedad para soportar múltiples sucursales
     private var _sucursalActual by mutableStateOf(prefs.getString("sucursal_actual", if (esAtlixco) "Atlixco" else "Metepec") ?: "Atlixco")
     var sucursalActual: String
@@ -73,8 +75,10 @@ class SessionViewModel(
         private set
 
     init {
-        auth.currentUser?.uid?.let { cargarUsuario(it) }
-        escucharDevolucionesPendientes()
+        auth.currentUser?.uid?.let {
+            cargarUsuarioCache(it)
+            cargarUsuario(it)
+        }
         iniciarMonitoreoConexion()
     }
 
@@ -83,7 +87,7 @@ class SessionViewModel(
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
             .build()
-        
+
         val activeNetwork = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
         estaOnline = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
@@ -106,12 +110,48 @@ class SessionViewModel(
             try {
                 val doc = db.collection(FirestoreCollections.USUARIOS).document(uid).get().await()
                 if (doc.exists()) {
-                    val u = doc.toObject(Usuario::class.java)?.copy(uid = uid) ?: return@launch
-                    usuario = u
+                    val usuarioRemoto = doc.toObject(Usuario::class.java)?.copy(uid = uid)
+                    if (usuarioRemoto != null) {
+                        usuario = usuarioRemoto
+                        errorSesion = null
+                        guardarUsuarioCache(usuarioRemoto)
+                        escucharDevolucionesPendientes()
+                    } else if (usuario == null) {
+                        errorSesion = "No se pudo interpretar el perfil de usuario."
+                    }
+                } else if (usuario == null) {
+                    errorSesion = "Usuario autenticado sin perfil operativo en Firestore."
                 }
-            } catch (e: Exception) {}
-            cargandoSesion = false
+            } catch (e: Exception) {
+                if (usuario == null) {
+                    errorSesion = "No se pudo cargar la sesión operativa: ${e.message}"
+                }
+            } finally {
+                cargandoSesion = false
+            }
         }
+    }
+
+    private fun cargarUsuarioCache(uid: String) {
+        val cachedUid = prefs.getString("usuario_uid", null) ?: return
+        if (cachedUid != uid) return
+        val rolCache = prefs.getString("usuario_rol", null) ?: return
+        val rol = runCatching { Rol.valueOf(rolCache) }.getOrNull() ?: return
+        usuario = Usuario(
+            uid = cachedUid,
+            nombre = prefs.getString("usuario_nombre", "") ?: "",
+            correo = prefs.getString("usuario_correo", "") ?: "",
+            rol = rol
+        )
+    }
+
+    private fun guardarUsuarioCache(usuario: Usuario) {
+        prefs.edit()
+            .putString("usuario_uid", usuario.uid)
+            .putString("usuario_nombre", usuario.nombre)
+            .putString("usuario_correo", usuario.correo)
+            .putString("usuario_rol", usuario.rol.name)
+            .apply()
     }
 
     private fun escucharDevolucionesPendientes() {
@@ -130,9 +170,18 @@ class SessionViewModel(
         }
     }
 
+    fun validarPinDesbloqueo(pin: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            onResult(authManager.validarPinDesbloqueo(pin, usuario, sucursalActual))
+        }
+    }
+
     fun cerrarSesion() {
         auth.signOut()
+        listenerDevoluciones?.remove()
+        listenerDevoluciones = null
         usuario = null
+        errorSesion = null
         devolucionesPendientes = 0
         sucursalManual = false
         prefs.edit().clear().apply()
@@ -144,4 +193,3 @@ class SessionViewModel(
         networkCallback?.let { connectivityManager.unregisterNetworkCallback(it) }
     }
 }
-

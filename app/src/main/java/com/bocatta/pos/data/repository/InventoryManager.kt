@@ -4,8 +4,8 @@ import com.bocatta.pos.domain.model.*
 import java.lang.IllegalArgumentException
 
 /**
- * Motor de Deducción de Inventario.
- * Gestiona la lógica de restar stock basado en recetas y ventas.
+ * Motor de DeducciÃ³n de Inventario.
+ * Gestiona la lÃ³gica de restar stock basado en recetas y ventas.
  */
 class InventoryManager {
 
@@ -38,7 +38,7 @@ class InventoryManager {
         cantidadVendida: Int = 1
     ): List<Pair<String, Double>> {
         return producto.consumiblesAsociados.map { req ->
-            // Asumimos que los consumibles están en unidad "pz" (piezas)
+            // Asumimos que los consumibles estÃ¡n en unidad "pz" (piezas)
             Pair(req.consumibleId, req.cantidad * cantidadVendida)
         }
     }
@@ -75,7 +75,7 @@ class InventoryManager {
     }
 
     /**
-     * Calcula el costo de producción de una receta.
+     * Calcula el costo de producciÃ³n de una receta.
      */
     fun calcularCostoReceta(
         receta: RecetaV2,
@@ -92,5 +92,3 @@ class InventoryManager {
         return costoTotal
     }
 }
-
-

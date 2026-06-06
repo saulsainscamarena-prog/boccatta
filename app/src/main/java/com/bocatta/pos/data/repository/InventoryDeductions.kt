@@ -1,5 +1,6 @@
 package com.bocatta.pos.data.repository
 
+import com.bocatta.pos.domain.engine.PricingEngine
 import com.bocatta.pos.domain.model.IngredienteReceta
 import com.bocatta.pos.domain.model.ItemCarritoV2
 import java.util.Locale
@@ -9,6 +10,33 @@ object InventoryDeductions {
     val TOPPINGS_DULCES = listOf("Fresa", "Durazno", "Plátano", "Oreo", "Nuez", "Bombón", "Philadelphia", "Nutella", "Coco", "Chispas")
 
     val CONSUMIBLES_EMPAQUE = setOf("charola", "domo", "papel_hamburguesero", "vaso", "tenedor", "cuchara")
+
+    fun resolverDescuentoOpcion(
+        producto: com.bocatta.pos.domain.model.SalesInventoryProductV2,
+        opcionNombre: String,
+        esBase: Boolean = false
+    ): Pair<String, Double>? {
+        val opcionNorm = opcionNombre.normalizado()
+
+        // 1. Intentar buscar en el mapeo dinámico del producto (configSchema)
+        producto.configSchema.forEach { grupo ->
+            val keyCoincidente = grupo.descuentosInsumo.keys.find { it.normalizado() == opcionNorm }
+            if (keyCoincidente != null) {
+                val desc = grupo.descuentosInsumo[keyCoincidente]
+                if (desc != null && desc.insumoId.isNotBlank()) {
+                    val cantidadBase = convertirAUnidadBase(desc.cantidad, desc.unidad)
+                    return desc.insumoId to cantidadBase
+                }
+            }
+        }
+
+        // 2. Fallback: Si no tiene mapeo dinámico, usa la lógica estática ya programada
+        return if (esBase) {
+            mapearBaseAInsumo(opcionNombre) ?: mapearToppingOAderezoAInsumo(opcionNombre)
+        } else {
+            mapearToppingOAderezoAInsumo(opcionNombre) ?: mapearBaseAInsumo(opcionNombre)
+        }
+    }
 
     fun calcularParaItem(
         item: ItemCarritoV2,
@@ -25,17 +53,23 @@ object InventoryDeductions {
         }
 
         item.base?.let { base ->
-            base.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach {
-                mapearBaseAInsumo(it)?.let { (id, cantidad) -> deducciones.add(id, cantidad * qty) }
+            base.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { baseSingular ->
+                resolverDescuentoOpcion(item.producto, baseSingular, esBase = true)?.let { (id, cantidad) ->
+                    deducciones.add(id, cantidad * qty)
+                }
             }
         }
 
         item.toppings.forEach { topping ->
-            mapearToppingOAderezoAInsumo(topping)?.let { (id, cantidad) -> deducciones.add(id, cantidad * qty) }
+            resolverDescuentoOpcion(item.producto, topping, esBase = false)?.let { (id, cantidad) ->
+                deducciones.add(id, cantidad * qty)
+            }
         }
 
         item.aderezos.forEach { aderezo ->
-            mapearToppingOAderezoAInsumo(aderezo)?.let { (id, cantidad) -> deducciones.add(id, cantidad * qty) }
+            resolverDescuentoOpcion(item.producto, aderezo, esBase = false)?.let { (id, cantidad) ->
+                deducciones.add(id, cantidad * qty)
+            }
         }
 
         item.componentesCombo.forEach { componente ->
@@ -84,17 +118,13 @@ object InventoryDeductions {
     }
 
     fun calcularPrecioCrepa(precioBase: Double, base: String?, toppings: List<String>, extra: Double = 10.0): Double {
-        val basesNormales = base
-            ?.split(",")
-            ?.map { it.trim() }
-            ?.count { it.isNotBlank() }
-            ?: 0
-        val normales = toppings.count { !esPremium(it) }
-        val premiumToppingsCount = toppings.count { esPremium(it) }
-        val ingredientesNormales = normales + basesNormales
-        val cargoNormal = if (ingredientesNormales >= 3) extra else 0.0
-        val cargoPremium = premiumToppingsCount * extra
-        return precioBase + cargoNormal + cargoPremium
+        return PricingEngine.calcularPrecioDirecto(
+            precioBase = precioBase,
+            categoria = "crepas",
+            base = base,
+            toppings = toppings,
+            costoToppingExtra = extra
+        )
     }
 
     fun esPremium(nombre: String): Boolean {
@@ -180,4 +210,3 @@ object InventoryDeductions {
             .lowercase(Locale.ROOT)
     }
 }
-

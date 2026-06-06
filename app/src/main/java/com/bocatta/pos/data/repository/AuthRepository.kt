@@ -2,6 +2,7 @@ package com.bocatta.pos.data.repository
 
 import com.bocatta.pos.domain.model.Rol
 import com.bocatta.pos.domain.model.Usuario
+import com.bocatta.pos.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
@@ -13,11 +14,10 @@ class AuthRepository {
 
     /** Devuelve el UID si el login fue exitoso, lanza excepción si falló */
     suspend fun loginConUid(email: String, pass: String): Result<String> {
-        // Modo demo para testing
-        if (email.lowercase().contains("demo") && pass == "demo123") {
+        if (BuildConfig.DEMO_MODE_ENABLED && email == BuildConfig.DEMO_EMAIL && pass == BuildConfig.DEMO_PASSWORD) {
             return Result.success("demo_uid_12345")
         }
-        
+
         return try {
             val result = auth.signInWithEmailAndPassword(email, pass).await()
             val uid = result.user?.uid ?: return Result.failure(Exception("No se obtuvo el UID"))
@@ -32,15 +32,29 @@ class AuthRepository {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, pass).await()
             val uid = result.user?.uid ?: return Result.failure(Exception("No se obtuvo el UID de Firebase"))
-            
+
             val nuevoUsuario = Usuario(
                 uid = uid,
                 nombre = nombre,
                 correo = email,
                 rol = if (rol == "ADMIN") Rol.ADMIN else Rol.VENDEDOR
             )
-            
+
             db.collection(FirestoreCollections.USUARIOS).document(uid).set(nuevoUsuario).await()
+            try {
+                val employees = db.collection(FirestoreCollections.EMPLEADOS)
+                    .whereEqualTo("nombre", nombre)
+                    .limit(1)
+                    .get()
+                    .await()
+                if (!employees.isEmpty) {
+                    val employeeDocId = employees.documents[0].id
+                    db.collection(FirestoreCollections.EMPLEADOS).document(employeeDocId)
+                        .update("authUid", uid).await()
+                }
+            } catch (e: Exception) {
+                timber.log.Timber.tag("AUTH").e(e, "Error al vincular authUid en v2_employees")
+            }
             Result.success(uid)
         } catch (e: Exception) {
             val errorTraducido = traducirErrorFirebase(e)
@@ -61,7 +75,7 @@ class AuthRepository {
             val doc = db.collection(FirestoreCollections.CONFIGURACION).document("seguridad").get().await()
             val codigoAdmin = doc.getString("codigo_maestro")?.trim()
             val codigoStaff = doc.getString("codigo_maestro_empleado")?.trim()
-            
+
             when {
                 codigoAdmin != null && codigoLimpio.equals(codigoAdmin, ignoreCase = true) -> Rol.ADMIN
                 codigoStaff != null && codigoLimpio.equals(codigoStaff, ignoreCase = true) -> Rol.VENDEDOR

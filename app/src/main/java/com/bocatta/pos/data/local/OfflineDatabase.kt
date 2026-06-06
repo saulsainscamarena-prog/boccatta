@@ -15,6 +15,10 @@ data class VentaOffline(
     val codigoTicket: String,
     val total: Double,
     val descuentoLealtad: Double,
+    val descuentoPromociones: Double = 0.0,
+    val descuentoManual: Double = 0.0,
+    val propina: Double = 0.0,
+    val notaOrden: String = "",
     val fecha: Long,
     val sucursal: String,
     val atendio: String,
@@ -59,17 +63,38 @@ data class OperacionOffline(
     }
 }
 
+data class TurnoContingenciaLocal(
+    val id: String,
+    val sucursal: String,
+    val usuarioId: String,
+    val usuarioNombre: String,
+    val rol: String,
+    val fondoInicial: Double,
+    val fechaApertura: Long,
+    val fechaCierre: Long? = null,
+    val estado: String = ESTADO_ABIERTO,
+    val efectivoContado: Double = 0.0,
+    val tarjetaContada: Double = 0.0,
+    val syncPendiente: Boolean = true
+) {
+    companion object {
+        const val ESTADO_ABIERTO = "abierto"
+        const val ESTADO_CERRADO = "cerrado"
+    }
+}
+
 class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
-        private const val DATABASE_VERSION = 6
+        private const val DATABASE_VERSION = 9
 
         const val TABLE_VENTAS = "ventas_pendientes"
         const val TABLE_FOLIOS = "folios_offline"
         const val TABLE_OPS = "operaciones_pendientes"
         const val TABLE_HELD_ORDERS = "held_orders"
         const val TABLE_JORNADAS = "registro_jornadas"
+        const val TABLE_TURNOS_CONTINGENCIA = "turnos_contingencia"
 
         const val TABLE_INSUMOS = "insumos_v2"
         const val TABLE_CONSUMIBLES = "consumibles_v2"
@@ -107,6 +132,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 codigoTicket TEXT NOT NULL,
                 total REAL NOT NULL,
                 descuentoLealtad REAL NOT NULL,
+                descuentoPromociones REAL NOT NULL DEFAULT 0.0,
+                descuentoManual REAL NOT NULL DEFAULT 0.0,
+                propina REAL NOT NULL DEFAULT 0.0,
+                notaOrden TEXT NOT NULL DEFAULT '',
                 fecha INTEGER NOT NULL,
                 sucursal TEXT NOT NULL,
                 atendio TEXT NOT NULL,
@@ -152,6 +181,8 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 timestamp INTEGER NOT NULL
             )
         """)
+
+        createTurnosContingenciaTable(db)
 
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS $TABLE_HELD_ORDERS (
@@ -250,6 +281,25 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         """)
     }
 
+    private fun createTurnosContingenciaTable(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS $TABLE_TURNOS_CONTINGENCIA (
+                id TEXT PRIMARY KEY,
+                sucursal TEXT NOT NULL,
+                usuarioId TEXT NOT NULL,
+                usuarioNombre TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                fondoInicial REAL NOT NULL,
+                fechaApertura INTEGER NOT NULL,
+                fechaCierre INTEGER,
+                estado TEXT NOT NULL DEFAULT '${TurnoContingenciaLocal.ESTADO_ABIERTO}',
+                efectivoContado REAL NOT NULL DEFAULT 0.0,
+                tarjetaContada REAL NOT NULL DEFAULT 0.0,
+                syncPendiente INTEGER NOT NULL DEFAULT 1
+            )
+        """)
+    }
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             createNewTables(db)
@@ -286,6 +336,17 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         if (oldVersion < 6) {
             addColumnIfMissing(db, TABLE_HELD_ORDERS, "modalidad", "TEXT NOT NULL DEFAULT 'LOCAL'")
             addColumnIfMissing(db, TABLE_HELD_ORDERS, "mesaId", "TEXT")
+        }
+        if (oldVersion < 7) {
+            addColumnIfMissing(db, TABLE_VENTAS, "propina", "REAL NOT NULL DEFAULT 0.0")
+            addColumnIfMissing(db, TABLE_VENTAS, "notaOrden", "TEXT NOT NULL DEFAULT ''")
+        }
+        if (oldVersion < 8) {
+            createTurnosContingenciaTable(db)
+        }
+        if (oldVersion < 9) {
+            addColumnIfMissing(db, TABLE_VENTAS, "descuentoPromociones", "REAL NOT NULL DEFAULT 0.0")
+            addColumnIfMissing(db, TABLE_VENTAS, "descuentoManual", "REAL NOT NULL DEFAULT 0.0")
         }
     }
 
@@ -428,6 +489,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             put("codigoTicket", codigoTicket)
             put("total", total)
             put("descuentoLealtad", descuentoLealtad)
+            put("descuentoPromociones", descuentoPromociones)
+            put("descuentoManual", descuentoManual)
+            put("propina", propina)
+            put("notaOrden", notaOrden)
             put("fecha", fecha)
             put("sucursal", sucursal)
             put("atendio", atendio)
@@ -459,6 +524,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                     codigoTicket = getString(getColumnIndexOrThrow("codigoTicket")),
                     total = getDouble(getColumnIndexOrThrow("total")),
                     descuentoLealtad = getDouble(getColumnIndexOrThrow("descuentoLealtad")),
+                    descuentoPromociones = getOptionalDouble("descuentoPromociones"),
+                    descuentoManual = getOptionalDouble("descuentoManual"),
+                    propina = getOptionalDouble("propina"),
+                    notaOrden = getOptionalString("notaOrden").orEmpty(),
                     fecha = getLong(getColumnIndexOrThrow("fecha")),
                     sucursal = getString(getColumnIndexOrThrow("sucursal")),
                     atendio = getString(getColumnIndexOrThrow("atendio")),
@@ -473,6 +542,16 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             )
         }
         return list
+    }
+
+    private fun Cursor.getOptionalDouble(columnName: String): Double {
+        val index = getColumnIndex(columnName)
+        return if (index >= 0) getDouble(index) else 0.0
+    }
+
+    private fun Cursor.getOptionalString(columnName: String): String? {
+        val index = getColumnIndex(columnName)
+        return if (index >= 0) getString(index) else null
     }
 
     fun marcarVentaSincronizada(id: String, timestamp: Long) {
@@ -517,6 +596,148 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return db.rawQuery("SELECT COUNT(*) FROM $TABLE_VENTAS WHERE estado = ?", arrayOf(VentaOffline.ESTADO_PENDIENTE)).use { cursor ->
             if (cursor.moveToFirst()) cursor.getInt(0) else 0
         }
+    }
+
+    fun obtenerVentasFallidas(): List<VentaOffline> {
+        val list = mutableListOf<VentaOffline>()
+        val db = readableDatabase
+        db.query(
+            TABLE_VENTAS,
+            null,
+            "estado IN (?, ?)",
+            arrayOf(VentaOffline.ESTADO_FALLIDA, VentaOffline.ESTADO_FALLIDA_CRITICA),
+            null,
+            null,
+            "fecha ASC"
+        ).use { cursor -> list.addAll(cursor.toVentasList()) }
+        return list
+    }
+
+    fun reintentarVenta(id: String) {
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_VENTAS SET estado = '${VentaOffline.ESTADO_PENDIENTE}', intentos = 0 WHERE id = ?",
+            arrayOf(id)
+        )
+    }
+
+    fun contarVentasFallidas(): Int {
+        val db = readableDatabase
+        return db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_VENTAS WHERE estado IN ('${VentaOffline.ESTADO_FALLIDA}', '${VentaOffline.ESTADO_FALLIDA_CRITICA}')",
+            null
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        }
+    }
+
+    fun guardarTurnoContingencia(turno: TurnoContingenciaLocal) {
+        writableDatabase.insertWithOnConflict(
+            TABLE_TURNOS_CONTINGENCIA,
+            null,
+            turno.toContentValues(),
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+    }
+
+    fun obtenerTurnoContingenciaAbierto(sucursal: String): TurnoContingenciaLocal? {
+        val sucursalId = sucursal.lowercase()
+        return readableDatabase.query(
+            TABLE_TURNOS_CONTINGENCIA,
+            null,
+            "sucursal = ? AND estado = ?",
+            arrayOf(sucursalId, TurnoContingenciaLocal.ESTADO_ABIERTO),
+            null,
+            null,
+            "fechaApertura DESC",
+            "1"
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.toTurnoContingencia() else null
+        }
+    }
+
+    fun cerrarTurnoContingencia(id: String, efectivoContado: Double, tarjetaContada: Double, fechaCierre: Long = System.currentTimeMillis()) {
+        val values = ContentValues().apply {
+            put("estado", TurnoContingenciaLocal.ESTADO_CERRADO)
+            put("fechaCierre", fechaCierre)
+            put("efectivoContado", efectivoContado)
+            put("tarjetaContada", tarjetaContada)
+            put("syncPendiente", 1)
+        }
+        writableDatabase.update(TABLE_TURNOS_CONTINGENCIA, values, "id = ?", arrayOf(id))
+    }
+
+    fun obtenerTurnosContingenciaPendientesSync(): List<TurnoContingenciaLocal> {
+        val list = mutableListOf<TurnoContingenciaLocal>()
+        readableDatabase.query(
+            TABLE_TURNOS_CONTINGENCIA,
+            null,
+            "syncPendiente = ?",
+            arrayOf("1"),
+            null,
+            null,
+            "fechaApertura ASC"
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                list.add(cursor.toTurnoContingencia())
+            }
+        }
+        return list
+    }
+
+    fun marcarTurnoContingenciaSincronizado(id: String) {
+        val values = ContentValues().apply { put("syncPendiente", 0) }
+        writableDatabase.update(TABLE_TURNOS_CONTINGENCIA, values, "id = ?", arrayOf(id))
+    }
+
+    fun obtenerVentasLocalesDesde(sucursal: String, desde: Long): List<VentaOffline> {
+        val list = mutableListOf<VentaOffline>()
+        readableDatabase.query(
+            TABLE_VENTAS,
+            null,
+            "sucursal = ? AND fecha >= ?",
+            arrayOf(sucursal.lowercase(), desde.toString()),
+            null,
+            null,
+            "fecha ASC"
+        ).use { cursor -> list.addAll(cursor.toVentasList()) }
+        return list
+    }
+
+    private fun TurnoContingenciaLocal.toContentValues(): ContentValues {
+        return ContentValues().apply {
+            put("id", id)
+            put("sucursal", sucursal)
+            put("usuarioId", usuarioId)
+            put("usuarioNombre", usuarioNombre)
+            put("rol", rol)
+            put("fondoInicial", fondoInicial)
+            put("fechaApertura", fechaApertura)
+            fechaCierre?.let { put("fechaCierre", it) }
+            put("estado", estado)
+            put("efectivoContado", efectivoContado)
+            put("tarjetaContada", tarjetaContada)
+            put("syncPendiente", if (syncPendiente) 1 else 0)
+        }
+    }
+
+    private fun Cursor.toTurnoContingencia(): TurnoContingenciaLocal {
+        val fechaCierreIndex = getColumnIndex("fechaCierre")
+        val fechaCierre = fechaCierreIndex.takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
+        return TurnoContingenciaLocal(
+            id = getString(getColumnIndexOrThrow("id")),
+            sucursal = getString(getColumnIndexOrThrow("sucursal")),
+            usuarioId = getString(getColumnIndexOrThrow("usuarioId")),
+            usuarioNombre = getString(getColumnIndexOrThrow("usuarioNombre")),
+            rol = getString(getColumnIndexOrThrow("rol")),
+            fondoInicial = getDouble(getColumnIndexOrThrow("fondoInicial")),
+            fechaApertura = getLong(getColumnIndexOrThrow("fechaApertura")),
+            fechaCierre = fechaCierre,
+            estado = getString(getColumnIndexOrThrow("estado")),
+            efectivoContado = getDouble(getColumnIndexOrThrow("efectivoContado")),
+            tarjetaContada = getDouble(getColumnIndexOrThrow("tarjetaContada")),
+            syncPendiente = getInt(getColumnIndexOrThrow("syncPendiente")) == 1
+        )
     }
 
     fun guardarOperacion(op: OperacionOffline) {
@@ -571,6 +792,14 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val db = writableDatabase
         db.execSQL(
             "UPDATE $TABLE_OPS SET estado = '${OperacionOffline.ESTADO_SINCRONIZADA}', intentos = intentos + 1 WHERE id = ?",
+            arrayOf(id)
+        )
+    }
+
+    fun registrarIntentoOperacionFallido(id: String) {
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE $TABLE_OPS SET estado = '${OperacionOffline.ESTADO_PENDIENTE}', intentos = intentos + 1 WHERE id = ?",
             arrayOf(id)
         )
     }

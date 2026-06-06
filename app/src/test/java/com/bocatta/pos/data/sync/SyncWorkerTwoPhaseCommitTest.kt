@@ -21,7 +21,7 @@ class SyncWorkerTwoPhaseCommitTest {
     fun teardown() = runBlocking { queue.clearAll() }
 
     @Test
-    fun phaseOneMarkAsSyncing_pendingDecreases() = runBlocking {
+    fun markAsSyncing_pendingDecreases() = runBlocking {
         repeat(5) { enqueue() }
         val allPending = queue.getAllPending()
         val ids = allPending.mapNotNull { it.id }
@@ -32,7 +32,7 @@ class SyncWorkerTwoPhaseCommitTest {
     }
 
     @Test
-    fun phaseTwoDeleteProcessed_removesOnlyCompleted() = runBlocking {
+    fun deleteProcessed_removesOnlyCompleted() = runBlocking {
         val ids = (1..5).map { enqueue() }
         queue.markAsSyncing(ids)
         val succeeded = ids.take(3)
@@ -53,8 +53,9 @@ class SyncWorkerTwoPhaseCommitTest {
 
         queue.markAsSyncing(ids)
 
-        queue.resetSyncingState(ids)
+        val recovered = queue.resetStaleSyncing(0)
 
+        assertEquals(3, recovered)
         assertEquals(3, queue.getAllPending().size)
     }
 

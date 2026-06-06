@@ -18,7 +18,7 @@ class ExpensesViewModelV2 : BaseViewModel() {
         private set
     var gastos = mutableStateListOf<GastoV2>()
         private set
-    
+
     init {
         escucharInsumos()
     }
@@ -38,7 +38,7 @@ class ExpensesViewModelV2 : BaseViewModel() {
         val hoy = java.util.Calendar.getInstance().apply {
             set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0); set(java.util.Calendar.SECOND, 0)
         }.timeInMillis
-        
+
         expensesListener?.remove()
         expensesListener = db.collection(FirestoreCollections.GASTOS)
             .whereEqualTo("sucursal", sucursal.lowercase())
@@ -61,10 +61,10 @@ class ExpensesViewModelV2 : BaseViewModel() {
     }
 
     fun registrarGastoIndustrial(
-        descripcion: String, 
-        monto: Double, 
-        categoria: String, 
-        sucursal: String, 
+        descripcion: String,
+        monto: Double,
+        categoria: String,
+        sucursal: String,
         usuarioId: String,
         insumoId: String? = null,
         cantidadSurtida: Double = 0.0,
@@ -91,17 +91,19 @@ class ExpensesViewModelV2 : BaseViewModel() {
                     sucursal = sucursal.lowercase(),
                     usuarioId = usuarioId
                 )
-                
+
                 batch.set(
                     db.collection(FirestoreCollections.GASTOS).document(gastoId),
                     mapOf(
                         "id" to gasto.id,
                         "descripcion" to gasto.descripcion,
+                        "concepto" to gasto.descripcion,
                         "monto" to gasto.monto,
                         "categoria" to gasto.categoria,
                         "fecha" to gasto.fecha,
                         "sucursal" to gasto.sucursal,
                         "usuarioId" to gasto.usuarioId,
+                        "usuario" to gasto.usuarioId,
                         "insumoId" to insumoId,
                         "cantidadSurtida" to cantidadSurtida,
                         "presentacionCompra" to presentacionCompra,
@@ -109,13 +111,18 @@ class ExpensesViewModelV2 : BaseViewModel() {
                         "contenidoPorUnidad" to contenidoPorUnidad
                     )
                 )
-                
+
                 if (insumoId != null && cantidadSurtida > 0) {
                     val costoUnitario = monto / cantidadSurtida
                     val stockRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId)
                     batch.set(
                         stockRef,
-                        mapOf("cantidadEnBase" to FieldValue.increment(cantidadSurtida), "ultimaActualizacion" to System.currentTimeMillis()),
+                        mapOf(
+                            "cantidadEnBase" to FieldValue.increment(cantidadSurtida),
+                            "cantidadDisponible" to FieldValue.increment(cantidadSurtida),
+                            "currentQty" to FieldValue.increment(cantidadSurtida),
+                            "ultimaActualizacion" to System.currentTimeMillis()
+                        ),
                         com.google.firebase.firestore.SetOptions.merge()
                     )
                     batch.set(
@@ -128,7 +135,7 @@ class ExpensesViewModelV2 : BaseViewModel() {
                         com.google.firebase.firestore.SetOptions.merge()
                     )
                 }
-                
+
                 batch.commit().await()
                 mensajeExito = "Operación exitosa"
             } finally {
@@ -147,7 +154,12 @@ class ExpensesViewModelV2 : BaseViewModel() {
             if (!insumoId.isNullOrBlank() && cantidadSurtida > 0.0) {
                 batch.set(
                     db.collection(FirestoreCollections.INVENTARIO_GLOBAL).document(insumoId),
-                    mapOf("cantidadEnBase" to FieldValue.increment(-cantidadSurtida), "ultimaActualizacion" to System.currentTimeMillis()),
+                    mapOf(
+                        "cantidadEnBase" to FieldValue.increment(-cantidadSurtida),
+                        "cantidadDisponible" to FieldValue.increment(-cantidadSurtida),
+                        "currentQty" to FieldValue.increment(-cantidadSurtida),
+                        "ultimaActualizacion" to System.currentTimeMillis()
+                    ),
                     com.google.firebase.firestore.SetOptions.merge()
                 )
                 batch.set(
@@ -161,9 +173,6 @@ class ExpensesViewModelV2 : BaseViewModel() {
             mensajeExito = "Gasto eliminado"
         }
     }
-    
+
     fun limpiarError() { mensajeError = null }
 }
-
-
-

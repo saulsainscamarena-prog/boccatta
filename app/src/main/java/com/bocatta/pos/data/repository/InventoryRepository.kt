@@ -65,8 +65,37 @@ class InventoryRepository(
                 ),
                 SetOptions.merge()
             )
-            registrarMovimiento(batch, "compra", insumoId, cantidadUsoTotal, "global", proveedorId, compraId)
+
+            val sucursalLower = sucursal.trim().lowercase()
+            if (sucursalLower.isNotBlank() && sucursalLower != "global") {
+                batch.set(
+                    firestore.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalLower}_$insumoId"),
+                    mapOf(
+                        "id" to "${sucursalLower}_$insumoId",
+                        "insumoId" to insumoId,
+                        "productId" to insumoId,
+                        "sucursal" to sucursalLower,
+                        "branchId" to sucursalLower,
+                        "cantidadEnBase" to FieldValue.increment(cantidadUsoTotal),
+                        "cantidadDisponible" to FieldValue.increment(cantidadUsoTotal),
+                        "currentQty" to FieldValue.increment(cantidadUsoTotal),
+                        "ultimaActualizacion" to System.currentTimeMillis()
+                    ),
+                    SetOptions.merge()
+                )
+            }
+
+            registrarMovimiento(batch, "compra", insumoId, cantidadUsoTotal, if (sucursalLower.isNotBlank()) sucursalLower else "global", proveedorId, compraId)
             batch.commit().await()
+
+            if (offlineDb != null && sucursalLower.isNotBlank() && sucursalLower != "global") {
+                try {
+                    addStock(insumoId, cantidadUsoTotal)
+                } catch (ex: Exception) {
+                    Timber.tag("PURCHASE").e(ex, "Error al actualizar stock local SQLite")
+                }
+            }
+
             Timber.tag("PURCHASE").i("Compra $compraId registrada con éxito")
             true
         } catch (e: Exception) {
@@ -296,13 +325,28 @@ class InventoryRepository(
             val cierreId = firestore.collection(FirestoreCollections.INVENTORY_CLOSURES).document().id
             batch.set(
                 firestore.collection(FirestoreCollections.INVENTORY_CLOSURES).document(cierreId),
-                mapOf("id" to cierreId, "sucursal" to sucursalId, "sobrantes" to sobrantes, "stockSistema" to stockSistema, "fecha" to System.currentTimeMillis())
+                mapOf(
+                    "id" to cierreId,
+                    "sucursal" to sucursalId,
+                    "branchId" to sucursalId,
+                    "sobrantes" to sobrantes,
+                    "stockSistema" to stockSistema,
+                    "inventarioFinal" to sobrantes,
+                    "usuario" to "sistema",
+                    "usuarioId" to "sistema",
+                    "fecha" to System.currentTimeMillis()
+                )
             )
             sobrantes.forEach { (insumoId, conteo) ->
                 val diferencia = conteo - (stockSistema[insumoId] ?: 0.0)
                 batch.set(
                     firestore.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"),
-                    mapOf("cantidadEnBase" to conteo, "ultimaActualizacion" to System.currentTimeMillis()),
+                    mapOf(
+                        "cantidadEnBase" to conteo,
+                        "cantidadDisponible" to conteo,
+                        "currentQty" to conteo,
+                        "ultimaActualizacion" to System.currentTimeMillis()
+                    ),
                     SetOptions.merge()
                 )
                 if (diferencia != 0.0) registrarMovimiento(batch, "cierre", insumoId, diferencia, sucursalId, "sistema", cierreId)
@@ -328,7 +372,15 @@ class InventoryRepository(
             val aperturaId = firestore.collection(FirestoreCollections.INVENTORY_OPENINGS).document().id
             batch.set(
                 firestore.collection(FirestoreCollections.INVENTORY_OPENINGS).document(aperturaId),
-                mapOf("id" to aperturaId, "sucursal" to sucursalId, "conteos" to conteos, "usuarioId" to usuarioId, "fecha" to System.currentTimeMillis())
+                mapOf(
+                    "id" to aperturaId,
+                    "sucursal" to sucursalId,
+                    "branchId" to sucursalId,
+                    "conteos" to conteos,
+                    "usuarioId" to usuarioId,
+                    "usuario" to usuarioId,
+                    "fecha" to System.currentTimeMillis()
+                )
             )
             conteos.forEach { (insumoId, conteo) ->
                 val diferencia = conteo - (stockSistema[insumoId] ?: 0.0)
@@ -337,8 +389,12 @@ class InventoryRepository(
                     mapOf(
                         "id" to "${sucursalId}_$insumoId",
                         "insumoId" to insumoId,
+                        "productId" to insumoId,
                         "sucursal" to sucursalId,
+                        "branchId" to sucursalId,
                         "cantidadEnBase" to conteo,
+                        "cantidadDisponible" to conteo,
+                        "currentQty" to conteo,
                         "ultimaActualizacion" to System.currentTimeMillis()
                     ),
                     SetOptions.merge()
@@ -371,7 +427,12 @@ class InventoryRepository(
             )
             batch.set(
                 firestore.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$insumoId"),
-                mapOf("cantidadEnBase" to FieldValue.increment(-cantidad), "ultimaActualizacion" to System.currentTimeMillis()),
+                mapOf(
+                    "cantidadEnBase" to FieldValue.increment(-cantidad),
+                    "cantidadDisponible" to FieldValue.increment(-cantidad),
+                    "currentQty" to FieldValue.increment(-cantidad),
+                    "ultimaActualizacion" to System.currentTimeMillis()
+                ),
                 SetOptions.merge()
             )
             registrarMovimiento(batch, "merma", insumoId, -cantidad, sucursalId, usuarioId, mermaId)
@@ -399,12 +460,18 @@ class InventoryRepository(
             mapOf(
                 "id" to ref.id,
                 "tipo" to tipo,
+                "type" to tipo.uppercase(),
                 "insumoId" to insumoId,
+                "productId" to insumoId,
                 "cantidadEnBase" to cantidad,
+                "quantity" to cantidad,
                 "sucursal" to sucursal.lowercase(),
+                "branchId" to sucursal.lowercase(),
                 "usuarioId" to usuarioId,
+                "userId" to usuarioId,
                 "referenciaId" to referenciaId,
-                "fecha" to System.currentTimeMillis()
+                "fecha" to System.currentTimeMillis(),
+                "timestamp" to System.currentTimeMillis()
             )
         )
     }
@@ -425,12 +492,18 @@ class InventoryRepository(
             mapOf(
                 "id" to ref.id,
                 "tipo" to tipo,
+                "type" to tipo.uppercase(),
                 "insumoId" to insumoId,
+                "productId" to insumoId,
                 "cantidadEnBase" to cantidad,
+                "quantity" to cantidad,
                 "sucursal" to sucursal.lowercase(),
+                "branchId" to sucursal.lowercase(),
                 "usuarioId" to usuarioId,
+                "userId" to usuarioId,
                 "referenciaId" to referenciaId,
-                "fecha" to fecha
+                "fecha" to fecha,
+                "timestamp" to fecha
             )
         )
     }
@@ -444,6 +517,3 @@ class InventoryRepository(
         else -> null
     }
 }
-
-
-

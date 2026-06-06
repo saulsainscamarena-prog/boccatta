@@ -2,6 +2,7 @@ package com.bocatta.pos.presentation.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,8 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import timber.log.Timber
 import com.bocatta.pos.domain.model.InventoryProductV2
 
 sealed class FormField(
@@ -71,7 +74,7 @@ object DynamicFormEngine {
         )
     )
 
-    fun getSchema(giro: String): GiroSchema = schemas[giro.uppercase()] ?: schemas["FOOD"]!!
+    fun getSchema(giro: String): GiroSchema = schemas[giro.uppercase()] ?: schemas["FOOD"] ?: error("No FOOD schema available in DynamicFormEngine")
 
     fun getSupportedGiros(): List<GiroSchema> = schemas.values.toList()
 
@@ -114,7 +117,7 @@ object DynamicFormEngine {
 }
 
 fun fixMojibake(input: String): String {
-    if (!input.contains("Ã") && !input.contains("Â") && !input.contains("\uFFFD")) {
+    if (input.none { it == '\u00C3' || it == '\u00C2' || it == '\uFFFD' }) {
         return input
     }
 
@@ -123,13 +126,14 @@ fun fixMojibake(input: String): String {
         if (
             decoded != input &&
             !decoded.contains("\uFFFD") &&
-            decoded.count { it == 'Ã' || it == 'Â' } <= input.count { it == 'Ã' || it == 'Â' }
+            decoded.count { it == '\u00C3' || it == '\u00C2' } <= input.count { it == '\u00C3' || it == '\u00C2' }
         ) {
             decoded
         } else {
             input
         }
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        Timber.e(e, "fixMojibake failed for input: %s", input)
         input
     }
 }
@@ -304,7 +308,10 @@ private fun SwitchFormField(
     readOnly: Boolean
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !readOnly) { onCheckedChange(!checked) }
+            .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -432,4 +439,3 @@ fun GiroSelector(
         }
     }
 }
-

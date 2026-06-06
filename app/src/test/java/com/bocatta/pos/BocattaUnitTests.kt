@@ -8,7 +8,7 @@ import org.junit.Test
 import org.junit.Assert.*
 import java.math.BigDecimal
 
-class SessionViewModelTest {
+class AuthorizationRoleTest {
     @Test
     fun esAdmin_retornaTrue_paraAdmin() {
         val usuario = Usuario(
@@ -17,12 +17,12 @@ class SessionViewModelTest {
             rol = Rol.ADMIN,
             correo = "admin@test.com"
         )
-        
+
         val resultado = usuario.rol == Rol.ADMIN || usuario.rol == Rol.DUEÑO
-        
+
         assertTrue(resultado)
     }
-    
+
     @Test
     fun esAdmin_retornaFalse_paraVendedor() {
         val usuario = Usuario(
@@ -31,12 +31,12 @@ class SessionViewModelTest {
             rol = Rol.VENDEDOR,
             correo = "vendor@test.com"
         )
-        
+
         val resultado = usuario.rol == Rol.ADMIN || usuario.rol == Rol.DUEÑO
-        
+
         assertFalse(resultado)
     }
-    
+
     @Test
     fun esAdmin_retornaTrue_paraDuenio() {
         val usuario = Usuario(
@@ -45,9 +45,9 @@ class SessionViewModelTest {
             rol = Rol.DUEÑO,
             correo = "dueno@test.com"
         )
-        
+
         val resultado = usuario.rol == Rol.ADMIN || usuario.rol == Rol.DUEÑO
-        
+
         assertTrue(resultado)
     }
 }
@@ -61,13 +61,13 @@ class ModelsV2Test {
             precioFinal = BigDecimal("50.00"),
             cantidad = 1
         )
-        
+
         val copia = original.copyConCantidad(5)
-        
+
         assertEquals(1, original.cantidad)
         assertEquals(5, copia.cantidad)
     }
-    
+
     @Test
     fun itemCarrito_tieneToppings() {
         val producto = SalesInventoryProductV2(id = "prod1", nombre = "Test", precioVenta = emptyMap())
@@ -77,11 +77,11 @@ class ModelsV2Test {
             cantidad = 1,
             toppings = listOf("extra1", "extra2")
         )
-        
+
         assertEquals(2, item.toppings.size)
         assertTrue(item.toppings.contains("extra1"))
     }
-    
+
     @Test
     fun itemCarrito_notaDefaultEmpty() {
         val producto = SalesInventoryProductV2(id = "prod1", nombre = "Test", precioVenta = emptyMap())
@@ -90,10 +90,10 @@ class ModelsV2Test {
             precioFinal = BigDecimal("50.00"),
             cantidad = 2
         )
-        
+
         assertEquals("", item.nota)
     }
-    
+
     @Test
     fun itemCarrito_cantidadDefaultUno() {
         val producto = SalesInventoryProductV2(id = "prod1", nombre = "Test", precioVenta = emptyMap())
@@ -101,10 +101,10 @@ class ModelsV2Test {
             producto = producto,
             precioFinal = BigDecimal("50.00")
         )
-        
+
         assertEquals(1, item.cantidad)
     }
-    
+
     @Test
     fun itemCarrito_copiaConNuevaCantidad() {
         val producto = SalesInventoryProductV2(id = "prod1", nombre = "Test", precioVenta = emptyMap())
@@ -113,9 +113,9 @@ class ModelsV2Test {
             precioFinal = BigDecimal("50.00"),
             cantidad = 1
         )
-        
+
         val copia = original.copyConCantidad(10)
-        
+
         assertEquals(10, copia.cantidad)
         assertEquals(original.producto.id, copia.producto.id)
     }
@@ -136,14 +136,14 @@ class LogicaNegocioTest {
                 cantidad = 1
             )
         )
-        
-        val total = productos.sumOf { 
-            it.precioFinal.toDouble() * it.cantidad 
+
+        val total = productos.sumOf {
+            it.precioFinal.toDouble() * it.cantidad
         }
-        
+
         assertEquals(180.0, total, 0.01)
     }
-    
+
     @Test
     fun lealtad_descuentoAplicaEnVisita5() {
         val visitasCiclo = 5
@@ -151,26 +151,26 @@ class LogicaNegocioTest {
         val descuento = if (visitasCiclo == 5) comprasPromedio.average() else 0.0
         assertEquals(110.0, descuento, 0.01)
     }
-    
+
     @Test
     fun lealtad_sinDescuentoAntesDe5Visitas() {
         val visitasCiclo = 3
         val descuento = if (visitasCiclo == 5) 100.0 else 0.0
         assertEquals(0.0, descuento, 0.01)
     }
-    
+
     @Test
     fun lealtad_reiniciaCicloEnVisita6() {
         val visitasCiclo = 5
         val nuevasVisitas = if (visitasCiclo >= 5) 1 else visitasCiclo + 1
         assertEquals(1, nuevasVisitas)
     }
-    
+
     @Test
     fun precioToppingsPremium_suma10() {
         val toppings = listOf("premium", "extra")
         val precioToppings = toppings.sumOf { if (it == "premium") 10.0 else 5.0 }
-        
+
         assertEquals(15.0, precioToppings, 0.01)
     }
 }

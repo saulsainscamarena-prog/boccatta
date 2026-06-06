@@ -21,6 +21,8 @@ import com.bocatta.pos.domain.model.ConfiguracionSalarial
 import com.bocatta.pos.domain.model.FormaPago
 import com.bocatta.pos.domain.model.RegistroPago
 import com.bocatta.pos.domain.model.TipoPago
+import timber.log.Timber
+import com.bocatta.pos.logging.LogHelper
 import com.bocatta.pos.presentation.viewmodel.AdminViewModel
 import com.bocatta.pos.presentation.viewmodel.SalarioViewModel
 import java.text.SimpleDateFormat
@@ -67,6 +69,7 @@ fun TabSueldos(
             }
             FilledTonalButton(
                 onClick = {
+                    LogHelper.recordBreadcrumb("share_payroll_whatsapp", "sucursal=$sucursal")
                     val texto = salarioVm.generarTextoNominaWhatsApp(sucursal, empleados, periodoInicio, periodoFin)
                     compartirNomina(context, texto)
                 },
@@ -390,7 +393,9 @@ private fun compartirNomina(context: android.content.Context, texto: String) {
     }
     try {
         context.startActivity(whatsappIntent)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        Timber.e(e, "WhatsApp not available, falling back to chooser")
+        LogHelper.recordBreadcrumb("share_payroll_fallback", "whatsapp_not_available")
         val genericIntent = Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_TEXT, texto)

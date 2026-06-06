@@ -2,9 +2,8 @@ package com.bocatta.pos.presentation.ui.components
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,7 +23,7 @@ class ResponsiveLayoutInstrumentedTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Buscar...").assertIsDisplayed()
+        composeTestRule.onNodeWithText("BUSCAR...").assertIsDisplayed()
     }
 
     @Test
@@ -48,7 +47,7 @@ class ResponsiveLayoutInstrumentedTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Limpiar b\u00fasqueda").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Limpiar busqueda").assertIsDisplayed()
     }
 
     @Test
@@ -60,7 +59,7 @@ class ResponsiveLayoutInstrumentedTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Limpiar b\u00fasqueda").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Limpiar busqueda").assertDoesNotExist()
     }
 
     @Test
@@ -79,7 +78,7 @@ class ResponsiveLayoutInstrumentedTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Coca Cola").assertIsDisplayed()
+        composeTestRule.onNodeWithText("COCA COLA").assertIsDisplayed()
         composeTestRule.onNodeWithText("$50.00").assertIsDisplayed()
     }
 
@@ -102,18 +101,20 @@ class ResponsiveLayoutInstrumentedTest {
     }
 
     @Test
-    fun dynamicProductForm_durationField_incrementsCorrectly() {
+    fun dynamicProductForm_durationField_acceptsReplacement() {
+        var values = mapOf<String, Any?>()
         composeTestRule.setContent {
             DynamicProductForm(
                 giro = "SERVICE",
                 initialValues = mapOf("durationMinutes" to 30),
-                onValuesChanged = {}
+                onValuesChanged = { values = it }
             )
         }
 
-        composeTestRule.onNodeWithText("30 min").assertIsDisplayed()
-        composeTestRule.onNodeWithText("+").performClick()
-        composeTestRule.onNodeWithText("35 min").assertIsDisplayed()
+        composeTestRule.onNodeWithText("30").assertIsDisplayed()
+        composeTestRule.onNodeWithText("30").performTextReplacement("35")
+        composeTestRule.onNodeWithText("35").assertIsDisplayed()
+        assertEquals(35.0, values["durationMinutes"])
     }
 
     @Test
@@ -142,7 +143,7 @@ class ResponsiveLayoutInstrumentedTest {
 
         composeTestRule.onNodeWithText("Alimentos").performClick()
         composeTestRule.onNodeWithText("Servicios").performClick()
-        assert(selectedGiro == "SERVICE")
+        assertEquals("SERVICE", selectedGiro)
     }
 
     @Test

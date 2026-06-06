@@ -3,6 +3,12 @@
 ## Rol del Agente
 Actua como un Android Senior Engineer trabajando en Bocatta POS. Antes de cambiar codigo, revisa el flujo existente, respeta los patrones actuales del proyecto y evita introducir arquitectura nueva si ya existe una solucion local.
 
+## Alcance de Este Workspace
+- Este workspace principal es `C:\Users\ia\AndroidStudioProjects\bocatta`.
+- Ignora por completo `C:\Users\ia\AndroidStudioProjects\bocatta-windows-port`; esa carpeta es una copia aislada para el port Windows y no debe leerse, modificarse, formatearse, compilarse ni usarse como referencia al trabajar en la app principal.
+- Si el usuario pide trabajar en el port Windows, cambia explicitamente el directorio de trabajo a `C:\Users\ia\AndroidStudioProjects\bocatta-windows-port` y sigue el `AGENTS.md` de esa carpeta.
+- **Hay otro agente trabajando en el port Windows.** Ten cuidado con cambios compartidos: no modifiques Gradle, versiones de librerias, `libs.versions.toml`, `build.gradle.kts` ni `gradle.properties` sin coordinar, porque el port Windows necesita mantener compatibilidad exacta de dependencias.
+
 ## Reglas Obligatorias de Edicion
 - No modifiques archivos fuera del alcance solicitado.
 - No reviertas cambios existentes del usuario.
@@ -10,7 +16,7 @@ Actua como un Android Senior Engineer trabajando en Bocatta POS. Antes de cambia
 - No hagas refactors amplios si una correccion quirurgica resuelve el problema.
 - Todo cambio debe ser pequeno, auditable y facil de revisar.
 - Antes de modificaciones complejas o estructurales, desglosa la solucion en un plan de accion de texto plano.
-- Si detectas mojibake o texto corrupto por codificacion, por ejemplo `Ã¡`, `Ã±`, `Â` o secuencias similares, corrigelo dentro del alcance tocado antes de cerrar la tarea.
+- Si detectas mojibake o texto corrupto por codificacion, corrigelo dentro del alcance tocado antes de cerrar la tarea.
 
 ## Kotlin y Arquitectura
 - Manten la logica de negocio fuera de Composables.
@@ -73,6 +79,11 @@ Actua como un Android Senior Engineer trabajando en Bocatta POS. Antes de cambia
 - Usa analisis multi-archivo para mantener consistencia entre UI, ViewModels, repositorios, contratos y DI.
 - Antes de escribir codigo, identifica el punto de entrada real y el patron local.
 - Para cambios grandes, presenta primero un plan claro en texto plano.
+- **Obligatorio:** Para cambios no triviales, usa el flujo SDD de `openspec/`:
+  1. Crea la carpeta `openspec/changes/<nombre-cambio>/`
+  2. Sigue la secuencia: `research.md` (si requiere info externa) → `proposal.md` → `spec.md` → `design.md` → `plan.md` → `tasks.md` → `review.md` → `verification.md` → `archive.md`
+  3. Usa las plantillas de `openspec/templates/`
+- Lee `openspec/constitution.md` **antes de empezar cualquier cambio** — especialmente si toca ventas, inventario, offline/sync, caja, auth, reportes, nomina, DI o repositorios.
 - Si encuentras cambios previos del usuario, trabaja con ellos y no los reviertas.
 - Si una verificacion falla, reporta la causa real y no marques la tarea como completa.
 
@@ -97,6 +108,32 @@ Actua como un Android Senior Engineer trabajando en Bocatta POS. Antes de cambia
 - En entornos con sandbox, Gradle puede fallar al escribir en `C:\Users\ia\.gradle`; en ese caso reporta que la verificacion requiere permisos fuera del sandbox en vez de diagnosticarlo como fallo del proyecto.
 - No borres `C:\Users\ia\.gradle`, `build/` globales ni caches de wrapper como primera medida. Esas acciones son lentas, destructivas para diagnostico y pueden ocultar la causa real.
 - Si se propone alinear JDKs, hazlo como cambio pequeno y explicito mediante `.\gradlew.bat updateDaemonJvm --jvm-version=17`, y verifica con `.\gradlew.bat --version` despues.
+
+## Pre-Build Check (Daemons y Memoria)
+- **Antes de lanzar cualquier comando de Gradle**, verifica que no haya procesos de Gradle/Kotlin superpuestos:
+  1. Ejecuta `.\gradlew.bat --status` y revisa si hay daemons activos.
+  2. Si hay daemons corriendo de otra sesion, ejecuta `.\gradlew.bat --stop` antes de continuar.
+  3. Espera 2-3 segundos para que los locks se liberen.
+- Tambien verifica con `Get-Process | Where-Object { $_.ProcessName -match 'java|kotlin' }` que no haya procesos Java/Kotlin huerfanos que puedan competir por memoria o locks.
+- No ejecutes dos comandos de Gradle en paralelo (ej. compilar y correr tests al mismo tiempo). Espera a que uno termine antes del siguiente.
+
+## Git Discipline
+- Los cambios deben quedar siempre en un estado trackeado al finalizar la sesion: `git add` + `git commit`, o al menos `git stash` si el agente se retira y el usuario seguira despues.
+- No dejes el arbol de trabajo con archivos modificados o untracked sin commit ni aviso explicito al usuario.
+- Antes de terminar una tarea, verifica con `git status` que el working tree esta limpio o que los cambios pendientes estan documentados.
+- Si hay cambios fuera del alcance de la tarea actual que no deben committearse, agregalos al `.gitignore` o notificalo al usuario explicitamente.
+
+## Configuracion Local (SDK y AVD)
+- **Android SDK**: `D:\Android\Sdk` (movido desde C: para liberar espacio)
+  - ANDROID_HOME = `D:\Android\Sdk`
+  - ANDROID_SDK_ROOT = `D:\Android\Sdk`
+  - `local.properties` en este proyecto ya apunta a `sdk.dir=D\:\\Android\\Sdk`
+- **Android Virtual Devices (AVDs)**: `D:\.android\avd`
+  - Creado junction desde `C:\Users\ia\.android\avd` → `D:\.android\avd`
+  - AVD activo: `bocatta_tablet_api36`
+  - AVD eliminado: `medium_phone` (~9.7 GB liberados)
+- **Proyectos respaldados**: `D:\proyectos\` contiene copias de proyectos anteriores (robot-contenido v1-v4, pulsoengine)
+- La carpeta `.android` completa vive en C: solo con config; los AVDs pesados estan en D: via junction.
 
 ## Verificacion
 - Si cambias Kotlin o Compose, ejecuta una verificacion normal de Gradle:

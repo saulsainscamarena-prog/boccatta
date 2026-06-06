@@ -21,6 +21,10 @@ jobs:
           java-version: 17
           cache: gradle
 
+      - name: Check mojibake
+        shell: pwsh
+        run: ./tools/encoding/Find-Mojibake.ps1
+
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:

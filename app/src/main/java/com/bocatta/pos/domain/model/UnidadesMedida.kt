@@ -3,12 +3,12 @@ package com.bocatta.pos.domain.model
 import kotlin.math.roundToInt
 
 sealed class UnidadMedida(val codigo: String, val nombre: String, val factorABase: Double) {
-    // --- BASE (MÈtricas) ---
+    // --- BASE (M√©tricas) ---
     object Gramo : UnidadMedida("g", "Gramos", 1.0)
     object Mililitro : UnidadMedida("ml", "Mililitros", 1.0)
     object Pieza : UnidadMedida("pz", "Piezas", 1.0)
 
-    // --- DERIVADAS (MÈtricas) ---
+    // --- DERIVADAS (M√©tricas) ---
     object Kilo : UnidadMedida("kg", "Kilogramos", 1000.0)
     object Litro : UnidadMedida("L", "Litros", 1000.0)
 
@@ -17,8 +17,8 @@ sealed class UnidadMedida(val codigo: String, val nombre: String, val factorABas
     object Cucharada : UnidadMedida("cd", "Cucharadas", 15.0) // 1 cd = 15 ml
 
     // --- EMPAQUE / COMERCIALES ---
-    object Paquete : UnidadMedida("pkg", "Paquete", 1.0) // Factor din·mico
-    object Caja : UnidadMedida("box", "Caja", 1.0) // Factor din·mico
+    object Paquete : UnidadMedida("pkg", "Paquete", 1.0) // Factor din√°mico
+    object Caja : UnidadMedida("box", "Caja", 1.0) // Factor din√°mico
 
     companion object {
         fun fromCodigo(codigo: String): UnidadMedida {
@@ -39,24 +39,24 @@ sealed class UnidadMedida(val codigo: String, val nombre: String, val factorABas
 }
 
 data class ConversionUnidad(
-    val unidadOrigen: String, // CÛdigo de UnidadMedida
-    val unidadDestino: String, // CÛdigo de UnidadMedida
-    val factor: Double // Cu·ntas unidades destino hay en una origen
+    val unidadOrigen: String, // C√≥digo de UnidadMedida
+    val unidadDestino: String, // C√≥digo de UnidadMedida
+    val factor: Double // Cu√°ntas unidades destino hay en una origen
 ) {
     companion object {
         // Helper para convertir cantidades
         fun convertir(cantidad: Double, desde: UnidadMedida, hacia: UnidadMedida, conversiones: List<ConversionUnidad>): Double {
             if (desde.codigo == hacia.codigo) return cantidad
 
-            // Convertir a base mÈtrica primero
+            // Convertir a base m√©trica primero
             val cantidadEnBase = cantidad * desde.factorABase
 
-            // Si la destino es base mÈtrica, dividir por su factor
+            // Si la destino es base m√©trica, dividir por su factor
             if (hacia.factorABase > 0 && hacia != UnidadMedida.Pieza) {
                 return cantidadEnBase / hacia.factorABase
             }
 
-            // Buscar conversiÛn especÌfica (ej. Caja -> Paquete)
+            // Buscar conversi√≥n espec√≠fica (ej. Caja -> Paquete)
             val conv = conversiones.find { it.unidadOrigen == desde.codigo && it.unidadDestino == hacia.codigo }
             return if (conv != null) {
                 cantidad * conv.factor
@@ -66,5 +66,3 @@ data class ConversionUnidad(
         }
     }
 }
-
-

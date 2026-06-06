@@ -88,6 +88,7 @@ class DynamicFormEngineInstrumentedTest {
         }
 
         composeTestRule.onNodeWithText("Es Combo").performClick()
+        composeTestRule.waitUntil { changedValues.containsKey("esCombo") }
         assertNotNull(changedValues["esCombo"])
     }
 
@@ -173,6 +174,7 @@ class DynamicFormEngineInstrumentedTest {
         }
 
         composeTestRule.onNodeWithText("Es Combo").performClick()
+        composeTestRule.waitUntil { currentValues["esCombo"] == true }
         val esCombo = currentValues["esCombo"]
         assertTrue(esCombo is Boolean && esCombo == true)
     }

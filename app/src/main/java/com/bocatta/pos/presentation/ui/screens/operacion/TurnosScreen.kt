@@ -38,7 +38,17 @@ fun TurnosScreen(
     val locale = LocalLocale.current.platformLocale
     val dateFormat = remember(locale) { SimpleDateFormat("dd/MM/yyyy", locale) }
     val hayTurno = turno != null
+    val validandoSesionOTurno = cargandoTurno || sessionVm.cargandoSesion
+    val perfilOperativoCargado = sessionVm.usuario != null
     val participantesVisibles = if (sessionVm.esAdmin) participantes else participantes.filter { it.rol != "ADMIN" }
+    val errorSesion = sessionVm.errorSesion?.let { error ->
+        when {
+            error.contains("PERMISSION_DENIED", ignoreCase = true) ||
+                error.contains("insufficient permissions", ignoreCase = true) ->
+                "Perfil operativo no cargado. Revisa permisos de Firebase y el documento del usuario antes de operar."
+            else -> error
+        }
+    }
     val errorTurno = cajaVm.errorTurno?.let { error ->
         when {
             error.contains("FAILED_PRECONDITION", ignoreCase = true) ||
@@ -98,7 +108,7 @@ fun TurnosScreen(
                 ) {
                     Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         when {
-                            cargandoTurno -> {
+                            validandoSesionOTurno -> {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(32.dp),
                                     strokeWidth = 3.dp,
@@ -110,10 +120,24 @@ fun TurnosScreen(
                             }
                             hayTurno -> {
                                 val turnoActivo = turno
-                                Text("TURNO ACTIVO", fontWeight = FontWeight.Black, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    if (cajaVm.modoContingenciaLocal) "TURNO LOCAL DE CONTINGENCIA" else "TURNO ACTIVO",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 14.sp,
+                                    color = if (cajaVm.modoContingenciaLocal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                )
                                 Spacer(Modifier.height(6.dp))
                                 Text("Abierto por: ${turnoActivo.usuarioResponsable}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.7f))
                                 Text("Fondo: $${"%.2f".format(turnoActivo.fondoInicial)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                if (cajaVm.modoContingenciaLocal) {
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        "Las ventas se guardaran localmente y se sincronizaran al volver internet.",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                                 Spacer(Modifier.height(8.dp))
                                 Text("Participantes:", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                                 participantesVisibles.forEach { p ->
@@ -146,6 +170,21 @@ fun TurnosScreen(
                     Spacer(Modifier.height(16.dp))
                 }
 
+                errorSesion?.let { error ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(0.35f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(error, fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+
                 errorTurno?.let { error ->
                     Surface(
                         color = MaterialTheme.colorScheme.errorContainer.copy(0.35f),
@@ -163,12 +202,12 @@ fun TurnosScreen(
 
                 Button(
                     onClick = if (hayTurno) onUnirseTurno else onIniciarTurno,
-                    enabled = !cargandoTurno,
+                    enabled = !validandoSesionOTurno && perfilOperativoCargado,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    if (cargandoTurno) {
+                    if (validandoSesionOTurno) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
@@ -176,6 +215,10 @@ fun TurnosScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text("VALIDANDO", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    } else if (!perfilOperativoCargado) {
+                        Icon(Icons.Default.Lock, "Perfil requerido", modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("PERFIL REQUERIDO", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     } else {
                         Icon(if (hayTurno) Icons.Default.GroupAdd else Icons.Default.PlayArrow, if (hayTurno) "Unirse a turno" else "Iniciar turno", modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))

@@ -13,9 +13,11 @@ import com.google.firebase.firestore.FieldValue
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.util.Locale
+import com.bocatta.pos.data.local.OfflineDatabase
 
-class FirebaseSalesRepositoryV2 : SalesRepository {
+class FirebaseSalesRepositoryV2(private val offlineDb: OfflineDatabase) : SalesRepository {
     private val db = FirebaseFirestoreProvider.db
     private val allocationRepo = StockAllocationRepository()
 
@@ -29,83 +31,57 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
         esConsumoEmpleado: Boolean,
         descuentoPromociones: Double,
         descuentoManual: Double,
-        splitPartes: List<com.bocatta.pos.domain.model.SplitParte>
+        propina: Double,
+        notaOrden: String,
+        splitPartes: List<com.bocatta.pos.domain.model.SplitParte>,
+        forcedVentaId: String?
     ): ResultadoVenta {
         val sucursalId = normalizarSucursal(sucursal)
         val subtotal = carrito.sumOf { it.precioFinal.toDouble() * it.cantidad }
-        val totalFinal = if (esConsumoEmpleado) 0.0 else (subtotal - descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
+        val totalSinPropina = (subtotal - descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
+        val propinaFinal = if (esConsumoEmpleado) 0.0 else propina.coerceAtLeast(0.0)
+        val totalFinal = if (esConsumoEmpleado) 0.0 else totalSinPropina + propinaFinal
+        val totalParaLealtad = if (esConsumoEmpleado) 0.0 else totalSinPropina
 
+        // 1. Resolver ingredientes de receta de manera local ultrarrápida (SQLite)
+        val recetaIngredientes = carrito.associate { item ->
+            val recetaId = item.producto.recetaId
+            item.cartId to if (recetaId.isNullOrBlank()) {
+                emptyList()
+            } else {
+                offlineDb.obtenerRecetaPorId(recetaId)?.ingredientes ?: emptyList()
+            }
+        }
+
+        // 2. Calcular deducciones necesarias
+        val deducciones = linkedMapOf<String, Double>()
+        val deduccionesPorLinea = carrito.associate { item ->
+            val linea = InventoryDeductions.calcularParaItem(item, recetaIngredientes[item.cartId] ?: emptyList())
+            linea.forEach { (insumoId, cantidad) -> deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad }
+            item.cartId to linea
+        }
+
+        val idsConCuotaSucursal = allocationRepo.itemsVendibles.toSet()
+        val idsFisicosSucursal = allocationRepo.itemsFisicos.toSet()
+
+        // 3. Pre-flight Check: Validar existencias localmente en SQLite antes de disparar la transacción Firebase
+        deducciones.forEach { (insumoId, requerido) ->
+            if (idsConCuotaSucursal.contains(insumoId)) {
+                val localStock = offlineDb.obtenerStockInsumo(insumoId)
+                if (localStock < requerido) {
+                    throw IllegalStateException("Stock insuficiente local para $insumoId. Disponible: $localStock, requerido: $requerido")
+                }
+            }
+        }
+
+        // 4. Iniciar transacción en la nube sin realizar lecturas pesadas de recetas ni stocks (Latencia reducida)
         return db.runTransaction { transaction ->
             val contadorRef = db.collection(FirestoreCollections.CONFIGURACION).document("contadores_$sucursalId")
             val counterDoc = transaction.get(contadorRef)
             val nextTicket = (counterDoc.getLong("ultimo_ticket") ?: 0L) + 1
             val codigoTicket = TicketUtils.generarCodigoTicket(sucursalId, nextTicket)
 
-            val recetaIngredientes = carrito.associate { item ->
-                val recetaId = item.producto.recetaId
-                item.cartId to if (recetaId.isNullOrBlank()) {
-                    emptyList()
-                } else {
-                    val recetaSnap = transaction.get(db.collection(FirestoreCollections.RECETAS).document(recetaId))
-                    val raw = recetaSnap.get("ingredientes") as? List<*> ?: emptyList<Any>()
-                    raw.mapNotNull { it as? Map<*, *> }.map {
-                        IngredienteReceta(
-                            insumoId = it["insumoId"] as? String ?: "",
-                            nombreInsumo = it["nombreInsumo"] as? String ?: "",
-                            cantidad = (it["cantidad"] as? Number)?.toDouble() ?: 0.0,
-                            unidad = it["unidad"] as? String ?: "g"
-                        )
-                    }.filter { it.insumoId.isNotBlank() }
-                }
-            }
-
-            val deducciones = linkedMapOf<String, Double>()
-            val deduccionesPorLinea = carrito.associate { item ->
-                val linea = InventoryDeductions.calcularParaItem(item, recetaIngredientes[item.cartId] ?: emptyList())
-                linea.forEach { (insumoId, cantidad) -> deducciones[insumoId] = (deducciones[insumoId] ?: 0.0) + cantidad }
-                item.cartId to linea
-            }
-
-            val branchRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
-            val globalRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL)
-            val legacySucursalId = sucursal.trim()
-            val idsConCuotaSucursal = allocationRepo.itemsVendibles.toSet()
-            val idsFisicosSucursal = allocationRepo.itemsFisicos.toSet()
-            val stockDocs = deducciones.keys.filter { idsConCuotaSucursal.contains(it) }.associateWith { insumoId ->
-                val requerido = deducciones[insumoId] ?: 0.0
-                val primaryRef = branchRef.document("${sucursalId}_$insumoId")
-                val primarySnap = transaction.get(primaryRef)
-                val primaryActual = primarySnap.getDouble("cantidadEnBase") ?: primarySnap.getDouble("cantidadDisponible") ?: 0.0
-                val legacyRef = branchRef.document("${legacySucursalId}_$insumoId")
-                if (legacyRef.id != primaryRef.id && primaryActual < requerido) {
-                    val legacySnap = transaction.get(legacyRef)
-                    val legacyActual = legacySnap.getDouble("cantidadEnBase") ?: legacySnap.getDouble("cantidadDisponible") ?: 0.0
-                    if (legacyActual >= requerido) legacyRef to legacySnap else primaryRef to primarySnap
-                } else {
-                    primaryRef to primarySnap
-                }
-            }
-            val globalDocs = deducciones.keys.filter { !idsFisicosSucursal.contains(it) }.associateWith { insumoId ->
-                transaction.get(globalRef.document(insumoId))
-            }
-            deducciones.forEach { (insumoId, requerido) ->
-                if (idsConCuotaSucursal.contains(insumoId)) {
-                    val snap = stockDocs[insumoId]?.second
-                    val actual = snap?.getDouble("cantidadEnBase") ?: snap?.getDouble("cantidadDisponible") ?: 0.0
-                    if (actual < requerido) {
-                        throw IllegalStateException("Stock insuficiente para $insumoId en sucursal $sucursalId. Disponible: $actual, requerido: $requerido")
-                    }
-                }
-                if (!idsFisicosSucursal.contains(insumoId)) {
-                    val globalSnap = globalDocs[insumoId]
-                    val globalActual = globalSnap?.getDouble("cantidadEnBase") ?: globalSnap?.getDouble("cantidadDisponible") ?: 0.0
-                    if (globalActual < requerido) {
-                        throw IllegalStateException("Stock insuficiente para $insumoId en bodega central. Disponible: $globalActual, requerido: $requerido")
-                    }
-                }
-            }
-
-            val ventaId = db.collection(FirestoreCollections.VENTAS).document().id
+            val ventaId = forcedVentaId ?: db.collection(FirestoreCollections.VENTAS).document().id
             val lineasVenta = carrito.map { item ->
                 ItemVendidoV2(
                     cartId = item.cartId,
@@ -146,6 +122,7 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                 ),
                 SetOptions.merge()
             )
+
             val ventaDocMap = mutableMapOf<String, Any?>(
                 "id" to ventaId,
                 "ticket" to nextTicket,
@@ -155,9 +132,13 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                 "descuentoLealtad" to descuentoLealtad,
                 "descuentoPromociones" to descuentoPromociones,
                 "descuentoManual" to descuentoManual,
+                "propina" to propinaFinal,
+                "notaOrden" to notaOrden.trim(),
                 "fecha" to System.currentTimeMillis(),
                 "sucursal" to sucursalId,
+                "branchId" to sucursalId,
                 "atendio" to usuarioNombre,
+                "userId" to usuarioNombre,
                 "metodoPago" to metodoPagoSeleccionado,
                 "esConsumoEmpleado" to esConsumoEmpleado,
                 "estado" to "completada",
@@ -185,22 +166,30 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                 transaction.update(clienteRef, "visitasCicloActual", nuevasVisitas)
                 transaction.update(clienteRef, "fechaUltimaVisita", System.currentTimeMillis())
                 if (clienteSeleccionado.visitasCicloActual >= 5) {
-                    transaction.update(clienteRef, "comprasCicloActual", listOf(totalFinal))
+                    transaction.update(clienteRef, "comprasCicloActual", listOf(totalParaLealtad))
                 } else {
-                    transaction.update(clienteRef, "comprasCicloActual", FieldValue.arrayUnion(totalFinal))
+                    transaction.update(clienteRef, "comprasCicloActual", FieldValue.arrayUnion(totalParaLealtad))
                 }
             }
 
+            val branchRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
+            val globalRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL)
+
+            // Aplicar decrementos atómicos en background (sin bloquear en transaction.get de stock)
             deducciones.forEach { (insumoId, cantidad) ->
                 if (idsConCuotaSucursal.contains(insumoId)) {
-                    val stockRef = stockDocs[insumoId]?.first ?: branchRef.document("${sucursalId}_$insumoId")
+                    val stockRef = branchRef.document("${sucursalId}_$insumoId")
                     transaction.set(
                         stockRef,
                         mapOf(
                             "id" to stockRef.id,
                             "insumoId" to insumoId,
+                            "productId" to insumoId,
                             "sucursal" to sucursalId,
+                            "branchId" to sucursalId,
                             "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "cantidadDisponible" to FieldValue.increment(-cantidad),
+                            "currentQty" to FieldValue.increment(-cantidad),
                             "ultimaActualizacion" to System.currentTimeMillis()
                         ),
                         SetOptions.merge()
@@ -213,7 +202,10 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                         mapOf(
                             "id" to insumoId,
                             "insumoId" to insumoId,
+                            "productId" to insumoId,
                             "cantidadEnBase" to FieldValue.increment(-cantidad),
+                            "cantidadDisponible" to FieldValue.increment(-cantidad),
+                            "currentQty" to FieldValue.increment(-cantidad),
                             "ultimaActualizacion" to System.currentTimeMillis()
                         ),
                         SetOptions.merge()
@@ -225,11 +217,18 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                     mapOf(
                         "id" to movRef.id,
                         "tipo" to "venta",
+                        "type" to "SALE",
                         "insumoId" to insumoId,
+                        "productId" to insumoId,
                         "cantidadEnBase" to -cantidad,
+                        "quantity" to -cantidad,
                         "sucursal" to sucursalId,
+                        "branchId" to sucursalId,
                         "referenciaId" to ventaId,
-                        "fecha" to System.currentTimeMillis()
+                        "fecha" to System.currentTimeMillis(),
+                        "timestamp" to System.currentTimeMillis(),
+                        "usuarioId" to usuarioNombre,
+                        "userId" to usuarioNombre
                     )
                 )
             }
@@ -253,13 +252,23 @@ class FirebaseSalesRepositoryV2 : SalesRepository {
                 sucursal = sucursal.lowercase(),
                 usuarioId = usuarioId
             )
-            db.collection(FirestoreCollections.GASTOS).document(id).set(gasto).await()
+            db.collection(FirestoreCollections.GASTOS).document(id).set(
+                mapOf(
+                    "id" to gasto.id,
+                    "descripcion" to gasto.descripcion,
+                    "concepto" to gasto.descripcion,
+                    "monto" to gasto.monto,
+                    "categoria" to gasto.categoria,
+                    "fecha" to gasto.fecha,
+                    "sucursal" to gasto.sucursal,
+                    "usuarioId" to gasto.usuarioId,
+                    "usuario" to gasto.usuarioId
+                )
+            ).await()
             true
         } catch (e: Exception) {
+            Timber.tag("SALES").e(e, "Error registrando gasto validado: $motivo")
             false
         }
     }
 }
-
-
-

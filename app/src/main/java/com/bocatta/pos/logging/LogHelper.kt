@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.bocatta.pos.BuildConfig
+import com.bocatta.pos.data.local.OfflineDatabase
 import timber.log.Timber
 import java.io.File
 import java.io.FileWriter
@@ -53,6 +54,9 @@ object LogHelper {
             appendLine("Android: ${Build.VERSION.RELEASE} / SDK ${Build.VERSION.SDK_INT}")
             appendLine("Dispositivo: ${Build.MANUFACTURER} ${Build.MODEL}")
             appendLine()
+            appendLine("ESTADO LOCAL")
+            appendLine(buildLocalStateSummary(context))
+            appendLine()
             appendLine("ULTIMAS ACCIONES")
             snapshotBreadcrumbs().ifEmpty { listOf("Sin acciones registradas") }.forEach { appendLine(it) }
             appendLine()
@@ -60,6 +64,26 @@ object LogHelper {
         }
         val logs = getRecentLogText(context, maxChars - header.length)
         return (header + logs).take(maxChars)
+    }
+
+    private fun buildLocalStateSummary(context: Context): String {
+        return runCatching {
+            val db = OfflineDatabase.getInstance(context.applicationContext)
+            val pendingSales = db.contarPendientes()
+            val pendingOps = db.obtenerOperacionesPendientes().size
+            val pendingContingencyShifts = db.obtenerTurnosContingenciaPendientesSync().size
+            val logDir = getLogDirectory(context)
+            val logFiles = logDir.listFiles()?.filter { it.isFile } ?: emptyList()
+            buildString {
+                appendLine("Ventas offline pendientes: $pendingSales")
+                appendLine("Operaciones offline pendientes: $pendingOps")
+                appendLine("Turnos contingencia pendientes: $pendingContingencyShifts")
+                appendLine("Archivos de log locales: ${logFiles.size}")
+                append("Carpeta logs: ${logDir.absolutePath}")
+            }
+        }.getOrElse { error ->
+            "No se pudo leer estado local: ${error.message}"
+        }
     }
 
     internal fun pruneOldLogs(context: Context) {

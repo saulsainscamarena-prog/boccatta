@@ -6,7 +6,7 @@ interface IHeldOrderRepository {
     fun save(order: HeldOrder)
     fun getAll(): List<HeldOrder>
     fun getById(id: String): HeldOrder?
+    fun assignToMesa(id: String, mesaId: String): HeldOrder?
     fun delete(id: String)
     fun clear()
 }
-

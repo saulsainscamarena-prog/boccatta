@@ -37,7 +37,7 @@ fun InventoryScreen(
 ) {
     var mostrarRegistroProduccion by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
     LaunchedEffect(vm.mensajeExito) {
         vm.mensajeExito?.let {
             snackbarHostState.showSnackbar(it)
@@ -52,19 +52,19 @@ fun InventoryScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
-        Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = Color.Transparent,
             topBar = {
                 LargeTopAppBar(
-                    title = { 
+                    title = {
                         Column {
                             Text("GESTIÓN DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 2.sp, color = Color.White)
                             Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) { 
+                        IconButton(onClick = onBack) {
                             Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
                             }
@@ -73,8 +73,8 @@ fun InventoryScreen(
                     actions = {
                         if (session.esAdmin) {
                             var mostrarPin by remember { mutableStateOf(false) }
-                            IconButton(onClick = { mostrarPin = true }) { 
-                                Icon(Icons.Default.FlashOn, "Encender", tint = MaterialTheme.colorScheme.tertiary) 
+                            IconButton(onClick = { mostrarPin = true }) {
+                                Icon(Icons.Default.FlashOn, "Encender", tint = MaterialTheme.colorScheme.tertiary)
                             }
                             if (mostrarPin) {
                                 com.bocatta.pos.presentation.ui.components.AdminPinDialog(
@@ -121,11 +121,13 @@ fun InventoryScreen(
                     ) {
                         items(vm.stockInsumos.keys.toList(), key = { it }) { id ->
                             val cant = vm.stockInsumos[id] ?: 0.0
+                            val insumo = vm.maestroInsumos[id]
+                            val stockMinimo = insumo?.stockMinimo ?: 10.0
                             InventoryCardPremium(
-                                nombre = id.replace("_", " ").uppercase(),
+                                nombre = insumo?.nombre ?: id.replace("_", " ").uppercase(),
                                 cantidad = cant,
-                                unidad = if(id.contains("masa") || id.contains("helado")) "unidades/lt" else "unidades",
-                                bajoStock = cant < 10.0
+                                unidad = insumo?.unidadBase ?: if(id.contains("masa") || id.contains("helado")) "unidades/lt" else "unidades",
+                                stockMinimo = stockMinimo
                             )
                         }
                     }
@@ -145,24 +147,27 @@ fun InventoryScreen(
 }
 
 @Composable
-fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoStock: Boolean) {
+fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, stockMinimo: Double) {
+    val agotado = cantidad <= 0.0
+    val bajoStock = cantidad <= stockMinimo
+    val colorEstado = BocattaDesign.getStockColor(cantidad, stockMinimo)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, if(bajoStock) MaterialTheme.colorScheme.error.copy(0.4f) else Color.White.copy(0.08f)),
+        border = BorderStroke(1.dp, if(bajoStock) colorEstado.copy(0.4f) else Color.White.copy(0.08f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
-                color = if(bajoStock) MaterialTheme.colorScheme.error.copy(0.1f) else MaterialTheme.colorScheme.primary.copy(0.1f),
+                color = if(bajoStock) colorEstado.copy(0.1f) else MaterialTheme.colorScheme.primary.copy(0.1f),
                 shape = CircleShape,
                 modifier = Modifier.size(56.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        if(bajoStock) Icons.Default.Warning else Icons.Default.Inventory2, 
-                        null, 
-                        tint = if(bajoStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        if(bajoStock) Icons.Default.Warning else Icons.Default.Inventory2,
+                        null,
+                        tint = if(bajoStock) colorEstado else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -170,15 +175,12 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, bajoS
             Spacer(Modifier.width(20.dp))
             Column(Modifier.weight(1f)) {
                 Text(nombre, fontWeight = FontWeight.Black, fontSize = 14.sp, color = Color.White, letterSpacing = 1.sp)
-                Text("${"%.1f".format(cantidad)} $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) MaterialTheme.colorScheme.error else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
+                Text("${"%.1f".format(cantidad)} $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) colorEstado else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
+                Text("Minimo: ${"%.1f".format(stockMinimo)} $unidad", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.45f))
             }
             if (bajoStock) {
-                StatusBadgePremium("ALERTA", MaterialTheme.colorScheme.error)
+                StatusBadgePremium(if (agotado) "AGOTADO" else "BAJO", colorEstado)
             }
         }
     }
 }
-
-
-
-

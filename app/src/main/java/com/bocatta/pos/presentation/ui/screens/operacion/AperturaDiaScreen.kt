@@ -6,9 +6,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -47,7 +49,8 @@ fun AperturaDiaScreen(
 
     fun verificarYAvanzar(siguiente: () -> Unit) {
         if (!OfflineManager.isNetworkAvailable(context)) {
-            scope.launch { snackbarHost.showSnackbar("Sin conexión. Verifica internet para iniciar.") }
+            scope.launch { snackbarHost.showSnackbar("Sin conexión. Puedes abrir caja en contingencia local.") }
+            pasoActual = 2
             return
         }
         siguiente()
@@ -434,12 +437,41 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
 @Composable
 fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () -> Unit) {
     var fondo by remember { mutableStateOf("") }
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    val context = LocalContext.current
+    val sinConexion = !OfflineManager.isNetworkAvailable(context)
+    val mostrarContingencia = sinConexion || vm.mensajeError?.contains("Error:", ignoreCase = true) == true
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .navigationBarsPadding()
+            .padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
         Column {
             Text("FONDO DE CAJA", fontWeight = FontWeight.ExtraBold,
                 style = MaterialTheme.typography.titleMedium, color = Color.White, letterSpacing = 1.sp)
             Text("¿Cuánto efectivo tienes para dar cambio?",
                 color = Color.White.copy(0.5f), fontSize = 13.sp)
+        }
+        if (sinConexion) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer.copy(0.35f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.35f))
+            ) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CloudOff, "Sin conexión", tint = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Sin conexión: se omitirá asignación remota y el turno quedará guardado localmente para sincronizar después.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
         Surface(color = Color.White.copy(0.05f), shape = RoundedCornerShape(28.dp),
             modifier = Modifier.fillMaxWidth(),
@@ -471,23 +503,47 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
             Text(it, color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 4.dp))
         }
-        Button(
-            onClick = { vm.abrirTurno(fondo.toDoubleOrNull() ?: 0.0,
-                session.sucursalActual, session.usuario) { if (it) onFinish() } },
-            enabled = !vm.cargando && fondo.isNotBlank(),
-            modifier = Modifier.fillMaxWidth().height(64.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
-        ) {
-            if (vm.cargando) {
-                CircularProgressIndicator(color = Color.White,
-                    modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-            } else {
-                Icon(Icons.Default.PlayArrow, "Iniciar", tint = Color.White)
-                Spacer(Modifier.width(12.dp))
-                Text("COMENZAR JORNADA", fontWeight = FontWeight.ExtraBold,
-                    fontSize = 18.sp, color = Color.White)
+        if (!sinConexion) {
+            Button(
+                onClick = { vm.abrirTurno(fondo.toDoubleOrNull() ?: 0.0,
+                    session.sucursalActual, session.usuario) { if (it) onFinish() } },
+                enabled = !vm.cargando && fondo.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            ) {
+                if (vm.cargando) {
+                    CircularProgressIndicator(color = Color.White,
+                        modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.PlayArrow, "Iniciar", tint = Color.White)
+                    Spacer(Modifier.width(12.dp))
+                    Text("COMENZAR JORNADA", fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp, color = Color.White)
+                }
+            }
+        }
+        if (mostrarContingencia) {
+            OutlinedButton(
+                onClick = {
+                    vm.abrirTurnoContingenciaLocal(
+                        fondo.toDoubleOrNull() ?: 0.0,
+                        session.sucursalActual,
+                        session.usuario
+                    ) { if (it) onFinish() }
+                },
+                enabled = !vm.cargando && fondo.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Icon(Icons.Default.CloudOff, "Contingencia", tint = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "ABRIR CONTINGENCIA LOCAL",
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }

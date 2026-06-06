@@ -26,8 +26,6 @@ object OfflineManager {
                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
-    @Deprecated("Use TicketUtils.generarCodigoTicket instead", ReplaceWith("TicketUtils.generarCodigoTicket(sucursal, numero)"))
-    fun generarCodigoTicket(sucursal: String, numero: Long): String = TicketUtils.generarCodigoTicket(sucursal, numero)
 
     fun guardarVentaOffline(
         context: Context,
@@ -36,11 +34,16 @@ object OfflineManager {
         usuarioNombre: String,
         total: Double,
         descuentoLealtad: Double,
+        descuentoPromociones: Double = 0.0,
+        descuentoManual: Double = 0.0,
         clienteSeleccionado: ClienteV2?,
         metodoPago: String,
-        esConsumoEmpleado: Boolean
+        esConsumoEmpleado: Boolean,
+        propina: Double = 0.0,
+        notaOrden: String = "",
+        forcedVentaId: String? = null
     ): ResultadoVenta {
-        val ventaId = "offline_${System.currentTimeMillis()}"
+        val ventaId = forcedVentaId ?: "offline_${System.currentTimeMillis()}"
         val sucursalId = sucursal.lowercase()
         val db = OfflineDatabase.getInstance(context)
         val inventoryRepo = InventoryRepository(db)
@@ -86,6 +89,10 @@ object OfflineManager {
             codigoTicket = "",
             total = total,
             descuentoLealtad = descuentoLealtad,
+            descuentoPromociones = descuentoPromociones,
+            descuentoManual = descuentoManual,
+            propina = propina,
+            notaOrden = notaOrden,
             fecha = System.currentTimeMillis(),
             sucursal = sucursalId,
             atendio = usuarioNombre,
@@ -98,12 +105,11 @@ object OfflineManager {
             ultimoIntento = null
         )
 
-        val legacyUltimoTicket = leerUltimoTicketLocalLegacy(context, sucursalId)
         val ventaConfirmada = db.guardarVentaYDescontarStockReservandoFolio(
             ventaBase = ventaPendiente,
-            deducciones = deducciones,
-            legacyUltimoTicket = legacyUltimoTicket
+            deducciones = deducciones
         )
+        SyncScheduler.scheduleImmediateSync(context)
 
         return ResultadoVenta(
             numeroTicket = ventaConfirmada.ticket,
@@ -138,21 +144,8 @@ object OfflineManager {
         )
 
         OfflineDatabase.getInstance(context).guardarOperacion(operacion)
+        SyncScheduler.scheduleImmediateSync(context)
     }
 
-    @Deprecated("Legacy SharedPreferences counter is read only as a migration floor. Use SQLite folios in OfflineDatabase.")
-    fun obtenerUltimoTicketLocal(context: Context, sucursalId: String): Long = leerUltimoTicketLocalLegacy(context, sucursalId)
 
-    private fun leerUltimoTicketLocalLegacy(context: Context, sucursalId: String): Long {
-        val prefs = context.getSharedPreferences("bocatta_offline_tickets", Context.MODE_PRIVATE)
-        return prefs.getLong("last_ticket_$sucursalId", 0L)
-    }
-
-    @Deprecated("Legacy SharedPreferences counter is no longer updated by the checkout flow.")
-    fun guardarUltimoTicketLocal(context: Context, sucursalId: String, ticket: Long) {
-        val prefs = context.getSharedPreferences("bocatta_offline_tickets", Context.MODE_PRIVATE)
-        prefs.edit().putLong("last_ticket_$sucursalId", ticket).apply()
-    }
 }
-
-

@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.presentation.ui.screens.ventas
+package com.bocatta.pos.presentation.ui.screens.ventas
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -314,8 +314,7 @@ fun ActividadScreen(
     }
 
     // Modal de asignar venta rapida a mesa
-    if (orderToMoveToMesa != null) {
-        val orden = orderToMoveToMesa!!
+    orderToMoveToMesa?.let { orden ->
         val mesasLibres = mesaVm.mesas.filter { it.estado == EstadoMesa.LIBRE }
 
         AlertDialog(
@@ -356,25 +355,11 @@ fun ActividadScreen(
                                         .padding(vertical = 4.dp)
                                         .clickable {
                                             scope.launch {
-                                                // Mover la orden SQLite
-                                                val nuevaOrden = orden.copy(
-                                                    mesaId = mesa.id,
-                                                    modalidad = "LOCAL"
-                                                )
-                                                heldOrderVm.deleteOrder(orden.id)
-                                                heldOrderVm.saveOrder(
-                                                    carrito = heldOrderVm.parseCarrito(nuevaOrden.carritoJson),
-                                                    cliente = heldOrderVm.parseCliente(nuevaOrden.clienteJson),
-                                                    nota = nuevaOrden.nota,
-                                                    sucursal = nuevaOrden.sucursal,
-                                                    total = nuevaOrden.total,
-                                                    modalidad = "LOCAL",
-                                                    mesaId = mesa.id
-                                                )
-                                                orderToMoveToMesa = null
-                                                // Refrescar
-                                                mesaVm.cargarMesas()
-                                                heldOrderVm.loadOrders()
+                                                if (heldOrderVm.assignOrderToMesa(orden.id, mesa.id)) {
+                                                    orderToMoveToMesa = null
+                                                    mesaVm.cargarMesas()
+                                                    heldOrderVm.loadOrders()
+                                                }
                                             }
                                         },
                                     colors = CardDefaults.cardColors(
@@ -446,8 +431,7 @@ fun ActividadScreen(
     }
 
     // Modal de mesa ocupada en otro dispositivo
-    if (showMesaOcupadaExternoDialog != null) {
-        val mesa = showMesaOcupadaExternoDialog!!
+    showMesaOcupadaExternoDialog?.let { mesa ->
         val esAdmin = sessionVm.esAdmin
 
         AlertDialog(

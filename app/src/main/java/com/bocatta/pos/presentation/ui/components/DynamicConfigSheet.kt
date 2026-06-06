@@ -20,20 +20,32 @@ import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.ConfigFieldType
 import com.bocatta.pos.domain.model.ConfigOptionGroup
 import com.bocatta.pos.domain.model.ConfigResult
+import com.bocatta.pos.domain.model.ItemCarritoV2
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DynamicConfigSheet(
     configGroups: List<ConfigOptionGroup>,
     accentColor: Color = MaterialTheme.colorScheme.primary,
+    itemInicial: ItemCarritoV2? = null,
     onConfirm: (ConfigResult) -> Unit,
     onDismiss: () -> Unit
 ) {
     // State: key → list of selected values
-    val selections = remember(configGroups) {
+    val selections = remember(configGroups, itemInicial) {
         mutableStateMapOf<String, List<String>>().apply {
             configGroups.forEach { group ->
-                val initial = if (group.defaultValue != null) listOf(group.defaultValue) else emptyList()
+                val initial = if (itemInicial != null) {
+                    when (group.key.lowercase(Locale.ROOT)) {
+                        "base" -> if (itemInicial.base?.isNotBlank() == true) listOf(itemInicial.base) else emptyList()
+                        "aderezos" -> itemInicial.aderezos
+                        "toppings" -> itemInicial.toppings
+                        else -> listOfNotNull(group.defaultValue)
+                    }
+                } else {
+                    listOfNotNull(group.defaultValue)
+                }
                 put(group.key, initial)
             }
         }
@@ -196,5 +208,3 @@ private fun ConfigGroupSection(
         }
     }
 }
-
-

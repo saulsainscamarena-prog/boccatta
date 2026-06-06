@@ -51,6 +51,13 @@ class AuthorizationManagerTest {
     }
 
     @Test
+    fun verificarPermiso_vendedorPuedeAbrirTurnoSinConsultarFirestore() = runTest {
+        val vendedor = Usuario(uid = "vendedor123", nombre = "Mostrador", rol = Rol.VENDEDOR)
+
+        assertTrue(authManager.verificarPermiso(vendedor, AccionSensible.ABRIR_TURNO))
+    }
+
+    @Test
     fun evaluarPermisoFino_aplicarDescuento_validaCorrectamente() {
         // Requiere puedeCobrarTarjeta || puedeCobrarEfectivo
         val permisoTarjeta = PermisoEmpleado(puedeCobrarTarjeta = true, puedeCobrarEfectivo = false)
@@ -112,5 +119,27 @@ class AuthorizationManagerTest {
 
         assertTrue(authManager.evaluarPermisoFino(permisoConAcceso, AccionSensible.AJUSTAR_INVENTARIO))
         assertFalse(authManager.evaluarPermisoFino(permisoSinAcceso, AccionSensible.AJUSTAR_INVENTARIO))
+    }
+
+    @Test
+    fun hashPinForStorage_isDeterministicAndDoesNotExposePin() {
+        val hash1 = AuthorizationManager.hashPinForStorage("123456")
+        val hash2 = AuthorizationManager.hashPinForStorage(" 123456 ")
+
+        assertEquals(hash1, hash2)
+        assertFalse(hash1.contains("123456"))
+        assertEquals(64, hash1.length)
+    }
+
+    @Test
+    fun verificarRateLimit_usesInjectedStoreAndClock() {
+        val store = InMemoryPinRateLimitStore().apply {
+            cooldownHasta = 20_000L
+        }
+        val manager = AuthorizationManager(store) { 10_000L }
+
+        val message = manager.verificarRateLimit()
+
+        assertTrue(message.orEmpty().contains("Espera 11s"))
     }
 }

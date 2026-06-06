@@ -4,9 +4,9 @@ import java.util.Calendar
 
 object BocattaUtilsV2 {
     /**
-     * Determina la sucursal sugerida según el día de la semana.
+     * Determina la sucursal sugerida segÃºn el dÃ­a de la semana.
      * Atlixco: Lunes a Viernes
-     * Metepec: Sábados y Domingos
+     * Metepec: SÃ¡bados y Domingos
      */
     fun sucursalSugeridaPorDia(): String {
         val dia = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
@@ -21,5 +21,3 @@ object BocattaUtilsV2 {
         return sdf.format(java.util.Date(timestamp))
     }
 }
-
-

@@ -2,10 +2,14 @@ package com.bocatta.pos.presentation.ui.screens.admin
 
 import android.content.Intent
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +48,8 @@ import com.bocatta.pos.presentation.viewmodel.PromocionViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.ui.res.stringResource
+import com.bocatta.pos.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -60,11 +66,18 @@ fun AdminScreen(
     onVerSyncInventario: () -> Unit = {},
     onVerGestionarSucursales: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val snackbarHost = remember { SnackbarHostState() }
-    var tabPrincipal by remember { mutableIntStateOf(0) }
+    var seccionActiva by remember { mutableStateOf<String?>("dashboard") }
     var subTabSeleccionado by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(tabPrincipal) { subTabSeleccionado = 0 }
+    LaunchedEffect(seccionActiva) {
+        subTabSeleccionado = 0
+        if (seccionActiva == "empleados") {
+            vm.escucharEmpleadosOperativos()
+        }
+    }
+
     LaunchedEffect(vm.mensajeExito, vm.mensajeError) {
         val msg = vm.mensajeExito ?: vm.mensajeError ?: return@LaunchedEffect
         snackbarHost.showSnackbar(msg)
@@ -72,7 +85,7 @@ fun AdminScreen(
     }
 
     if (vm.seederEnProgreso) {
-        BocattaLoadingDialog("Inicializando catalogo y configuracion inicial...")
+        BocattaLoadingDialog(context.getString(R.string.admin_inicializando))
     }
 
     Scaffold(
@@ -84,23 +97,38 @@ fun AdminScreen(
                 title = {
                     Column {
                         Text(
-                            "Control Central",
+                            when (seccionActiva) {
+                                "menu" -> stringResource(R.string.admin_menu_precios)
+                                "recetas" -> stringResource(R.string.admin_recetas_prod)
+                                "inventario" -> stringResource(R.string.admin_almacen_inventario)
+                                "empleados" -> stringResource(R.string.admin_empleados_permisos)
+                                "reportes" -> stringResource(R.string.admin_reportes_auditoria)
+                                "config" -> stringResource(R.string.admin_ajustes_config)
+                                else -> stringResource(R.string.admin_control_central)
+                            },
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Black,
                             fontSize = 17.sp
                         )
                         Text(
-                            "Panel de administracion",
+                            if (seccionActiva == "dashboard") stringResource(R.string.admin_panel_general)
+                            else stringResource(R.string.admin_panel_seccion, seccionActiva!!.uppercase()),
                             color = MaterialTheme.colorScheme.onPrimary.copy(0.7f),
                             fontSize = 10.sp
                         )
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        if (seccionActiva == "dashboard") {
+                            onBack()
+                        } else {
+                            seccionActiva = "dashboard"
+                        }
+                    }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.admin_volver),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -112,113 +140,233 @@ fun AdminScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (seccionActiva != "dashboard") {
+                val subTabLabels = when (seccionActiva) {
+                    "recetas" -> listOf(stringResource(R.string.admin_subtab_recetas), stringResource(R.string.admin_subtab_produccion), stringResource(R.string.admin_subtab_costos))
+                    "empleados" -> listOf(stringResource(R.string.admin_subtab_empleados), stringResource(R.string.admin_subtab_sueldos))
+                    "reportes" -> listOf(stringResource(R.string.admin_subtab_auditoria), stringResource(R.string.admin_subtab_reportes))
+                    "config" -> listOf(stringResource(R.string.admin_subtab_config_global), stringResource(R.string.admin_subtab_config_negocio), stringResource(R.string.admin_subtab_apariencia), stringResource(R.string.admin_subtab_notificaciones))
+                    else -> emptyList()
+                }
 
-            // Tabs principales
-            Surface(
-                color = MaterialTheme.colorScheme.onSurface,
-                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                PrimaryTabRow(
-                    selectedTabIndex = tabPrincipal,
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    divider = {},
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    listOf("Dashboard", "Logistica", "Inventario").forEachIndexed { i, label ->
-                        Tab(
-                            selected = tabPrincipal == i,
-                            onClick = { tabPrincipal = i; subTabSeleccionado = 0 },
-                            text = {
-                                Text(
-                                    label.uppercase(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
+                if (subTabLabels.isNotEmpty()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            subTabLabels.forEachIndexed { i, label ->
+                                FilterChip(
+                                    selected = subTabSeleccionado == i,
+                                    onClick = { subTabSeleccionado = i },
+                                    label = {
+                                        Text(
+                                            label,
+                                            fontWeight = if (subTabSeleccionado == i) FontWeight.Bold else FontWeight.Normal,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 )
                             }
-                        )
+                        }
                     }
                 }
             }
 
-            // Sub-tabs semanticos, sin colores hardcodeados
-            val subTabLabels = when (tabPrincipal) {
-                0 -> listOf("Resumen", "Auditoria")
-                1 -> listOf("Catalogo", "Recetas", "Costos", "Catalogos", "Config", "Apariencia", "Combos", "Promos", "Empleados", "Zonas", "Sueldos", "Notif.")
-                2 -> listOf("Stock", "Produccion", "Config")
-                else -> emptyList()
-            }
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 1.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                FlowRow(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    subTabLabels.forEachIndexed { i, label ->
-                        FilterChip(
-                            selected = subTabSeleccionado == i,
-                            onClick = { subTabSeleccionado = i },
-                            label = {
-                                Text(
-                                    label.limpiarEtiquetaAdmin(),
-                                    fontWeight = if (subTabSeleccionado == i) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+            when (seccionActiva) {
+                "dashboard" -> {
+                    Column(Modifier.fillMaxSize()) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxWidth().height(330.dp),
+                            contentPadding = PaddingValues(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item {
+                                DashboardCardPremium(
+                                    title = stringResource(R.string.admin_card_menu),
+                                    subtitle = stringResource(R.string.admin_card_sub_productos, vm.productos.size),
+                                    icon = Icons.Default.MenuBook,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    onClick = { seccionActiva = "menu" }
                                 )
-                            },
-                            shape = RoundedCornerShape(14.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            }
+                            item {
+                                DashboardCardPremium(
+                                    title = stringResource(R.string.admin_card_recetas),
+                                    subtitle = stringResource(R.string.admin_card_sub_config),
+                                    icon = Icons.Default.ReceiptLong,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    onClick = { seccionActiva = "recetas" }
+                                )
+                            }
+                            item {
+                                DashboardCardPremium(
+                                    title = stringResource(R.string.admin_card_inventario),
+                                    subtitle = stringResource(R.string.admin_card_sub_insumos, vm.insumosMaestros.size),
+                                    icon = Icons.Default.Warehouse,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    onClick = { seccionActiva = "inventario" }
+                                )
+                            }
+                            item {
+                                DashboardCardPremium(
+                                    title = stringResource(R.string.admin_card_personal),
+                                    subtitle = stringResource(R.string.admin_card_sub_permisos),
+                                    icon = Icons.Default.People,
+                                    color = Color(0xFFE91E63),
+                                    onClick = { seccionActiva = "empleados" }
+                                )
+                            }
+                            item {
+                                DashboardCardPremium(
+                                    title = stringResource(R.string.admin_card_reportes),
+                                    subtitle = stringResource(R.string.admin_card_sub_estadisticas),
+                                    icon = Icons.Default.Analytics,
+                                    color = Color(0xFFFF9800),
+                                    onClick = { seccionActiva = "reportes" }
+                                )
+                            }
+                            item {
+                                DashboardCardPremium(
+                                    title = stringResource(R.string.admin_card_ajustes),
+                                    subtitle = stringResource(R.string.admin_card_sub_parametros),
+                                    icon = Icons.Default.Settings,
+                                    color = Color(0xFF9C27B0),
+                                    onClick = { seccionActiva = "config" }
+                                )
+                            }
+                        }
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            TabDashboard(
+                                vm = vm,
+                                onComenzarConfiguracion = { seccionActiva = "config" },
+                                onValidarPin = { pin, resultado -> session.validarPinAdmin(pin, resultado) }
                             )
-                        )
+                        }
                     }
                 }
-            }
-
-            // Contenido
-            when (tabPrincipal) {
-                0 -> when (subTabSeleccionado) {
-                    0 -> TabDashboard(
-                        vm = vm,
-                        onComenzarConfiguracion = { tabPrincipal = 1; subTabSeleccionado = 0 },
-                        onValidarPin = { pin, resultado -> session.validarPinAdmin(pin, resultado) }
-                    )
-                    1 -> TabAuditoria(vm = vm)
-                }
-                1 -> when (subTabSeleccionado) {
-                    0 -> TabMenu(vm = vm)
-                    1 -> TabRecetas(vm = vm)
-                    2 -> TabCostosInsumos(vm = vm)
-                    3 -> TabCatalogos(vm = viewModel())
-                    4 -> TabConfigGlobal(vm = viewModel(), allProducts = vm.productos, allCategories = vm.categorias.map { CategoriaProducto(id = it.id, nombre = it.nombre) })
-                    5 -> TabApariencia(session = session)
-                    6 -> TabCombos(vm = viewModel(), allProducts = vm.productos, onBack = { tabPrincipal = 1; subTabSeleccionado = 0 })
-                    7 -> TabPromociones(vm = viewModel(), allProducts = vm.productos)
-                    8 -> TabEmpleados(vm = vm)
-                    9 -> TabZonas(vm = viewModel())
-                    10 -> TabSueldos(salarioVm = viewModel(), adminVm = vm, sucursal = session.sucursalActual)
-                    11 -> TabNotificaciones(vm = viewModel())
-                }
-                2 -> when (subTabSeleccionado) {
-                    0 -> TabBodegaGeneral(
-                        vm = vm,
-                        nombreUsuario = session.nombreUsuario,
-                        usuarioId = session.uid,
-                        sucursal = session.sucursalActual,
-                        onVerDashboardBodega = onVerDashboardBodega,
-                        onVerGestionarSucursales = onVerGestionarSucursales,
-                        onVerReportesInventario = onVerReportesInventario,
-                        onVerSyncInventario = onVerSyncInventario
-                    )
+                "menu" -> TabMenu(vm = vm)
+                "recetas" -> when (subTabSeleccionado) {
+                    0 -> TabRecetas(vm = vm)
                     1 -> TabProduccion(inventoryVm)
-                    2 -> TabConfigNegocio()
+                    2 -> TabCostosInsumos(vm = vm)
                 }
+                "inventario" -> TabBodegaGeneral(
+                    vm = vm,
+                    nombreUsuario = session.nombreUsuario,
+                    usuarioId = session.uid,
+                    sucursal = session.sucursalActual,
+                    onVerDashboardBodega = onVerDashboardBodega,
+                    onVerGestionarSucursales = onVerGestionarSucursales,
+                    onVerReportesInventario = onVerReportesInventario,
+                    onVerSyncInventario = onVerSyncInventario
+                )
+                "empleados" -> when (subTabSeleccionado) {
+                    0 -> TabEmpleados(vm = vm)
+                    1 -> TabSueldos(salarioVm = koinViewModel(), adminVm = vm, sucursal = session.sucursalActual)
+                }
+                "reportes" -> when (subTabSeleccionado) {
+                    0 -> TabAuditoria(vm = vm)
+                    1 -> {
+                        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                            ElevatedCard(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    Icon(Icons.Default.Assessment, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Text(stringResource(R.string.admin_reportes_inv_titulo), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text(stringResource(R.string.admin_reportes_inv_desc), color = MaterialTheme.colorScheme.outline)
+                                    Button(onClick = onVerReportesInventario) {
+                                        Text(stringResource(R.string.admin_btn_abrir_reportes))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                "config" -> when (subTabSeleccionado) {
+                    0 -> TabConfigGlobal(vm = koinViewModel(), allProducts = vm.productos, allCategories = vm.categorias.map { CategoriaProducto(id = it.id, nombre = it.nombre) })
+                    1 -> TabConfigNegocio()
+                    2 -> TabApariencia(session = session)
+                    3 -> TabNotificaciones(vm = koinViewModel())
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DashboardCardPremium(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        border = BorderStroke(1.dp, Color.White.copy(0.08f)),
+        modifier = Modifier.fillMaxWidth().height(90.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(10.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = color.copy(0.15f),
+                    shape = CircleShape,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+                    }
+                }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    null,
+                    tint = Color.White.copy(0.3f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Column {
+                Text(
+                    title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 9.sp,
+                    color = Color.White.copy(0.5f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -226,18 +374,6 @@ fun AdminScreen(
 
 private fun String.limpiarEtiquetaAdmin(): String {
     return this
-        .replace("ÃƒÂ¡", "a")
-        .replace("ÃƒÂ©", "e")
-        .replace("ÃƒÂ­", "i")
-        .replace("ÃƒÂ³", "o")
-        .replace("ÃƒÂº", "u")
-        .replace("ÃƒÂ±", "n")
-        .replace("ÃƒÂ", "A")
-        .replace("Ãƒâ€°", "E")
-        .replace("ÃƒÂ", "I")
-        .replace("Ãƒâ€œ", "O")
-        .replace("ÃƒÅ¡", "U")
-        .replace("Ãƒâ€˜", "N")
 }
 
 @Composable
@@ -268,15 +404,15 @@ private fun TabDashboard(
                     colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Bienvenido a Bocatta POS", fontWeight = FontWeight.Black,
+                        Text(stringResource(R.string.admin_bienvenido), fontWeight = FontWeight.Black,
                             style = MaterialTheme.typography.titleMedium)
-                        Text("Sigue estos pasos para comenzar:", style = MaterialTheme.typography.bodySmall)
-                        Text("1. Menu: agrega tus productos")
-                        Text("2. Inventario: registra tus insumos")
-                        Text("3. Recetas: vincula productos con insumos")
+                        Text(stringResource(R.string.admin_bienvenido_desc), style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.admin_bienvenido_paso1))
+                        Text(stringResource(R.string.admin_bienvenido_paso2))
+                        Text(stringResource(R.string.admin_bienvenido_paso3))
                         Spacer(Modifier.height(4.dp))
                         BocattaButton(
-                            texto = "Comenzar configuracion",
+                            texto = stringResource(R.string.admin_btn_configurar),
                             onClick = onComenzarConfiguracion,
                             modifier = Modifier.fillMaxWidth(),
                             icono = Icons.Default.Settings
@@ -288,23 +424,23 @@ private fun TabDashboard(
 
         // Metricas
         item {
-            BocattaSectionTitle("Resumen del dia")
+            BocattaSectionTitle(stringResource(R.string.admin_resumen_dia))
             Spacer(Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BocattaMetricCard("Ventas", "$${"%.2f".format(totalVentas)}", MaterialTheme.colorScheme.primary, Modifier.weight(1f),
-                        subtitulo = "${ventasHoy.size} transacciones")
-                    BocattaMetricCard("Gastos", "$${"%.2f".format(totalGastos)}", MaterialTheme.colorScheme.error, Modifier.weight(1f))
+                    BocattaMetricCard(stringResource(R.string.admin_metric_ventas), "$${"%.2f".format(totalVentas)}", MaterialTheme.colorScheme.primary, Modifier.weight(1f),
+                        subtitulo = stringResource(R.string.admin_metric_transacciones, ventasHoy.size))
+                    BocattaMetricCard(stringResource(R.string.admin_metric_gastos), "$${"%.2f".format(totalGastos)}", MaterialTheme.colorScheme.error, Modifier.weight(1f))
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val numAlertas = vm.insumosMaestros.count { it.cantidadEnBase < it.stockMinimo }
                     BocattaMetricCard(
-                        "Alertas stock",
+                        stringResource(R.string.admin_metric_alertas),
                         numAlertas.toString(),
                         if (numAlertas > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         Modifier.weight(1f)
                     )
-                    BocattaMetricCard("Utilidad", "$${"%.2f".format(totalVentas - totalGastos)}", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                    BocattaMetricCard(stringResource(R.string.admin_metric_utilidad), "$${"%.2f".format(totalVentas - totalGastos)}", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                 }
             }
         }
@@ -316,12 +452,12 @@ private fun TabDashboard(
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.BugReport, "Diagnostico", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Icon(Icons.Default.BugReport, stringResource(R.string.admin_icono_diag), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                         Spacer(Modifier.width(8.dp))
-                        Text("Diagnostico de la app", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text(stringResource(R.string.admin_diagnostico_titulo), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     Text(
-                        "Comparte logs recientes, ultimas acciones y datos del dispositivo si la app se cierra, se congela o falla una sincronizacion.",
+                        stringResource(R.string.admin_diagnostico_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(0.75f)
                     )
@@ -329,18 +465,29 @@ private fun TabDashboard(
                         onClick = {
                             LogHelper.recordBreadcrumb("share_diagnostics", "admin_dashboard")
                             val texto = LogHelper.buildDiagnosticReport(context)
-                            val intent = Intent(Intent.ACTION_SEND).apply {
+                            val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "Diagnostico Bocatta POS")
+                                putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.admin_diagnostico_subject))
                                 putExtra(Intent.EXTRA_TEXT, texto)
+                                setPackage("com.whatsapp")
                             }
-                            context.startActivity(Intent.createChooser(intent, "Compartir diagnostico"))
+                            try {
+                                context.startActivity(whatsappIntent)
+                            } catch (e: Exception) {
+                                LogHelper.recordBreadcrumb("share_diagnostics_fallback", e.javaClass.simpleName)
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.admin_diagnostico_subject))
+                                    putExtra(Intent.EXTRA_TEXT, texto)
+                                }
+                                context.startActivity(Intent.createChooser(intent, context.getString(R.string.admin_btn_compartir_diag)))
+                            }
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Compartir diagnostico")
+                        Text(stringResource(R.string.admin_btn_compartir_diag))
                     }
                 }
             }
@@ -377,19 +524,19 @@ private fun TabDashboard(
             if (showBorrarConfirm) {
                 AlertDialog(
                     onDismissRequest = { showBorrarConfirm = false; accionPendiente = null },
-                    title = { Text("Accion irreversible") },
-                    text = { Text("Estas seguro de borrar TODOS los datos del sistema? Esta accion no se puede deshacer.") },
+                    title = { Text(stringResource(R.string.admin_irreversible_titulo)) },
+                    text = { Text(stringResource(R.string.admin_irreversible_desc)) },
                     confirmButton = {
                         Button(
                             onClick = { vm.realizarLimpiezaTotal(); showBorrarConfirm = false; accionPendiente = null },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Text("Si, borrar todo")
+                            Text(stringResource(R.string.admin_btn_si_borrar))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showBorrarConfirm = false; accionPendiente = null }) {
-                            Text("Cancelar")
+                            Text(stringResource(R.string.admin_cancelar))
                         }
                     }
                 )
@@ -401,23 +548,23 @@ private fun TabDashboard(
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Warning, "Advertencia", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Warning, stringResource(R.string.admin_icono_advertencia), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Mantenimiento del sistema", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.admin_mantenimiento_titulo), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                     }
-                    Text("Requiere PIN de administrador.", style = MaterialTheme.typography.bodySmall,
+                    Text(stringResource(R.string.admin_mantenimiento_desc), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer.copy(0.7f))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             onClick = { accionPendiente = "borrar"; showPinDialog = true },
                             modifier = Modifier.weight(1f),
                             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-                        ) { Text("Borrar todo", fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
+                        ) { Text(stringResource(R.string.admin_btn_borrar_todo), fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
                         Button(
                             onClick = { accionPendiente = "v2"; showPinDialog = true },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) { Text("Cargar V2", fontSize = 12.sp) }
+                        ) { Text(stringResource(R.string.admin_btn_cargar_v2), fontSize = 12.sp) }
                     }
                 }
             }
@@ -425,7 +572,7 @@ private fun TabDashboard(
 
         // Ultimas ventas
         if (ventasHoy.isNotEmpty()) {
-            item { BocattaSectionTitle("Ultimas ventas") }
+            item { BocattaSectionTitle(stringResource(R.string.admin_ultimas_ventas)) }
             items(ventasHoy.takeLast(5).reversed()) { v ->
                 ElevatedCard(shape = RoundedCornerShape(14.dp)) {
                     Row(
@@ -435,7 +582,7 @@ private fun TabDashboard(
                     ) {
                         Column {
                             Text("$${"%.2f".format(v.total)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                            Text("Atendio: ${v.atendio}", style = MaterialTheme.typography.bodySmall,
+                            Text(stringResource(R.string.admin_atendio, v.atendio), style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline)
                         }
                         BocattaBadge(v.sucursal.uppercase(), MaterialTheme.colorScheme.primary)
@@ -471,7 +618,7 @@ private fun TabMenu(vm: AdminViewModel) {
     ) {
         item {
             BocattaButton(
-                texto = "Agregar nuevo producto",
+                texto = stringResource(R.string.admin_btn_agregar_producto),
                 onClick = { mostrarDialogo = true },
                 modifier = Modifier.fillMaxWidth(),
                 icono = Icons.Default.AddCircle
@@ -495,7 +642,7 @@ private fun TabMenu(vm: AdminViewModel) {
                             Column {
                                 Text(producto.nombre, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    "Atl: $${"%.0f".format(producto.precioVenta["atlixco"] ?: 0.0)} - Met: $${"%.0f".format(producto.precioVenta["metepec"] ?: 0.0)}",
+                                    stringResource(R.string.admin_precios_sucursal, "%.0f".format(producto.precioVenta["atlixco"] ?: 0.0), "%.0f".format(producto.precioVenta["metepec"] ?: 0.0)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.outline
                                 )
@@ -503,10 +650,10 @@ private fun TabMenu(vm: AdminViewModel) {
                         }
                         Row {
                             IconButton(onClick = { productoEditar = producto }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.admin_icono_editar), tint = MaterialTheme.colorScheme.primary)
                             }
                             IconButton(onClick = { vm.eliminarProducto(producto) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.admin_icono_eliminar), tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -566,17 +713,17 @@ private fun TabBodegaGeneral(
 
         AlertDialog(
             onDismissRequest = { showNuevoInsumoDialog = false },
-            title = { Text("NUEVO INSUMO", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.admin_nuevo_insumo_titulo), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = nuevoNombre, onValueChange = { nuevoNombre = it },
-                        label = { Text("Nombre*") }, placeholder = { Text("Ej: Masa para Molotes") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                        label = { Text(stringResource(R.string.admin_nuevo_insumo_nombre)) }, placeholder = { Text(stringResource(R.string.admin_nuevo_insumo_ej_nombre)) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                     OutlinedTextField(value = nuevaUnidad, onValueChange = { nuevaUnidad = it },
-                        label = { Text("Unidad base") }, placeholder = { Text("kg, g, ml, L, pza") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                        label = { Text(stringResource(R.string.admin_nuevo_insumo_unidad)) }, placeholder = { Text(stringResource(R.string.admin_nuevo_insumo_ej_unidad)) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                     OutlinedTextField(value = nuevoCosto, onValueChange = { nuevoCosto = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("Costo por unidad base (\$)") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = RoundedCornerShape(12.dp))
+                        label = { Text(stringResource(R.string.admin_nuevo_insumo_costo)) }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = RoundedCornerShape(12.dp))
                     OutlinedTextField(value = nuevaCategoria, onValueChange = { nuevaCategoria = it },
-                        label = { Text("Categoria") }, placeholder = { Text("Ej: Masas, Lacteos, Salsas") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                        label = { Text(stringResource(R.string.admin_nuevo_insumo_categoria)) }, placeholder = { Text(stringResource(R.string.admin_nuevo_insumo_ej_categoria)) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                 }
             },
             confirmButton = {
@@ -591,9 +738,9 @@ private fun TabBodegaGeneral(
                         vm.agregarInsumo(insumo)
                         showNuevoInsumoDialog = false
                     }
-                }, enabled = nuevoNombre.isNotBlank()) { Text("Crear insumo", fontWeight = FontWeight.Bold) }
+                }, enabled = nuevoNombre.isNotBlank()) { Text(stringResource(R.string.admin_nuevo_insumo_btn_crear), fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { showNuevoInsumoDialog = false }) { Text("Cancelar") } },
+            dismissButton = { TextButton(onClick = { showNuevoInsumoDialog = false }) { Text(stringResource(R.string.admin_cancelar)) } },
             shape = RoundedCornerShape(20.dp)
         )
     }
@@ -603,32 +750,32 @@ private fun TabBodegaGeneral(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            BocattaButton(texto = "Registrar compra / gasto", onClick = { showPurchaseDialog = true },
+            BocattaButton(texto = stringResource(R.string.admin_bodega_titulo), onClick = { showPurchaseDialog = true },
                 modifier = Modifier.fillMaxWidth(), icono = Icons.Default.AddShoppingCart)
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onVerDashboardBodega, modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)) { Text("Bodega", fontSize = 12.sp) }
+                    shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.admin_bodega_btn_bodega), fontSize = 12.sp) }
                 OutlinedButton(onClick = onVerGestionarSucursales, modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)) { Text("Sucursales", fontSize = 12.sp) }
+                    shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.admin_bodega_btn_sucursales), fontSize = 12.sp) }
             }
             Spacer(Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onVerReportesInventario, modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)) { Text("Reportes", fontSize = 12.sp) }
+                    shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.admin_bodega_btn_reportes), fontSize = 12.sp) }
                 OutlinedButton(onClick = onVerSyncInventario, modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)) { Text("Sync", fontSize = 12.sp) }
+                    shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.admin_bodega_btn_sync), fontSize = 12.sp) }
             }
             Spacer(Modifier.height(8.dp))
-            BocattaSectionTitle("Insumos - toca para ajustar stock")
+            BocattaSectionTitle(stringResource(R.string.admin_insumos_titulo))
             OutlinedButton(
                 onClick = { showNuevoInsumoDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Add, "Agregar", modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, stringResource(R.string.admin_icono_agregar), modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Nuevo insumo", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.admin_btn_nuevo_insumo), fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -653,14 +800,14 @@ private fun TabBodegaGeneral(
                             Text(insumo.nombre, fontWeight = FontWeight.SemiBold)
                             if (esProduccion) {
                                 Spacer(Modifier.width(6.dp))
-                                BocattaBadge("PROD", MaterialTheme.colorScheme.primary)
+                                BocattaBadge(stringResource(R.string.admin_badge_prod), MaterialTheme.colorScheme.primary)
                             }
                             if (stockBajo) {
                                 Spacer(Modifier.width(6.dp))
-                                BocattaBadge("BAJO", MaterialTheme.colorScheme.error)
+                                BocattaBadge(stringResource(R.string.admin_badge_bajo), MaterialTheme.colorScheme.error)
                             }
                         }
-                        Text("Minimo: ${insumo.stockMinimo} ${insumo.unidadBase}",
+                        Text(stringResource(R.string.admin_insumo_minimo, insumo.stockMinimo.toString(), insumo.unidadBase),
                             style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                     }
                     Text("${"%.1f".format(insumo.cantidadEnBase)} ${insumo.unidadBase}",
@@ -679,8 +826,8 @@ private fun TabAuditoria(vm: AdminViewModel) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             BocattaEmptyState(
                 icono = Icons.Default.VerifiedUser,
-                titulo = "Sin alertas",
-                descripcion = "No hay cancelaciones ni diferencias de inventario",
+                titulo = stringResource(R.string.admin_sin_alertas),
+                descripcion = stringResource(R.string.admin_sin_alertas_desc),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -688,14 +835,14 @@ private fun TabAuditoria(vm: AdminViewModel) {
     }
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            BocattaSectionTitle("Auditoria operativa")
-            Text("Cancelaciones y diferencias fisicas capturadas en apertura.", style = MaterialTheme.typography.bodySmall,
+            BocattaSectionTitle(stringResource(R.string.admin_auditoria_titulo))
+            Text(stringResource(R.string.admin_auditoria_desc), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.height(8.dp))
         }
         if (vm.diferenciasInventario.isNotEmpty()) {
             item {
-                Text("Diferencias de inventario", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.admin_auditoria_diferencias), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
             }
             items(vm.diferenciasInventario, key = { it["id"]?.toString() ?: it.hashCode().toString() }) { log ->
                 ElevatedCard(
@@ -708,10 +855,13 @@ private fun TabAuditoria(vm: AdminViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(log["insumoId"]?.toString()?.replace("_", " ") ?: "Insumo", fontWeight = FontWeight.Black)
-                            Text("Motivo: ${log["motivo"] ?: "Sin motivo"}", style = MaterialTheme.typography.bodySmall)
+                            Text(log["insumoId"]?.toString()?.replace("_", " ") ?: stringResource(R.string.admin_producto_label), fontWeight = FontWeight.Black)
                             Text(
-                                "Sugerido: ${log["sugerido"] ?: 0}  Confirmado: ${log["confirmado"] ?: 0}  Sucursal: ${log["sucursal"] ?: "-"}",
+                                log["motivo"]?.let { stringResource(R.string.admin_motivo, it) } ?: stringResource(R.string.admin_sin_motivo),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                "${stringResource(R.string.admin_sugerido, log["sugerido"] ?: 0)}  ${stringResource(R.string.admin_confirmado, log["confirmado"] ?: 0)}  ${stringResource(R.string.admin_sucursal_label, log["sucursal"] ?: "-")}",
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
@@ -726,7 +876,7 @@ private fun TabAuditoria(vm: AdminViewModel) {
         }
         if (vm.cancelacionesPendientes.isNotEmpty()) {
             item {
-                Text("Cancelaciones", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.admin_auditoria_cancelaciones), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
             }
             items(vm.cancelacionesPendientes.reversed()) { log ->
                 ElevatedCard(shape = RoundedCornerShape(12.dp),
@@ -734,15 +884,15 @@ private fun TabAuditoria(vm: AdminViewModel) {
                     Row(modifier = Modifier.padding(14.dp).fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(log["productoNombre"]?.toString() ?: "Producto", fontWeight = FontWeight.Black)
-                            Text("Motivo: ${log["motivo"]}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            Text("Vendedor: ${log["vendedor"]}", style = MaterialTheme.typography.labelSmall)
+                            Text(log["productoNombre"]?.toString() ?: stringResource(R.string.admin_producto_label), fontWeight = FontWeight.Black)
+                            Text(stringResource(R.string.admin_motivo, log["motivo"]?.toString() ?: ""), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.admin_vendedor_label, log["vendedor"]?.toString() ?: ""), style = MaterialTheme.typography.labelSmall)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(sdf.format(Date(log["fecha"] as? Long ?: 0L)),
                                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             IconButton(onClick = { vm.revisarCancelacion(log["id"].toString()) }) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = "Marcar revisado", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.admin_marcar_revisado), tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -769,8 +919,8 @@ private fun TabRecetas(vm: AdminViewModel) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         contentPadding = PaddingValues(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            BocattaSectionTitle("Recetas automaticas")
-            Text("Define que insumos se descuentan por cada venta.", style = MaterialTheme.typography.bodySmall,
+            BocattaSectionTitle(stringResource(R.string.admin_recetas_titulo))
+            Text(stringResource(R.string.admin_recetas_desc), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.height(8.dp))
         }
@@ -784,11 +934,11 @@ private fun TabRecetas(vm: AdminViewModel) {
                             Text(prod.nombre, fontWeight = FontWeight.Bold)
                             val receta = vm.recetas[prod.id]
                             if (receta != null && receta.ingredientes.isNotEmpty())
-                                Text("${receta.ingredientes.size} ingredientes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.admin_receta_ingredientes, receta.ingredientes.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                             else
-                                Text("Sin receta - no descuenta inventario", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                                Text(stringResource(R.string.admin_receta_sin_receta), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         }
-                        Icon(Icons.Default.ChevronRight, contentDescription = "Configurar", tint = MaterialTheme.colorScheme.outline)
+                        Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.admin_receta_configurar), tint = MaterialTheme.colorScheme.outline)
                     }
                 }
             }
@@ -811,12 +961,12 @@ private fun DialogReceta(
 
     AlertDialog(
         onDismissRequest = onCancelar,
-        title = { Text("Receta: ${producto.nombre}", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.admin_dialog_receta_titulo, producto.nombre), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.heightIn(max = 380.dp)) {
-                Text("Define los insumos que se consumen por unidad vendida:", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.admin_dialog_receta_desc), style = MaterialTheme.typography.bodySmall)
                 Box {
-                    BocattaButton(texto = "Agregar ingrediente", onClick = { expandInsumos = true },
+                    BocattaButton(texto = stringResource(R.string.admin_dialog_agregar_ingrediente), onClick = { expandInsumos = true },
                         modifier = Modifier.fillMaxWidth(), icono = Icons.Default.Add)
                     DropdownMenu(expanded = expandInsumos, onDismissRequest = { expandInsumos = false }) {
                         insumosDisponibles.forEach { ins ->
@@ -836,7 +986,7 @@ private fun DialogReceta(
                                 label = { Text(ins?.unidadBase ?: "") }, modifier = Modifier.width(90.dp),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
                             IconButton(onClick = { ingredientesMap.remove(id) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.admin_icono_eliminar), tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -847,9 +997,9 @@ private fun DialogReceta(
             Button(onClick = {
                 onGuardar(RecetaV2(productoId = producto.id,
                     ingredientes = ingredientesMap.map { (id, cant) -> IngredienteReceta(insumoId = id, cantidad = cant) }))
-            }) { Text("Guardar receta") }
+            }) { Text(stringResource(R.string.admin_dialog_guardar_receta)) }
         },
-        dismissButton = { TextButton(onClick = onCancelar) { Text("Cancelar") } },
+        dismissButton = { TextButton(onClick = onCancelar) { Text(stringResource(R.string.admin_cancelar)) } },
         shape = RoundedCornerShape(20.dp)
     )
 }
@@ -859,8 +1009,8 @@ private fun TabCostosInsumos(vm: AdminViewModel) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         contentPadding = PaddingValues(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            BocattaSectionTitle("Costos de insumos")
-            Text("Actualiza el precio de compra de cada insumo. Se usa para calcular la utilidad real.",
+            BocattaSectionTitle(stringResource(R.string.admin_costos_titulo))
+            Text(stringResource(R.string.admin_costos_desc),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.height(8.dp))
         }
@@ -871,12 +1021,12 @@ private fun TabCostosInsumos(vm: AdminViewModel) {
                     var precioStr by remember(insumo.costoUnitarioBase) { mutableStateOf(insumo.costoUnitarioBase.toString()) }
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Por ${insumo.unidadBase}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.admin_costos_por_unidad, insumo.unidadBase), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                         OutlinedTextField(value = precioStr, onValueChange = { precioStr = it },
                             label = { Text("$") }, modifier = Modifier.width(100.dp), shape = RoundedCornerShape(8.dp),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true)
                         IconButton(onClick = { vm.actualizarCostoInsumo(insumo.id, precioStr.toDoubleOrNull() ?: 0.0) }) {
-                            Icon(Icons.Default.Check, contentDescription = "Guardar costo", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.admin_costos_guardar), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -906,8 +1056,8 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
-            BocattaSectionTitle("Registro de tandas de produccion")
-            Text("Transforma materia prima en porciones listas para la venta.",
+            BocattaSectionTitle(stringResource(R.string.admin_produccion_titulo))
+            Text(stringResource(R.string.admin_produccion_desc),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         item {
@@ -916,47 +1066,48 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
                     Box {
                         OutlinedButton(onClick = { expandProd = true }, modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)) {
-                            Text(itemsProduccion.find { it.id == selectedId }?.nombre ?: "Seleccionar producto")
+                            Text(itemsProduccion.find { it.id == selectedId }?.nombre ?: stringResource(R.string.admin_produccion_seleccionar))
                         }
                         DropdownMenu(expanded = expandProd, onDismissRequest = { expandProd = false }) {
                             if (itemsProduccion.isEmpty()) {
-                                DropdownMenuItem(text = { Text("Sin insumos de produccion configurados") }, onClick = { expandProd = false })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.admin_produccion_sin_insumos)) }, onClick = { expandProd = false })
                             }
                             itemsProduccion.forEach { ins ->
                                 DropdownMenuItem(text = { Text(ins.nombre) }, onClick = { selectedId = ins.id; yieldHistory; expandProd = false })
                             }
                         }
                     }
-                    if (selectedId != null) {
+                    val insumoSeleccionado = selectedId
+                    if (insumoSeleccionado != null) {
                         if (avgYield > 0) {
                             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer.copy(0.3f)) {
                                 Column(Modifier.padding(12.dp)) {
-                                    Text("Rendimiento historico", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text(stringResource(R.string.admin_produccion_rendimiento), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     Spacer(Modifier.height(4.dp))
-                                    Text("Ultimas tandas: ${yieldHistory.joinToString(", ") { "%.0f".format(it) }}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
-                                    Text("Promedio: ~${"%.0f".format(avgYield)} porciones", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary)
+                                    Text(stringResource(R.string.admin_produccion_ultimas_tandas, yieldHistory.joinToString(", ") { "%.0f".format(it) }), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                                    Text(stringResource(R.string.admin_produccion_promedio, "%.0f".format(avgYield)), fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary)
                                 }
                             }
                         }
                         OutlinedTextField(value = materiaUsada, onValueChange = { materiaUsada = it },
-                            label = { Text("Materia prima usada") },
-                            supportingText = { Text("g / ml / kg segun el insumo") },
+                            label = { Text(stringResource(R.string.admin_produccion_materia)) },
+                            supportingText = { Text(stringResource(R.string.admin_produccion_materia_support)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                         OutlinedTextField(value = porcionesObtenidas, onValueChange = { porcionesObtenidas = it },
-                            label = { Text("Porciones obtenidas (opcional)") },
+                            label = { Text(stringResource(R.string.admin_produccion_porciones)) },
                             supportingText = {
-                                Text(if (porcionesObtenidas.isBlank() && avgYield > 0) "Se usara el promedio: ${"%.0f".format(avgYield)}" else "")
+                                Text(if (porcionesObtenidas.isBlank() && avgYield > 0) stringResource(R.string.admin_produccion_promedio_support, "%.0f".format(avgYield)) else "")
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                         BocattaButton(
-                            texto = "Registrar tanda",
+                            texto = stringResource(R.string.admin_produccion_registrar),
                             onClick = {
                                 guardando = true
                                 val porciones = porcionesObtenidas.toDoubleOrNull() ?: if (avgYield > 0) avgYield else 0.0
                                 vm.registrarProduccion(
-                                    insumoId = selectedId!!,
+                                    insumoId = insumoSeleccionado,
                                     porcionesObtenidas = porciones,
                                     tandasPreparadas = materiaUsada.toDoubleOrNull() ?: 0.0,
                                     sobranteAnterior = 0.0
@@ -973,7 +1124,3 @@ private fun TabProduccion(vm: com.bocatta.pos.presentation.viewmodel.InventoryVi
         }
     }
 }
-
-
-
-

@@ -85,8 +85,9 @@ fun TabZonas(vm: MesaViewModel) {
     if (showZonaDialog) {
         DialogZona(zonaInicial = editingZona, onSave = { vm.guardarZona(it) }, onDismiss = { showZonaDialog = false; editingZona = null })
     }
-    if (showMesaDialog && editingMesa != null) {
-        DialogMesa(mesaInicial = editingMesa!!, zonas = zonas, onSave = { vm.guardarMesa(it) }, onDismiss = { showMesaDialog = false; editingMesa = null })
+    val mesaParaEditar = editingMesa
+    if (showMesaDialog && mesaParaEditar != null) {
+        DialogMesa(mesaInicial = mesaParaEditar, zonas = zonas, onSave = { vm.guardarMesa(it) }, onDismiss = { showMesaDialog = false; editingMesa = null })
     }
 }
 
@@ -119,6 +120,3 @@ private fun DialogMesa(mesaInicial: Mesa, zonas: List<Zona>, onSave: (Mesa) -> U
         confirmButton = { Button(onClick = { onSave(Mesa(id = mesaInicial.id, numero = numero.toIntOrNull() ?: 0, capacidad = capacidad.toIntOrNull() ?: 4, zonaId = zonaId)); onDismiss() }, enabled = numero.isNotBlank()) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
 }
-
-
-

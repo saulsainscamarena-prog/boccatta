@@ -17,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.R
+import timber.log.Timber
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -55,7 +57,7 @@ fun LoginScreen(
     var nombreCompleto by remember { mutableStateOf("") }
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = androidx.compose.ui.platform.LocalContext.current
-    val versionName = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { "2.6.0" } }
+    val versionName = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { Timber.w(e, "Failed to get versionName"); "2.6.0" } }
 
     Box(
         modifier = Modifier
@@ -76,14 +78,14 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
-                modifier = Modifier.size(120.dp), 
-                shape = CircleShape, 
+                modifier = Modifier.size(120.dp),
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_bocatta), 
-                    contentDescription = "Logo Bocatta", 
+                    painter = painterResource(id = R.drawable.logo_bocatta),
+                    contentDescription = stringResource(R.string.login_logo_desc),
                     modifier = Modifier.padding(20.dp)
                 )
             }
@@ -98,31 +100,31 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.padding(horizontal = 32.dp, vertical = 40.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        if (isRegisterMode) "NUEVO ACCESO" else "BOCATTA", 
-                        style = MaterialTheme.typography.headlineSmall, 
+                        if (isRegisterMode) stringResource(R.string.login_titulo_nuevo) else stringResource(R.string.login_titulo_bocatta),
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface,
                         letterSpacing = 2.sp
                     )
                     Text(
-                        "BOCATTA POS \u00B7 MERIDIAN DESIGN", 
-                        color = MaterialTheme.colorScheme.primary, 
+                        stringResource(R.string.login_subtitulo),
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
-                    
+
                     Spacer(Modifier.height(32.dp))
 
                     if (errorMensaje != null) {
                         Surface(
-                            color = MaterialTheme.colorScheme.error.copy(0.1f), 
-                            shape = RoundedCornerShape(16.dp), 
+                            color = MaterialTheme.colorScheme.error.copy(0.1f),
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(0.3f))
                         ) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Error, "Error", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Error, stringResource(R.string.login_icono_error), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text(errorMensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
@@ -131,13 +133,13 @@ fun LoginScreen(
 
                     if (isRegisterMode) {
                         OutlinedTextField(
-                            value = masterCode, 
-                            onValueChange = { masterCode = it; onType() }, 
-                            label = { Text("CODIGO DE ACCESO", fontWeight = FontWeight.Bold) },
-                            modifier = Modifier.fillMaxWidth(), 
-                            shape = RoundedCornerShape(16.dp), 
+                            value = masterCode,
+                            onValueChange = { masterCode = it; onType() },
+                            label = { Text(stringResource(R.string.login_label_codigo), fontWeight = FontWeight.Bold) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
                             visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.VpnKey, "Llave", tint = MaterialTheme.colorScheme.primary) },
+                            leadingIcon = { Icon(Icons.Default.VpnKey, stringResource(R.string.login_icono_llave), tint = MaterialTheme.colorScheme.primary) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -148,12 +150,12 @@ fun LoginScreen(
                         )
                         Spacer(Modifier.height(16.dp))
                         OutlinedTextField(
-                            value = nombreCompleto, 
-                            onValueChange = { nombreCompleto = it; onType() }, 
-                            label = { Text("NOMBRE DE OPERADOR", fontWeight = FontWeight.Bold) }, 
-                            modifier = Modifier.fillMaxWidth(), 
+                            value = nombreCompleto,
+                            onValueChange = { nombreCompleto = it; onType() },
+                            label = { Text(stringResource(R.string.login_label_nombre), fontWeight = FontWeight.Bold) },
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            leadingIcon = { Icon(Icons.Default.Person, "Usuario", tint = MaterialTheme.colorScheme.primary) },
+                            leadingIcon = { Icon(Icons.Default.Person, stringResource(R.string.login_icono_usuario), tint = MaterialTheme.colorScheme.primary) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -166,12 +168,12 @@ fun LoginScreen(
                     }
 
                     OutlinedTextField(
-                        value = user, 
-                        onValueChange = { user = it; onType() }, 
-                        label = { Text("ID DE USUARIO / EMAIL", fontWeight = FontWeight.Bold) }, 
-                        modifier = Modifier.fillMaxWidth(), 
-                        shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Email, "Correo", tint = MaterialTheme.colorScheme.primary) },
+                        value = user,
+                        onValueChange = { user = it; onType() },
+                        label = { Text(stringResource(R.string.login_label_email), fontWeight = FontWeight.Bold) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            leadingIcon = { Icon(Icons.Default.Email, stringResource(R.string.login_icono_correo), tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -182,11 +184,11 @@ fun LoginScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
-                        value = pass, 
-                        onValueChange = { pass = it; onType() }, 
-                        label = { Text("CLAVE DE ACCESO / PIN", fontWeight = FontWeight.Bold) }, 
-                        modifier = Modifier.fillMaxWidth(), 
-                        shape = RoundedCornerShape(16.dp), 
+                        value = pass,
+                        onValueChange = { pass = it; onType() },
+                        label = { Text(stringResource(R.string.login_label_pin), fontWeight = FontWeight.Bold) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
@@ -196,7 +198,7 @@ fun LoginScreen(
                                 else onLoginClick(user, pass)
                             }
                         }),
-                        leadingIcon = { Icon(Icons.Default.Lock, "Bloquear", tint = MaterialTheme.colorScheme.primary) },
+                        leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.login_icono_bloquear), tint = MaterialTheme.colorScheme.primary) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -217,14 +219,14 @@ fun LoginScreen(
                     ) {
                         if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                         else Text(
-                            if (isRegisterMode) "ACTIVAR ACCESO" else "ENTRAR AL SISTEMA", 
+                            if (isRegisterMode) stringResource(R.string.login_boton_activar) else stringResource(R.string.login_boton_entrar),
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        if (isRegisterMode) "Administrador - Empleado" else "Administrador o Empleado",
+                        if (isRegisterMode) stringResource(R.string.login_rol_admin) else stringResource(R.string.login_rol_admin_short),
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 0.5.sp
@@ -233,11 +235,11 @@ fun LoginScreen(
             }
 
             TextButton(
-                onClick = { isRegisterMode = !isRegisterMode }, 
+                onClick = { isRegisterMode = !isRegisterMode },
                 modifier = Modifier.padding(top = 24.dp)
             ) {
                 Text(
-                    if (isRegisterMode) "\u00BFYa tienes cuenta? Inicia sesi\u00F3n" else "\u00BFSolicitar nuevo acceso al administrador?", 
+                    if (isRegisterMode) stringResource(R.string.login_alt_cuenta) else stringResource(R.string.login_solicitar_acceso),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -248,5 +250,3 @@ fun LoginScreen(
         }
     }
 }
-
-

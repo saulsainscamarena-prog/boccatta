@@ -23,7 +23,7 @@ class SQLiteStockAdjustmentQueue(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "offline_queue.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 3
         private const val TABLE_NAME = "stock_adjustments"
 
         private const val COL_ID = "id"
@@ -34,6 +34,7 @@ class SQLiteStockAdjustmentQueue(context: Context) :
         private const val COL_REASON = "reason"
         private const val COL_TIMESTAMP = "timestamp"
         private const val COL_STATUS = "status"      // 0=PENDING, 1=IN_PROGRESS
+        private const val COL_SYNC_STARTED_AT = "sync_started_at"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -47,7 +48,8 @@ class SQLiteStockAdjustmentQueue(context: Context) :
                 $COL_UNIT TEXT NOT NULL,
                 $COL_REASON TEXT NOT NULL,
                 $COL_TIMESTAMP INTEGER NOT NULL,
-                $COL_STATUS INTEGER NOT NULL DEFAULT 0
+                $COL_STATUS INTEGER NOT NULL DEFAULT 0,
+                $COL_SYNC_STARTED_AT INTEGER
             )
             """.trimIndent()
         )
@@ -57,6 +59,11 @@ class SQLiteStockAdjustmentQueue(context: Context) :
         if (oldVersion < 2) {
             db.execSQL(
                 "ALTER TABLE $TABLE_NAME ADD COLUMN $COL_STATUS INTEGER NOT NULL DEFAULT 0"
+            )
+        }
+        if (oldVersion < 3) {
+            db.execSQL(
+                "ALTER TABLE $TABLE_NAME ADD COLUMN $COL_SYNC_STARTED_AT INTEGER"
             )
         }
     }
@@ -71,6 +78,7 @@ class SQLiteStockAdjustmentQueue(context: Context) :
                 put(COL_REASON, adjustment.reason)
                 put(COL_TIMESTAMP, adjustment.timestamp)
                 put(COL_STATUS, 0)
+                putNull(COL_SYNC_STARTED_AT)
             }
             writableDatabase.insert(TABLE_NAME, null, values)
         }
@@ -120,11 +128,27 @@ class SQLiteStockAdjustmentQueue(context: Context) :
             val placeholders = ids.joinToString(",") { "?" }
             val args = ids.map { it.toString() }.toTypedArray()
             writableDatabase.execSQL(
-                "UPDATE $TABLE_NAME SET $COL_STATUS = 1 WHERE $COL_ID IN ($placeholders)",
-                args
+                "UPDATE $TABLE_NAME SET $COL_STATUS = 1, $COL_SYNC_STARTED_AT = ? WHERE $COL_ID IN ($placeholders)",
+                arrayOf(System.currentTimeMillis().toString(), *args)
             )
         }
     }
+
+    override suspend fun resetStaleSyncing(maxAgeMs: Long): Int =
+        withContext(queueDispatcher) {
+            val cutoff = System.currentTimeMillis() - maxAgeMs
+            writableDatabase.compileStatement(
+                """
+                UPDATE $TABLE_NAME
+                SET $COL_STATUS = 0, $COL_SYNC_STARTED_AT = NULL
+                WHERE $COL_STATUS = 1
+                AND ($COL_SYNC_STARTED_AT IS NULL OR $COL_SYNC_STARTED_AT < ?)
+                """.trimIndent()
+            ).use { statement ->
+                statement.bindLong(1, cutoff)
+                statement.executeUpdateDelete()
+            }
+        }
 
     override suspend fun resetSyncingState(ids: List<Long>) {
         if (ids.isEmpty()) return
@@ -132,7 +156,7 @@ class SQLiteStockAdjustmentQueue(context: Context) :
             val placeholders = ids.joinToString(",") { "?" }
             val args = ids.map { it.toString() }.toTypedArray()
             writableDatabase.execSQL(
-                "UPDATE $TABLE_NAME SET $COL_STATUS = 0 WHERE $COL_ID IN ($placeholders)",
+                "UPDATE $TABLE_NAME SET $COL_STATUS = 0, $COL_SYNC_STARTED_AT = NULL WHERE $COL_ID IN ($placeholders)",
                 args
             )
         }
@@ -151,4 +175,3 @@ class SQLiteStockAdjustmentQueue(context: Context) :
         )
     }
 }
-

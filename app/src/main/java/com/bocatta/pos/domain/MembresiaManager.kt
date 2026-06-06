@@ -1,6 +1,8 @@
 package com.bocatta.pos.domain
 
 object MembresiaManager {
+    const val UMBRAL_PLATINO = 50
+    const val UMBRAL_ORO = 20
     data class EstadoMembresia(
         val esElegiblePremio: Boolean,
         val visitasRestantesParaPremio: Int,
@@ -12,8 +14,8 @@ object MembresiaManager {
         val restantes = ciclo - (visitasActuales % ciclo)
         val elegible = visitasActuales > 0 && visitasActuales % ciclo == 0
         val nivel = when {
-            visitasActuales >= 50 -> "PLATINO"
-            visitasActuales >= 20 -> "ORO"
+            visitasActuales >= UMBRAL_PLATINO -> "PLATINO"
+            visitasActuales >= UMBRAL_ORO -> "ORO"
             else -> "PLATA"
         }
         return EstadoMembresia(
@@ -23,4 +25,3 @@ object MembresiaManager {
         )
     }
 }
-

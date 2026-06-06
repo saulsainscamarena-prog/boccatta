@@ -1,0 +1,790 @@
+Bocatta POS - Temas de publicacion en Google Play
+
+Esta nota centraliza los puntos tratados para subir Bocatta POS a Google Play
+y proteger la app publicada. Mantener esta conversacion enfocada en release,
+distribucion, Play Console, versionado, firma, builds, cumplimiento y temas
+relacionados.
+
+1. Subida a Google Play
+
+- Crear o abrir la cuenta en Google Play Console.
+- Crear la app con el paquete actual: com.bocatta.pos.
+- Completar ficha de Play Store: nombre, descripcion, capturas, icono,
+  feature graphic, paises, contacto y categoria.
+- Completar App content: politica de privacidad, Data safety, Content rating,
+  App access, anuncios si aplica y declaraciones requeridas.
+- Publicar apps nuevas mediante Android App Bundle (.aab), no APK suelto.
+- Usar una llave de subida para firmar el bundle.
+- Activar Play App Signing para que Google administre la llave final de firma.
+
+2. Estado actual del proyecto para release
+
+- applicationId: com.bocatta.pos
+- compileSdk: 36
+- targetSdk: 36
+- minSdk: 24
+- versionCode: 1
+- versionName: 1.0
+- Release tiene minify activo.
+- Release tiene shrinkResources activo.
+- Release apaga credenciales/demo mode:
+  - DEMO_EMAIL = ""
+  - DEMO_PASSWORD = ""
+  - DEMO_MODE_ENABLED = false
+
+3. Generacion del bundle
+
+Opcion recomendada desde Android Studio:
+
+- Build > Generate Signed Bundle / APK.
+- Elegir Android App Bundle.
+- Seleccionar build variant release.
+- Crear o usar keystore de subida.
+- Generar app-release.aab.
+
+Opcion por terminal cuando la firma release este configurada:
+
+.\gradlew.bat bundleRelease
+
+4. Pruebas antes de produccion
+
+- Primero publicar en Internal testing.
+- Agregar testers internos.
+- Validar en dispositivos reales:
+  - Login.
+  - Checkout.
+  - Venta offline.
+  - Sincronizacion al volver internet.
+  - Descuento de inventario.
+  - Tickets/reportes compartibles.
+  - Cierre de caja.
+  - Permisos y roles.
+- Despues promover a closed testing o produccion.
+
+Nota: si la cuenta de desarrollador es personal y fue creada despues del
+13 de noviembre de 2023, Google puede exigir prueba cerrada con al menos
+12 testers durante 14 dias continuos antes de permitir produccion.
+
+5. Proteccion de la app publicada
+
+- Usar Play App Signing.
+- Activar Automatic Protection en Play Console:
+  Test and release > App integrity.
+- Automatic Protection ayuda contra redistribucion no autorizada y versiones
+  modificadas, y puede pedir al usuario instalar la version oficial desde
+  Google Play.
+- No distribuir builds release sin proteccion por canales publicos externos.
+
+6. Proteccion contra ingenieria inversa
+
+El proyecto ya tiene protecciones basicas de release:
+
+- isMinifyEnabled = true
+- isShrinkResources = true
+- proguardFiles con reglas del proyecto
+
+Esto dificulta el analisis del APK/AAB generado, pero no vuelve la app
+imposible de analizar. La seguridad real debe estar en reglas remotas,
+validacion de permisos y control de acceso del backend.
+
+7. Proteccion de datos y backend
+
+- Firestore debe ser la autoridad de seguridad, no la UI.
+- No confiar solo en validaciones del cliente.
+- Revisar firestore.rules antes de produccion.
+- Confirmar reglas para:
+  - Ventas.
+  - Inventario.
+  - Movimientos.
+  - Empleados.
+  - Nomina.
+  - Clientes.
+  - Reportes.
+  - Acciones administrativas.
+- Mantener auditoria append-only donde ya exista.
+- Denegar todo lo no especificado.
+- No publicar secretos, endpoints privados ni credenciales en codigo fuente.
+
+8. Proteccion de pantallas sensibles
+
+Evaluar FLAG_SECURE para bloquear screenshots/grabacion solo en pantallas
+sensibles:
+
+- Login.
+- Administracion.
+- Empleados y nomina.
+- Reportes.
+- Caja y cierres.
+
+No activarlo globalmente sin revisar impacto operativo, porque puede afectar
+soporte, capacitacion y revision interna.
+
+9. Play Integrity API
+
+Play Integrity API permite validar que acciones criticas vienen de:
+
+- La app original reconocida por Google Play.
+- Una instalacion desde Google Play.
+- Un dispositivo Android certificado/confiable.
+
+Tiene sentido para una segunda fase en operaciones criticas:
+
+- Login.
+- Sincronizacion.
+- Cierre de caja.
+- Cambios de inventario.
+- Acciones administrativas.
+
+No se recomienda meterla como bloqueo del primer release si la prioridad es
+publicar rapido, porque requiere validacion server-side mediante backend o
+Cloud Function.
+
+10. Recomendacion para primer release
+
+Para la primera subida:
+
+- Play App Signing.
+- Android App Bundle firmado.
+- Automatic Protection activo.
+- R8/minify/shrinkResources activos.
+- Revision puntual de firestore.rules.
+- Politica de privacidad publicada.
+- Data Safety completo y consistente con Firebase/Auth/Firestore/Analytics.
+- Prueba interna antes de produccion.
+
+11. Suscripciones, pagos y monetizacion
+
+Punto clave para Bocatta POS:
+
+- Los pagos de mostrador por comida, bebidas, delivery, efectivo, tarjeta o
+  transferencia son pagos de bienes/servicios fisicos del negocio. Esos pagos
+  NO deben usar Google Play Billing.
+- Google Play Billing aplica cuando la app cobra por bienes digitales, acceso
+  a funciones de la app, contenido digital, servicios cloud o una suscripcion
+  para usar funciones dentro de la app distribuida por Google Play.
+- Si Bocatta se vende como software/SaaS desde la app, por ejemplo:
+  - plan mensual para usar Bocatta POS,
+  - desbloquear sucursales,
+  - desbloquear reportes premium,
+  - activar sincronizacion cloud,
+  - activar funciones administrativas,
+  entonces en una app publica de Google Play normalmente debe usarse Google
+  Play Billing, salvo que aplique una excepcion o programa especifico de pagos
+  externos permitido por Google.
+- Si el cobro de Bocatta POS se maneja por contrato B2B externo, factura,
+  transferencia, terminal bancaria o venta directa fuera de la app, evitar
+  botones, links, mensajes o flujos dentro de la app publica que lleven al
+  usuario a pagar por acceso digital fuera de Google Play, porque puede violar
+  la politica de pagos.
+
+Estado actual del proyecto:
+
+- No hay dependencia de Google Play Billing integrada actualmente.
+- Los pagos encontrados en codigo son metodos de venta POS y registros de
+  nomina, no compras dentro de Google Play.
+
+Si se decide manejar suscripcion desde Google Play:
+
+- Crear productos de suscripcion en Play Console.
+- Usar Google Play Billing Library. Al 30 de mayo de 2026, la version oficial
+  mas reciente documentada es 9.0.0.
+- Definir productos, planes base y ofertas:
+  - mensual,
+  - anual,
+  - prueba gratis si aplica,
+  - precios introductorios si aplica.
+- Validar compras en backend o Cloud Functions, no solo en el cliente.
+- Guardar entitlement activo por negocio/sucursal/usuario en Firestore.
+- Procesar renovaciones, cancelaciones, expiraciones, periodos de gracia,
+  account hold y cambios de plan.
+- Confirmar compras con acknowledgePurchase o la API de Google Play Developer.
+- Usar Real-time Developer Notifications para cambios de estado de suscripcion.
+- No habilitar funciones premium solo porque la UI local diga que el usuario
+  pago; la fuente de verdad debe venir de Play/backend.
+
+Recomendacion para primer release:
+
+- No meter suscripciones de Google Play en el primer release si todavia no hay
+  modelo comercial cerrado.
+- Publicar primero como app operativa del POS.
+- Si Bocatta se va a cobrar por licencia/SaaS, definir antes:
+  - quien paga: dueno, sucursal o usuario,
+  - periodicidad: mensual/anual/prepago,
+  - que pasa si falla el pago,
+  - si se bloquea toda la app o solo funciones premium,
+  - como se conserva acceso a datos historicos,
+  - como se atienden cancelaciones y reembolsos.
+
+Riesgo principal:
+
+- Mezclar links o mensajes de pago externo dentro de una app publicada en Play
+  para desbloquear funciones digitales puede causar rechazo o suspension. Para
+  pagos externos de bienes fisicos del restaurante no aplica Google Play
+  Billing.
+
+12. Modelo SaaS para restaurantes
+
+Objetivo:
+
+- Enfocar Bocatta primero como SaaS para restaurantes, cafeterias, taquerias,
+  fondas, pizzerias y negocios de comida con operacion de mostrador.
+- Competir por operacion real: venta rapida, caja, comandas, offline,
+  recetas, descuento de insumos, reportes y soporte cercano.
+
+Patrones encontrados en POS actuales:
+
+- Toast: modelo restaurante all-in-one, hardware + software + pagos. Tiene
+  Starter Kit desde 0 USD/mes para ciertos casos, Point of Sale desde 69
+  USD/mes y Build Your Own custom. Fuerte en plataforma completa, hardware,
+  pagos, payroll, online ordering y add-ons.
+- Square Restaurants: planes por ubicacion. Free 0 USD/mes, Plus 49 USD/mes,
+  Premium 149 USD/mes. Cobra procesamiento de tarjeta y KDS/kiosk como cargos
+  por dispositivo. Fuerte en entrada barata y ecosistema de pagos.
+- Lightspeed Restaurant: planes Starter 69 USD, Essential 189 USD y Premium
+  399 USD. KDS cuesta 30 USD por pantalla al mes. Fuerte en restaurantes de
+  mas operacion, datos, add-ons, multiubicacion y pagos integrados.
+- SpotOn: dos rutas claras: All-In 0 USD/estacion/mes con procesamiento mas
+  alto y contrato, o POS Essentials 55 USD/estacion/mes con hardware aparte y
+  procesamiento menor. Vende soporte 24/7, hardware propio y add-ons.
+- TouchBistro: POS restaurante desde 69 USD/mes; Essentials Bundle desde 119
+  USD/mes. Vende POS base y modulos extra: inventario, labor, KDS, profit,
+  online ordering, loyalty, marketing y gift cards.
+- Mexico/local: varios competidores venden de 349 a 599 MXN/mes aprox. con
+  soporte por WhatsApp, sin hardware especial, y enfoque en restaurante chico.
+  Ejemplos vistos: Almora 349/549 MXN, Kokua desde 450 MXN con implementacion
+  desde 1,500 MXN, MyRest 450 MXN/mes o licencia vitalicia, Oden 399 MXN de
+  fundador, OLON desde 499 MXN para cafeterias.
+
+Lectura estrategica:
+
+- En Estados Unidos el dinero fuerte esta en pagos, hardware, contratos,
+  add-ons y modulos premium.
+- En Mexico el comprador pequeno es sensible al precio mensual y valora
+  WhatsApp, instalacion rapida, no comprar hardware y que funcione con mala
+  conexion.
+- Bocatta no debe entrar como "POS generico barato". Debe entrar como POS para
+  comida con offline serio e inventario por recetas, porque eso es mas dificil
+  de copiar y ya existe en el producto.
+
+Propuesta 1: Bocatta Esencial
+
+- Precio sugerido: 499 MXN/mes por sucursal.
+- Pago anual: 4,990 MXN/anio, dos meses gratis.
+- Implementacion: 999 MXN una sola vez; gratis en plan anual.
+- Incluye:
+  - POS de mostrador.
+  - Caja, tickets, metodos de pago y cortes.
+  - Menu/productos/categorias.
+  - Comandas basicas a cocina o impresora.
+  - Reportes basicos.
+  - 1 sucursal.
+  - Hasta 2 dispositivos.
+  - Soporte por WhatsApp en horario comercial.
+- Cliente ideal:
+  - cafeteria chica, fonda, food truck, taqueria pequena.
+- Posicionamiento:
+  - "Empieza a vender hoy sin comprar hardware ni pagar comisiones al POS."
+
+Propuesta 2: Bocatta Operacion
+
+- Precio sugerido: 899 MXN/mes por sucursal.
+- Pago anual: 8,990 MXN/anio.
+- Implementacion: 1,999 MXN una sola vez; incluye carga de menu y capacitacion.
+- Incluye todo Esencial mas:
+  - Inventario por recetas e ingredientes.
+  - Deduccion automatica de insumos.
+  - Ventas offline guardables y sincronizables.
+  - KDS o pantalla de cocina.
+  - Turnos, gastos y caja avanzada.
+  - Roles de empleados.
+  - Reportes por metodo de pago, producto y categoria.
+  - Hasta 5 dispositivos.
+- Cliente ideal:
+  - restaurante de mostrador con cocina, cafeteria con recetas, creperia,
+    waffles, frappes, pizzeria, negocio con inventario sensible.
+- Posicionamiento:
+  - "El POS que sigue vendiendo aunque se caiga internet y descuenta insumos
+    por receta."
+
+Propuesta 3: Bocatta MultiSucursal
+
+- Precio sugerido: 1,699 MXN/mes por primera sucursal + 699 MXN/mes por
+  sucursal adicional.
+- Pago anual: 2 meses gratis.
+- Implementacion: desde 3,999 MXN segun numero de sucursales.
+- Incluye todo Operacion mas:
+  - Multi-sucursal.
+  - Dashboard consolidado.
+  - Comparativo de sucursales.
+  - Catalogos centralizados.
+  - Roles administrativos por sucursal.
+  - Auditoria de cancelaciones, inventario, caja y empleados.
+  - Soporte prioritario.
+  - Hasta 10 dispositivos por sucursal.
+- Cliente ideal:
+  - cadena pequena local con 2 a 8 sucursales.
+- Posicionamiento:
+  - "Controla varias sucursales sin perder caja, inventario ni auditoria."
+
+Decision recomendada:
+
+- Lanzar con precios accesibles para restaurantes pequenos.
+- Mantener Bocatta Esencial como plan de entrada real, no como plan inutil.
+- Empujar Bocatta Operacion como el plan recomendado cuando el negocio ya
+  necesita inventario, recetas, offline y cocina.
+- Mantener MultiSucursal como oferta comercial para cierres B2B, no como
+  primer CTA en Play Store.
+- No cobrar comision por venta al inicio. Diferenciarse de modelos que atan
+  pagos/procesamiento.
+- No prometer facturacion CFDI si no esta implementada.
+- No prometer integraciones de delivery si no estan integradas.
+- Para Play Store, presentar la app como herramienta SaaS de gestion POS para
+  restaurantes, no como app para comprar comida ni como app financiera.
+
+13. Estrategia accesible para negocios pequenos
+
+Objetivo comercial:
+
+- Que un restaurante pequeno pueda entrar sin miedo.
+- Que el precio sea facil de explicar por WhatsApp.
+- Que no haya contratos forzosos ni letras chiquitas.
+- Que el negocio pueda empezar con poco y subir de plan cuando Bocatta ya le
+  este ahorrando tiempo, errores e inventario perdido.
+
+Precios accesibles recomendados:
+
+Plan Arranque
+
+- Precio: 299 MXN/mes por sucursal.
+- Primer mes: gratis o 99 MXN para negocios piloto.
+- Implementacion: gratis si el cliente carga su menu; 499 MXN si Bocatta lo
+  carga por el cliente.
+- Incluye:
+  - POS de mostrador.
+  - Caja y cortes.
+  - Tickets.
+  - Menu, categorias y productos.
+  - Metodos de pago.
+  - Reporte basico diario.
+  - 1 sucursal.
+  - 1 dispositivo principal + 1 dispositivo de apoyo.
+- Limites sanos:
+  - Sin inventario por receta.
+  - Sin multi-sucursal.
+  - Sin KDS avanzado.
+  - Soporte por WhatsApp en horario definido.
+- Cliente ideal:
+  - negocio nuevo, food truck, puesto fijo, fonda, cafeteria pequena.
+
+Plan Crecimiento
+
+- Precio: 599 MXN/mes por sucursal.
+- Anual: 5,990 MXN/anio.
+- Implementacion: 999 MXN; gratis en anual.
+- Incluye:
+  - Todo Arranque.
+  - Inventario simple.
+  - Recetas e ingredientes.
+  - Descuento automatico de insumos.
+  - Ventas offline y sincronizacion.
+  - KDS o pantalla de cocina basica.
+  - Roles de empleados.
+  - Hasta 4 dispositivos.
+  - Reportes por producto, categoria y metodo de pago.
+- Cliente ideal:
+  - cafeteria, creperia, taqueria, restaurante de mostrador, negocio con cocina
+    e insumos que se pierden si no se controlan.
+
+Plan Pro Restaurante
+
+- Precio: 999 MXN/mes por sucursal.
+- Anual: 9,990 MXN/anio.
+- Implementacion: 1,999 MXN.
+- Incluye:
+  - Todo Crecimiento.
+  - Caja avanzada.
+  - Gastos.
+  - Auditoria de cancelaciones.
+  - Reportes administrativos.
+  - Control mas completo de empleados.
+  - Hasta 8 dispositivos.
+  - Soporte prioritario.
+- Cliente ideal:
+  - restaurante con mas volumen, varios turnos, mas empleados o mayor control
+    administrativo.
+
+MultiSucursal Accesible
+
+- Precio: 1,299 MXN/mes primera sucursal + 499 MXN/mes por sucursal adicional.
+- Implementacion: desde 2,999 MXN.
+- Enfocado en cadenas pequenas locales.
+
+Facilidades comerciales:
+
+- Prueba gratis de 14 dias sin tarjeta.
+- Primer mes a 99 MXN para primeros clientes o negocios piloto.
+- Descuento anual: 2 meses gratis.
+- Migracion de menu incluida en planes anuales.
+- Congelamiento de precio por 12 meses para clientes fundadores.
+- Sin contrato forzoso mensual.
+- Cancelacion simple al cierre del periodo pagado.
+- Opcion de pausa por temporada baja: mantener cuenta y datos por una cuota
+  reducida, por ejemplo 99 MXN/mes.
+- Plan solidario temporal para negocios nuevos: 3 meses a 199 MXN y despues
+  sube al plan elegido.
+
+Reglas para no perder rentabilidad:
+
+- No regalar soporte ilimitado en el plan mas bajo.
+- No incluir multi-sucursal en planes baratos.
+- No incluir configuraciones complejas gratis salvo pago anual o promocion
+  controlada.
+- No cobrar comision por venta, pero si cobrar por valor real: inventario,
+  recetas, offline, reportes, multi-sucursal y soporte prioritario.
+- Mantener precios simples, en MXN y sin cargos sorpresa.
+
+Mensaje comercial sugerido:
+
+- "Bocatta empieza desde 299 MXN al mes. Sin contratos forzosos, sin comision
+  por venta y sin comprar equipo especial."
+- "Si estas empezando, arrancas barato. Cuando tu restaurante crece, Bocatta
+  crece contigo."
+- "Hecho para restaurantes pequenos que no pueden dejar de vender cuando se
+  cae internet."
+
+Fuentes consultadas:
+
+- Toast POS: pos.toasttab.com
+- Square Restaurants pricing: squareup.com
+- Lightspeed Restaurant pricing: lightspeedhq.com
+- SpotOn Restaurant pricing: spoton.com
+- TouchBistro pricing: touchbistro.com
+- Kokua Mexico: kokua.com.mx
+- MyRest POS: myrestaurant.mx
+- Almora POS: almorapos.com
+- Oden POS: oden.food
+- OLON POS: olon.mx
+
+14. Tabla comparativa funcional y propuesta competitiva
+
+Comparativa resumida:
+
+| POS | Precio base aprox. | POS/caja | Cocina/KDS | Offline | Inventario/recetas | Multi-sucursal | Pagos integrados | Hardware | Soporte |
+| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |
+| Toast | 0 a 69 USD/mes+ | Si | Si | Si, segun plan/config | Si, modulo/add-on | Si | Fuerte, parte central del modelo | Hardware propio/financiado | 24/7 |
+| Square Restaurants | 0, 49, 149 USD/mes por ubicacion | Si | KDS add-on 20-30 USD/dispositivo | Pagos offline con condiciones | MarketMan add-on aprox. 99 USD/ubicacion | Si | Muy fuerte | Hardware opcional Square | Segun plan |
+| Lightspeed Restaurant | 69, 189, 399 USD/mes | Si | KDS 30 USD/pantalla | Si | Avanzado/add-on | Si | Integrado/custom | Hardware compatible | 24/7 |
+| SpotOn | 0 USD/estacion o 55 USD/estacion | Si | Si/add-on | Enfocado en continuidad | Integraciones/add-ons | Si | Muy fuerte, procesamiento propio | Hardware propietario | 24/7 |
+| TouchBistro | Desde 69 USD/mes | Si | Add-on | Si, enfoque restaurante | Add-on de inventario | Si | TouchBistro Payments | iPad/hardware compatible | Comercial/soporte |
+| Kokua MX | Desde 450 MXN/mes | Si | Comandas | Nube, depende de conexion | Inventario de alimentos | No siempre claro | Cobros efectivo/tarjeta | Celular/tablet/PC | Incluido |
+| MyRest MX | 450 MXN/mes | Si | Monitor cocina | Requiere internet basico | Modulos restaurante | No claro | No es el centro | Navegador/cualquier equipo | WhatsApp |
+| Almora POS | 349-549 MXN/mes | Si | Interfaz cocina | Si, offline-first | Si, segun plan | Si | No es el centro | Equipo del cliente | WhatsApp |
+| OLON POS | Desde 499 MXN/mes | Si | KDS en prueba/planes | Requiere internet | Recetas/costo ingrediente en plan superior | Plan medio | No es el centro | Tablet/celular/compu | WhatsApp |
+| Bocatta Arranque | 299 MXN/mes | Si | Basico/ticket | Parcial segun flujo actual | No avanzado | No | No amarra procesador | Android/tablet existente | WhatsApp horario |
+| Bocatta Crecimiento | 599 MXN/mes | Si | KDS/cocina basica | Si, ventaja clave | Si, recetas e insumos | No | No amarra procesador | Android/tablet existente | WhatsApp |
+| Bocatta Pro | 999 MXN/mes | Si | Si | Si | Si | Preparado para mas control | No amarra procesador | Android/tablet existente | Prioritario |
+
+Lectura:
+
+- Los POS grandes venden ecosistema: pagos, hardware, add-ons, soporte 24/7 y
+  contratos o financiamiento.
+- Los POS mexicanos compiten por precio, soporte cercano, cero hardware
+  especial y simplicidad.
+- La oportunidad de Bocatta es combinar precio local con funciones que suelen
+  estar en planes mas caros: offline, recetas, inventario por ingrediente,
+  auditoria y operacion de mostrador.
+
+Propuesta competitiva final:
+
+Plan 1 - Bocatta Arranque
+
+- Precio: 299 MXN/mes.
+- Primer mes: 99 MXN para negocios pequenos.
+- 14 dias gratis sin tarjeta.
+- Incluye POS, caja, cortes, tickets, menu, metodos de pago, reporte diario,
+  1 sucursal y hasta 2 dispositivos.
+- Promesa: "Digitaliza tu restaurante por menos de lo que cuesta una comision
+  semanal de delivery."
+
+Plan 2 - Bocatta Crecimiento
+
+- Precio: 599 MXN/mes.
+- Plan recomendado.
+- Incluye todo Arranque mas inventario, recetas, descuento de insumos, venta
+  offline, sincronizacion, cocina/KDS basico, roles y hasta 4 dispositivos.
+- Promesa: "Vende aunque se caiga internet y sabe que insumos se fueron en
+  cada venta."
+
+Plan 3 - Bocatta Pro
+
+- Precio: 999 MXN/mes.
+- Incluye todo Crecimiento mas caja avanzada, gastos, auditoria, reportes
+  administrativos, control de empleados, soporte prioritario y hasta 8
+  dispositivos.
+- Promesa: "Control operativo para restaurantes que ya no pueden manejarse con
+  hojas, papelitos o WhatsApp."
+
+MultiSucursal
+
+- Precio: 1,299 MXN/mes primera sucursal + 499 MXN/mes por sucursal adicional.
+- Para cadenas pequenas locales.
+- Promesa: "Todas tus sucursales bajo control sin pagar precios de cadena
+  grande."
+
+Diferenciadores de Bocatta:
+
+- Sin comision por venta.
+- Sin contrato forzoso.
+- Sin hardware propietario obligatorio.
+- Precio en MXN.
+- Soporte cercano por WhatsApp.
+- Offline como argumento central.
+- Recetas e inventario por ingrediente en un precio accesible.
+- Enfoque especifico en restaurantes pequenos de Mexico.
+
+Oferta de lanzamiento:
+
+- 14 dias gratis.
+- Primer mes a 99 MXN.
+- Precio fundador congelado por 12 meses.
+- Plan solidario: 3 meses a 199 MXN para negocios nuevos.
+- Dos meses gratis pagando anual.
+- Pausa temporal por temporada baja: 99 MXN/mes para conservar cuenta y datos.
+
+15. Comparacion punto a punto: huecos de competidores vs ventaja Bocatta
+
+Nota de uso comercial:
+
+- No decir "ellos no tienen" cuando si lo tienen como add-on o plan caro.
+- Decir "no incluido en plan base", "requiere add-on", "requiere hardware",
+  "no lo publican claramente" o "no esta enfocado a restaurante pequeno de
+  Mexico".
+- No prometer KDS avanzado hasta que la pantalla dedicada de cocina este
+  cerrada y probada.
+
+Ventajas reales o vendibles de Bocatta:
+
+- Precio bajo de entrada en MXN: desde 299 MXN/mes.
+- Sin comision por venta del POS.
+- Sin contrato forzoso mensual.
+- Sin hardware propietario obligatorio.
+- Enfoque especifico en restaurantes pequenos.
+- Ventas offline guardables y sincronizables.
+- Descuento de inventario por recetas e ingredientes.
+- Recetas de venta y recetas de produccion/batch.
+- Caja, gastos, cortes y reportes operativos.
+- Auditoria de cancelaciones/empleados y autorizacion con PIN.
+- Tickets/reportes compartibles por WhatsApp.
+- Soporte cercano por WhatsApp.
+- Facilidad para arrancar: 14 dias gratis, primer mes barato, plan solidario.
+
+Tabla punto a punto:
+
+| Competidor | Lo que ellos ofrecen fuerte | Hueco comercial o limitacion | Bocatta puede ganar con |
+| --- | --- | --- | --- |
+| Toast | POS restaurante completo, pagos, hardware, KDS, online ordering, loyalty, payroll, multiubicacion | Precio y ecosistema mas pesados para restaurante pequeno; muchas funciones viven en add-ons, hardware o procesamiento; puede sentirse sobrado para fonda/cafeteria chica | Precio local desde 299 MXN, sin procesador obligatorio, sin hardware propietario, offline + recetas en plan accesible |
+| Square Restaurants | Plan gratis, pagos integrados, hardware opcional, ecosistema simple, KDS como add-on | El modelo empuja procesamiento de pagos; KDS/inventario avanzado pueden subir costo; precios en USD; no esta pensado especificamente para restaurante pequeno mexicano con recetas locales | Sin comision por venta, precio MXN, receta/ingrediente como valor central, soporte local por WhatsApp |
+| Lightspeed Restaurant | POS robusto, reportes, pagos, multiubicacion, integraciones, KDS | Muy caro para negocio pequeno; KDS y funciones avanzadas suman costo; mas orientado a operacion con presupuesto alto | Misma narrativa operativa basica a fraccion del precio: caja, offline, recetas, inventario y reportes para restaurante pequeno |
+| SpotOn | Hardware, pagos, soporte 24/7, restaurantes con operacion completa | Modelo ligado a procesamiento/hardware/contrato; menos atractivo para negocio que no quiere cambiar banco/procesador | Bocatta no obliga procesador ni terminal; mensualidad simple y baja |
+| TouchBistro | Restaurante/iPad, mesas, menu, KDS, pagos, add-ons | Precio en USD; depende de iPad/hardware compatible; muchas funciones son modulares; costo puede crecer | Android/tablet existente, precio MXN, plan de entrada accesible y sin equipo Apple obligatorio |
+| Kokua MX | POS nube, comandas, inventario, reportes, soporte/capacitacion | Precio base mayor que Arranque; implementacion desde 1,500 MXN; no publica offline-first como diferenciador fuerte | Arranque 299 MXN, primer mes 99 MXN, offline como promesa central, opcion de entrar sin implementacion pagada |
+| MyRest MX | POS restaurante, monitor cocina, inventarios, domicilios, menu QR, terminal bundle | Desde 450 MXN/mes o hardware bundle; enfoque mas amplio, no necesariamente offline-first; puede empujar equipo todo-en-uno | Menor barrera de entrada, sin comprar terminal, offline + receta/ingrediente desde plan Crecimiento |
+| Almora POS | Offline-first, sync nube, cocina, multi-sucursal, precios 349-799 MXN | Competidor mas cercano; su ventaja offline es fuerte; Bocatta no debe atacarlo con "offline" solamente | Diferenciar por restaurante de comida con recetas, insumos, auditoria, caja, WhatsApp y soporte de implementacion cercano |
+| OLON POS | Muy buen enfoque cafeteria mexicana, recetas, inventario, multi-sucursal en plan medio, KDS/promos, WhatsApp | Precio inicia en 499 + IVA; recetas/inventario viven en plan de 999 + IVA; enfoque muy cafeteria, no restaurante general | Bocatta Arranque mas barato; Crecimiento 599 con recetas/offline para restaurante, crepa, frappe, taqueria, fonda, comida rapida |
+
+Tabla por caracteristica:
+
+| Caracteristica | Competidores grandes | Competidores MX | Bocatta recomendado |
+| --- | --- | --- | --- |
+| Precio de entrada | Pueden tener 0 USD, pero amarran pagos/hardware o suben con add-ons | 349-599 MXN comun | 299 MXN para entrar, 599 MXN recomendado |
+| Comision por venta | Frecuente si usan pagos propios | Normalmente no es el centro | No cobrar comision por venta |
+| Hardware obligatorio | Toast/SpotOn tienden a ecosistema propio; TouchBistro usa iPad | Normalmente equipo del cliente | Android/tablet existente |
+| Offline | Existe, pero con condiciones o en ecosistema propio | Algunos si, especialmente Almora | Hacerlo promesa central: vender aunque falle internet |
+| Recetas e ingredientes | Suele ser add-on o plan avanzado | Algunos lo tienen, a veces en plan superior | Incluirlo en Crecimiento 599 |
+| Inventario por venta | Disponible, pero puede requerir modulo | Variable | Deduccion por receta como diferenciador |
+| KDS/cocina | Add-on o dispositivo adicional | Algunos lo tienen | Comanda/ticket ahora; KDS basico como siguiente cierre de producto |
+| Multi-sucursal | Plan avanzado o enterprise | Algunos lo incluyen | Oferta B2B aparte: 1,299 + 499 por sucursal |
+| Auditoria/PIN | Disponible en soluciones grandes | No siempre visible | Venderlo en Pro: cancelaciones, empleados, caja |
+| WhatsApp | No es diferencial en EEUU | Si es comun en MX | Tickets/reportes compartibles y soporte por WhatsApp |
+| Facilidad para negocio pequeno | Menor si requiere hardware/contrato | Mejor | 14 dias gratis, primer mes 99, plan solidario |
+
+Propuesta competitiva afinada:
+
+- Plan visible en Play Store:
+  - Bocatta Arranque: 299 MXN/mes.
+  - Bocatta Crecimiento: 599 MXN/mes, recomendado.
+  - Bocatta Pro: 999 MXN/mes.
+- No mostrar MultiSucursal como plan principal; venderlo por contacto.
+- El mensaje principal debe ser:
+  "POS para restaurantes pequenos. Sin comisiones por venta, sin contrato
+  forzoso, sin equipo especial y con ventas offline."
+- El mensaje tecnico diferencial debe ser:
+  "Bocatta descuenta insumos por receta y conserva ventas offline para
+  sincronizarlas cuando regresa internet."
+- El mensaje de confianza:
+  "Precio claro en MXN, soporte por WhatsApp y prueba gratis."
+
+Funciones que no conviene prometer todavia:
+
+- Facturacion CFDI, salvo que se implemente y pruebe.
+- Integracion directa con terminal bancaria.
+- Integracion real con Uber Eats, Rappi o DiDi.
+- KDS avanzado si aun no hay pantalla dedicada terminada.
+- Payroll fiscal/legal; la nomina actual debe describirse como administrativa.
+
+16. Comparacion directa enfocada en Mexico
+
+Fecha de referencia: 30 de mayo de 2026.
+
+Competidores principales en Mexico:
+
+| POS Mexico | Precio publico base | Que ofrece | Hueco frente a Bocatta | Lectura para Bocatta |
+| --- | ---: | --- | --- | --- |
+| Soft Restaurant Cloud | Lite 811 MXN/mes; Pro 1,159 MXN/mes; anual Lite 8,920 MXN; anual Pro 12,750 MXN | Marca reconocida, nube, Android, facturacion electronica, pagos SR Payments, delivery Uber/Rappi/DiDi, reportes, hasta 2 o 10 equipos segun plan | Precio mas alto; Cloud esta pensado en linea y declara modo sin conexion temporal hasta 48h; en su FAQ indica que por el momento no tiene control de inventarios | Bocatta debe ser mas accesible y vender offline + inventario/recetas como ventaja |
+| Parrot Early | 949 MXN/mes por 12 meses; precio regular mostrado 1,800 MXN/mes | POS + terminal de pagos + canal delivery, 1 caja, 1 marca, 1 comandera, 1 terminal Parrot Pay, 1 app delivery, soporte 365 dias | Mas caro; enfoque fuerte en pagos/hardware; hardware cotizado aparte aunque permite Android | Bocatta puede competir como opcion sin terminal obligatoria y sin comision por venta |
+| Kokua | Desde 450 MXN/mes + implementacion desde 1,500 MXN | POS nube, comandas a cocina, inventario, pagos efectivo/tarjeta, reportes, acceso celular/tablet/computadora, soporte y capacitacion | Implementacion pagada; no posiciona offline-first; arranque mas caro que Bocatta Arranque | Bocatta puede entrar con 299 MXN y opcion de autoconfiguracion sin implementacion |
+| MyRest | 450 MXN/mes; anual 4,500 MXN; vitalicia 14,500 MXN; kit terminal 7,600 MXN con 6 meses | POS, inventarios, recetas, KDS, domicilios, reportes, menu QR, navegador web, soporte WhatsApp | Requiere internet por ser 100% nube; kit hardware opcional; precio base mayor que Arranque | Bocatta debe destacar venta offline real y menor precio de entrada |
+| Almora POS | Starter 349 MXN/mes; Pro 549 MXN/mes; Enterprise 799 MXN/mes | Offline-first, sync nube, cocina, gastos, repartidores, menu digital, multi-sucursal, soporte WhatsApp, sin add-ons | Competidor mas cercano en precio/offline; inventario, compras y CFDI aparecen en roadmap 2026, no como base cerrada | Bocatta debe diferenciarse por recetas, deduccion de insumos, auditoria y operacion restaurante |
+| OLON POS | Esencia 499 MXN/mes + IVA; Crecimiento 999 MXN/mes + IVA | Cafeterias mexicanas, POS, roles, turnos, cancelaciones con PIN, menu QR, reportes, recetas, inventario, multi-sucursal, KDS en Crecimiento | Muy fuerte en cafeteria; precio de recetas/inventario sube a 999 + IVA; menos general para restaurante amplio | Bocatta Crecimiento a 599 debe incluir recetas/offline para ganar valor-precio |
+| Poster POS Mexico | Desde 495 MXN + IVA | POS restaurante en tablet, comandas, gestion de ventas, caja adicional smartphone, prueba gratuita | Precio base mayor que Arranque; muchos detalles de modulos dependen del plan | Bocatta debe competir por precio MXN bajo y offline |
+| Pulpos | Inicial 18.56 MXN/mes; Esencial 370.04; Avanzado 601.04; Pro 799.24; sucursal extra desde 346.84 | POS mexicano general, inventario, CFDI 4.0, reportes, catalogo online, complementos | No es restaurante-first; complementos como fabricacion tienen costo; enfoque mas comercio general | Bocatta debe vender especializacion restaurante, cocina, recetas e insumos |
+| Loyverse | POS/KDS/dashboard gratis; add-ons 5-25 USD/mes por tienda | POS gratis, KDS gratis, dashboard gratis, inventario avanzado y empleados como add-ons | No es Mexico-first; precios en USD; soporte/localizacion no son ventaja; advanced inventory y empleados cuestan | Bocatta debe competir con soporte local, recetas de restaurante y precio claro MXN |
+
+Comparacion contra la propuesta Bocatta:
+
+| Plan Bocatta | Precio | Contra quien compite | Ventaja principal |
+| --- | ---: | --- | --- |
+| Arranque | 299 MXN/mes | Kokua 450, MyRest 450, Almora 349, OLON 499, Poster 495 | Entrada mas barata para restaurante pequeno sin contrato ni hardware especial |
+| Crecimiento | 599 MXN/mes | Almora Pro 549, Pulpos Avanzado 601, OLON Crecimiento 999, Soft Cloud Lite 811 | Mejor balance si incluye offline + recetas + inventario por insumos |
+| Pro | 999 MXN/mes | Soft Cloud Pro 1,159, Parrot Early 949, OLON Crecimiento 999 | Para restaurantes que quieren auditoria, caja avanzada, empleados y reportes sin amarrarse a pagos |
+| MultiSucursal | 1,299 + 499 por sucursal adicional | Soft/Parrot por cotizacion o planes superiores; Almora Pro/Enterprise | Oferta B2B para cadenas pequenas con precio claro |
+
+Posicionamiento recomendado en Mexico:
+
+- Contra Soft Restaurant: "Mas accesible, moderno, sin servidor, con inventario
+  por recetas y offline como prioridad."
+- Contra Parrot: "Sin terminal obligatoria, sin comision por venta y con precio
+  mensual mas bajo."
+- Contra Almora: "Tambien pensamos en offline, pero Bocatta se enfoca mas en
+  restaurante con recetas, insumos y auditoria."
+- Contra OLON: "Misma claridad para negocio pequeno, pero no solo cafeteria:
+  restaurante, creperia, frappe, taqueria, fonda y comida rapida."
+- Contra Kokua/MyRest/Poster: "Precio de entrada menor y venta offline como
+  argumento central."
+- Contra Pulpos/Loyverse: "No somos POS generico; somos POS para operacion de
+  restaurante."
+
+Precio recomendado para Mexico:
+
+- Mantener Arranque en 299 MXN.
+- Mantener Crecimiento en 599 MXN como plan recomendado.
+- Mantener Pro en 999 MXN, pero con oferta de lanzamiento a 899 MXN por 12
+  meses si el cliente contrata antes de cierta fecha.
+- Mantener primer mes a 99 MXN y 14 dias gratis sin tarjeta para reducir
+  friccion.
+
+17. Que falta para volver obsoletos a otros POS en restaurantes pequenos
+
+Idea central:
+
+- No basta con tener mas funciones.
+- Para desplazar a POS actuales en Mexico, Bocatta debe ganar al mismo tiempo
+  en operacion real, confianza comercial y facilidad de adopcion.
+- La promesa competitiva debe ser:
+  "Vende aunque se caiga internet, controla tus insumos por receta y entiende
+  tu caja sin pagar caro, sin contrato y sin equipo especial."
+
+Brechas importantes:
+
+1. Multi-tenant SaaS serio
+
+- Separar claramente negocio, sucursal, usuarios, roles, datos, plan activo y
+  limites por plan.
+- Sin esto, Bocatta no es SaaS vendible a muchos restaurantes; es una app
+  adaptada a un negocio.
+
+2. Onboarding automatico
+
+- El cliente debe poder crear cuenta, crear restaurante, elegir giro, cargar
+  menu basico, configurar metodos de pago, abrir caja y vender en menos de
+  15 minutos.
+- Si todo depende de configuracion manual, el negocio no escala.
+
+3. Control de suscripcion/licencia
+
+- Estados necesarios: trial activo, plan Arranque/Crecimiento/Pro, fecha de
+  corte, vencido, periodo de gracia, bloqueo parcial y panel interno para
+  activar/desactivar clientes.
+- No conviene apagar la caja en hora pico si falla el pago. Mejor usar avisos,
+  periodo de gracia y bloqueo gradual de reportes/admin antes de bloquear
+  ventas.
+
+4. Facturacion CFDI
+
+- En Mexico es un argumento fuerte.
+- Hace falta eventualmente emitir CFDI, configurar RFC/regimen, manejar timbres,
+  autofacturacion por QR y reportes para contador.
+- No prometerlo hasta que este implementado y probado.
+
+5. KDS real
+
+- No basta con ticket o pantalla improvisada.
+- Debe incluir pantalla de cocina por estacion, estados del pedido, tiempos,
+  filtros por area y alertas.
+- Idealmente debe seguir operando local/offline cuando la conexion falle.
+
+6. Panel web del dueno
+
+- El dueno necesita revisar ventas, cortes, productos top, inventario bajo,
+  utilidad estimada, sucursales, empleados y exportaciones sin usar la tablet
+  de caja.
+
+7. Migracion facil
+
+- Importar productos desde Excel.
+- Importar inventario.
+- Plantillas por giro: cafeteria, taqueria, creperia, fonda, pizzeria,
+  hamburguesas, fast food.
+- Carga rapida de recetas.
+- Servicio comercial: "mandanos foto de tu menu y te lo cargamos".
+
+8. Hardware confiable
+
+- No exigir hardware propietario, pero si publicar compatibilidad clara:
+  impresoras termicas Bluetooth/LAN/USB, cajon de dinero, tablets Android
+  recomendadas, lector de codigo y bascula si el giro lo requiere.
+
+9. Integraciones mexicanas
+
+- WhatsApp para tickets/reportes.
+- Registro de cobros con terminal externa, Mercado Pago o Clip sin amarrar al
+  cliente a un procesador.
+- Delivery mas adelante.
+- Prioridad recomendada: CFDI antes que delivery.
+
+10. Pruebas duras de offline
+
+- Validar venta sin internet, descuento local de inventario, folios, sync sin
+  duplicar ventas, resolucion de conflictos, reintentos y auditoria de fallos.
+- Este puede ser el diferenciador mas fuerte, pero debe estar blindado.
+
+Prioridad real de producto:
+
+1. Multi-tenant SaaS.
+2. Onboarding rapido.
+3. Suscripcion/licencia.
+4. Offline probado.
+5. Inventario por receta bien terminado.
+6. KDS real.
+7. Panel del dueno.
+8. CFDI.
+9. Hardware/impresoras.
+10. Integraciones.
+
+Conclusion:
+
+- Bocatta no va a volver obsoleto a Soft Restaurant en cadenas grandes de
+  inmediato.
+- Si puede volver obsoletos a muchos POS para restaurantes pequenos y medianos
+  si cumple la promesa de ser mas practico, accesible y confiable para la
+  operacion diaria en Mexico.

@@ -15,6 +15,10 @@ import androidx.compose.ui.platform.LocalContext
 import com.bocatta.pos.domain.model.ThemeConfigV2
 import kotlin.math.roundToInt
 
+private fun requireColor(value: Color?): Color = value ?: error("Missing color value in palette")
+
+private fun requirePaletteColor(key: Int, palette: Map<Int, Color>): Color = palette[key] ?: error("Missing color $key in palette")
+
 private val m3Primary = mapOf(
     0 to Color(0xFF000000), 10 to Color(0xFF1B5E20),
     20 to Color(0xFF2E7D32), 30 to Color(0xFF388E3C),
@@ -76,66 +80,66 @@ private val m3Error = mapOf(
 )
 
 val LightColorScheme = lightColorScheme(
-    primary = m3Primary[40]!!,
+    primary = requireColor(m3Primary[40]),
     onPrimary = Color.White,
-    primaryContainer = m3Primary[90]!!,
-    onPrimaryContainer = m3Primary[10]!!,
-    secondary = m3Secondary[40]!!,
+    primaryContainer = requireColor(m3Primary[90]),
+    onPrimaryContainer = requireColor(m3Primary[10]),
+    secondary = requireColor(m3Secondary[40]),
     onSecondary = Color.White,
-    secondaryContainer = m3Secondary[90]!!,
-    onSecondaryContainer = m3Secondary[10]!!,
-    tertiary = m3Tertiary[40]!!,
+    secondaryContainer = requireColor(m3Secondary[90]),
+    onSecondaryContainer = requireColor(m3Secondary[10]),
+    tertiary = requireColor(m3Tertiary[40]),
     onTertiary = Color.White,
-    tertiaryContainer = m3Tertiary[90]!!,
-    onTertiaryContainer = m3Tertiary[10]!!,
-    error = m3Error[40]!!,
+    tertiaryContainer = requireColor(m3Tertiary[90]),
+    onTertiaryContainer = requireColor(m3Tertiary[10]),
+    error = requireColor(m3Error[40]),
     onError = Color.White,
-    errorContainer = m3Error[90]!!,
-    onErrorContainer = m3Error[10]!!,
-    background = m3Neutral[99]!!,
-    onBackground = m3Neutral[10]!!,
-    surface = m3Neutral[99]!!,
-    onSurface = m3Neutral[10]!!,
-    surfaceVariant = m3NeutralVariant[90]!!,
-    onSurfaceVariant = m3NeutralVariant[30]!!,
-    outline = m3NeutralVariant[50]!!,
-    outlineVariant = m3NeutralVariant[80]!!,
-    inverseSurface = m3Neutral[20]!!,
-    inverseOnSurface = m3Neutral[95]!!,
-    inversePrimary = m3Primary[80]!!,
-    surfaceTint = m3Primary[40]!!,
+    errorContainer = requireColor(m3Error[90]),
+    onErrorContainer = requireColor(m3Error[10]),
+    background = requireColor(m3Neutral[99]),
+    onBackground = requireColor(m3Neutral[10]),
+    surface = requireColor(m3Neutral[99]),
+    onSurface = requireColor(m3Neutral[10]),
+    surfaceVariant = requireColor(m3NeutralVariant[90]),
+    onSurfaceVariant = requireColor(m3NeutralVariant[30]),
+    outline = requireColor(m3NeutralVariant[50]),
+    outlineVariant = requireColor(m3NeutralVariant[80]),
+    inverseSurface = requireColor(m3Neutral[20]),
+    inverseOnSurface = requireColor(m3Neutral[95]),
+    inversePrimary = requireColor(m3Primary[80]),
+    surfaceTint = requireColor(m3Primary[40]),
     scrim = Color.Black
 )
 
 val DarkColorScheme = darkColorScheme(
-    primary = m3Primary[80]!!,
-    onPrimary = m3Primary[20]!!,
-    primaryContainer = m3Primary[30]!!,
-    onPrimaryContainer = m3Primary[90]!!,
-    secondary = m3Secondary[80]!!,
-    onSecondary = m3Secondary[20]!!,
-    secondaryContainer = m3Secondary[30]!!,
-    onSecondaryContainer = m3Secondary[90]!!,
-    tertiary = m3Tertiary[80]!!,
-    onTertiary = m3Tertiary[20]!!,
-    tertiaryContainer = m3Tertiary[30]!!,
-    onTertiaryContainer = m3Tertiary[90]!!,
-    error = m3Error[80]!!,
-    onError = m3Error[20]!!,
-    errorContainer = m3Error[30]!!,
-    onErrorContainer = m3Error[90]!!,
-    background = m3Neutral[10]!!,
-    onBackground = m3Neutral[90]!!,
-    surface = m3Neutral[10]!!,
-    onSurface = m3Neutral[90]!!,
-    surfaceVariant = m3NeutralVariant[30]!!,
-    onSurfaceVariant = m3NeutralVariant[80]!!,
-    outline = m3NeutralVariant[60]!!,
-    outlineVariant = m3NeutralVariant[30]!!,
-    inverseSurface = m3Neutral[90]!!,
-    inverseOnSurface = m3Neutral[20]!!,
-    inversePrimary = m3Primary[40]!!,
-    surfaceTint = m3Primary[80]!!,
+    primary = requireColor(m3Primary[80]),
+    onPrimary = requireColor(m3Primary[20]),
+    primaryContainer = requireColor(m3Primary[30]),
+    onPrimaryContainer = requireColor(m3Primary[90]),
+    secondary = requireColor(m3Secondary[80]),
+    onSecondary = requireColor(m3Secondary[20]),
+    secondaryContainer = requireColor(m3Secondary[30]),
+    onSecondaryContainer = requireColor(m3Secondary[90]),
+    tertiary = requireColor(m3Tertiary[80]),
+    onTertiary = requireColor(m3Tertiary[20]),
+    tertiaryContainer = requireColor(m3Tertiary[30]),
+    onTertiaryContainer = requireColor(m3Tertiary[90]),
+    error = requireColor(m3Error[80]),
+    onError = requireColor(m3Error[20]),
+    errorContainer = requireColor(m3Error[30]),
+    onErrorContainer = requireColor(m3Error[90]),
+    background = requireColor(m3Neutral[10]),
+    onBackground = requireColor(m3Neutral[90]),
+    surface = requireColor(m3Neutral[10]),
+    onSurface = requireColor(m3Neutral[90]),
+    surfaceVariant = requireColor(m3NeutralVariant[30]),
+    onSurfaceVariant = requireColor(m3NeutralVariant[80]),
+    outline = requireColor(m3NeutralVariant[60]),
+    outlineVariant = requireColor(m3NeutralVariant[30]),
+    inverseSurface = requireColor(m3Neutral[90]),
+    inverseOnSurface = requireColor(m3Neutral[20]),
+    inversePrimary = requireColor(m3Primary[40]),
+    surfaceTint = requireColor(m3Primary[80]),
     scrim = Color.Black
 )
 
@@ -172,9 +176,9 @@ fun previewCustomColorScheme(config: ThemeConfigV2, darkTheme: Boolean = true): 
 }
 
 private fun buildCustomColorScheme(config: ThemeConfigV2, darkTheme: Boolean): ColorScheme {
-    val primary = parseHexColor(config.primaryHex) ?: parseHexColor("#FFB394")!!
-    val secondary = parseHexColor(config.secondaryHex) ?: parseHexColor("#5B4035")!!
-    val tertiary = parseHexColor(config.tertiaryHex) ?: parseHexColor("#F2C078")!!
+    val primary = parseHexColor(config.primaryHex) ?: requireColor(parseHexColor("#FFB394"))
+    val secondary = parseHexColor(config.secondaryHex) ?: requireColor(parseHexColor("#5B4035"))
+    val tertiary = parseHexColor(config.tertiaryHex) ?: requireColor(parseHexColor("#F2C078"))
 
     return if (darkTheme) {
         DarkColorScheme.copy(

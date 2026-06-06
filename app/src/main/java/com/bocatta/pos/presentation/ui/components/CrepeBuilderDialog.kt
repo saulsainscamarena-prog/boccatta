@@ -126,6 +126,41 @@ fun CrepeBuilderDialog(
 
     var esSeparado by remember(itemInicial?.cartId) { mutableStateOf(itemInicial?.esSeparado ?: false) }
     val scrollState = rememberScrollState()
+    fun agregarConfiguracion() {
+        if (numConfiguraciones == 1) {
+            val conf = configs[0]
+            val baseTexto = conf.bases.joinToString(", ").ifBlank { null }
+            onAddToCart(producto, baseTexto, conf.aderezos, conf.toppings, esSeparado, emptyList())
+        } else {
+            val subItems = configs.mapIndexed { index, conf ->
+                val baseTexto = conf.bases.joinToString(", ")
+                ItemCarritoV2(
+                    producto = producto.copy(
+                        id = "${producto.id}_crepa_${index + 1}",
+                        nombre = "Crepa ${if (conf.esSalada) "Salada" else "Dulce"}"
+                    ),
+                    nombre = buildString {
+                        append("Crepa ${if (conf.esSalada) "Salada" else "Dulce"}")
+                        if (baseTexto.isNotBlank()) append(" c/$baseTexto")
+                        if (conf.toppings.isNotEmpty()) append(" + ${conf.toppings.joinToString(", ")}")
+                    },
+                    precioFinal = BigDecimal.ZERO,
+                    base = baseTexto,
+                    aderezos = conf.aderezos,
+                    toppings = conf.toppings
+                )
+            }
+            onAddToCart(producto, null, emptyList(), emptyList(), esSeparado, subItems)
+        }
+    }
+
+    fun ejecutarAccionPrincipal() {
+        if (numConfiguraciones > 1 && currentConfigIndex < numConfiguraciones - 1) {
+            currentConfigIndex++
+        } else {
+            agregarConfiguracion()
+        }
+    }
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
@@ -169,6 +204,19 @@ fun CrepeBuilderDialog(
                         )
                         Text(producto.nombre.uppercase(), fontWeight = FontWeight.ExtraBold,
                             fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    FilledTonalButton(
+                        onClick = { ejecutarAccionPrincipal() },
+                        shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        modifier = Modifier.height(44.dp)
+                    ) {
+                        Text(
+                            if (numConfiguraciones > 1 && currentConfigIndex < numConfiguraciones - 1) "SIGUIENTE" else "AGREGAR",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 12.sp,
+                            maxLines = 1
+                        )
                     }
                 }
 
@@ -377,7 +425,7 @@ fun CrepeBuilderDialog(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (numConfiguraciones > 1 && currentConfigIndex < numConfiguraciones - 1) {
                         Button(
-                            onClick = { currentConfigIndex++ },
+                            onClick = { ejecutarAccionPrincipal() },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -402,36 +450,7 @@ fun CrepeBuilderDialog(
                             )
                         }
                         Button(
-                            onClick = {
-                                if (numConfiguraciones == 1) {
-                                    val conf = configs[0]
-                                    val baseTexto = conf.bases.joinToString(", ").ifBlank { null }
-                                    onAddToCart(producto, baseTexto, conf.aderezos,
-                                        conf.toppings, esSeparado, emptyList())
-                                } else {
-                                    val subItems = configs.mapIndexed { index, conf ->
-                                        val baseTexto = conf.bases.joinToString(", ")
-                                        ItemCarritoV2(
-                                            producto = producto.copy(
-                                                id = "${producto.id}_crepa_${index + 1}",
-                                                nombre = "Crepa ${if (conf.esSalada) "Salada" else "Dulce"}"
-                                            ),
-                                            nombre = buildString {
-                                                append("Crepa ${if (conf.esSalada) "Salada" else "Dulce"}")
-                                                if (baseTexto.isNotBlank()) append(" c/$baseTexto")
-                                                if (conf.toppings.isNotEmpty())
-                                                    append(" + ${conf.toppings.joinToString(", ")}")
-                                            },
-                                            precioFinal = BigDecimal.ZERO,
-                                            base = baseTexto,
-                                            aderezos = conf.aderezos,
-                                            toppings = conf.toppings
-                                        )
-                                    }
-                                    onAddToCart(producto, null, emptyList(),
-                                        emptyList(), esSeparado, subItems)
-                                }
-                            },
+                            onClick = { ejecutarAccionPrincipal() },
                             modifier = Modifier.weight(1.5f).height(52.dp),
                             shape = RoundedCornerShape(16.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp),

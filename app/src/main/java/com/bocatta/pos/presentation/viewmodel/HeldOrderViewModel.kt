@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.presentation.viewmodel
+package com.bocatta.pos.presentation.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
@@ -11,6 +11,7 @@ import com.bocatta.pos.data.repository.HeldOrderRepository
 import com.bocatta.pos.domain.model.HeldOrder
 import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.model.ClienteV2
+import timber.log.Timber
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -81,12 +82,31 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun assignOrderToMesa(orderId: String, mesaId: String): Boolean {
+        val updatedOrder = repository.assignToMesa(orderId, mesaId) ?: return false
+        val index = orders.indexOfFirst { it.id == orderId }
+        if (index >= 0) {
+            orders[index] = updatedOrder
+        } else {
+            orders.add(0, updatedOrder)
+        }
+        mensajeFeedback = "Orden asignada a mesa"
+
+        mesaLinkPolicy.alGuardar(updatedOrder)?.let { action ->
+            viewModelScope.launch {
+                mesaRepository.vincularOrden(action.mesaId, action.estado, action.ordenId)
+            }
+        }
+        return true
+    }
+
     fun getOrder(id: String): HeldOrder? = repository.getById(id)
 
     fun parseCarrito(jsonStr: String): List<ItemCarritoV2> {
         return try {
             json.decodeFromString(jsonStr)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse carrito JSON")
             emptyList()
         }
     }
@@ -95,7 +115,8 @@ class HeldOrderViewModel(application: Application) : AndroidViewModel(applicatio
         if (jsonStr.isNullOrBlank()) return null
         return try {
             json.decodeFromString(jsonStr)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse cliente JSON")
             null
         }
     }

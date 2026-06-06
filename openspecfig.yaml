@@ -1,0 +1,122 @@
+version: 1
+project:
+  name: Bocatta POS
+  workspace: C:\Users\ia\AndroidStudioProjects\bocatta
+  platform: android
+  language: kotlin
+  ui: jetpack-compose-material3
+  architecture: mvvm-clean-architecture
+  dependency_injection: koin
+  backend: firebase-firestore
+  local_storage:
+    - room
+    - sqlite
+  background_work: workmanager
+
+sdd:
+  docs_root: openspec
+  changes_root: openspec/changes
+  specs_root: openspec/specs
+  archive_root: openspec/changes/archive
+  constitution: openspec/constitution.md
+  skill_registry: openspec/skill-registry.yaml
+  source_catalog: openspec/source-catalog.yaml
+  web_research_policy: openspec/web-research-policy.md
+  mode: interactive
+  strict_tdd_default: true
+  require_human_checkpoint:
+    - after_proposal
+    - after_design
+    - before_apply
+    - before_archive
+
+phases:
+  - id: init
+    artifact: openspecfig.yaml
+    purpose: Detect stack, rules, docs roots, verification commands, and guardrails.
+  - id: research
+    artifact: research.md
+    purpose: Gather alternatives, tradeoffs, local owners, and unknowns before proposing a change.
+  - id: proposal
+    artifact: proposal.md
+    purpose: Define scope, non-scope, affected files, risks, rollback, and success criteria.
+  - id: spec
+    artifact: spec.md
+    purpose: Capture behavior using requirements and Given/When/Then scenarios.
+  - id: design
+    artifact: design.md
+    purpose: Map requirements to Android architecture, APIs, data contracts, and edge cases.
+  - id: tasks
+    artifact: tasks.md
+    purpose: Break work into small checkboxes with tests and evidence.
+  - id: apply
+    artifact: code_changes
+    purpose: Implement only approved tasks, preferably test-first when strict TDD applies.
+  - id: review
+    artifact: review.md
+    purpose: Audit code against proposal, spec, design, tasks, and guardrails.
+  - id: verify
+    artifact: verification.md
+    purpose: Record commands, manual checks, failures, and evidence.
+  - id: archive
+    artifact: archive.md
+    purpose: Preserve decision history and final outcome.
+
+verification:
+  kotlin_compile: .\gradlew.bat compileDebugKotlin
+  unit_tests: .\gradlew.bat testDebugUnitTest
+  assemble_debug: .\gradlew.bat assembleDebug
+  windows_daemon_diagnostics:
+    - .\gradlew.bat --status
+    - .\gradlew.bat --stop
+
+web_research:
+  default: local_first
+  require_question_before_search: true
+  prefer_primary_sources: true
+  max_sources_normal: 4
+  max_sources_critical: 6
+  max_secondary_sources: 1
+  stop_after_answered_by_primary_sources: 2
+  record_sources_in: research.md
+  use_when:
+    - version_sensitive_api
+    - android_or_firebase_behavior_changed
+    - gradle_or_jdk_build_failure
+    - play_store_or_target_sdk_policy
+    - security_privacy_permissions
+    - dependency_install_or_upgrade
+  do_not_use_when:
+    - local_business_rule
+    - existing_repo_pattern_clear
+    - cosmetic_change
+    - no_external_api_or_policy
+
+critical_domains:
+  ventas:
+    required_paths:
+      - app/src/main/java/com/bocatta/pos/presentation/viewmodel/SalesViewModelV2.kt
+      - app/src/main/java/com/bocatta/pos/data/repository/InventoryDeductions.kt
+      - app/src/main/java/com/bocatta/pos/data/sync/OfflineManager.kt
+      - app/src/main/java/com/bocatta/pos/data/sync/SyncWorker.kt
+  inventario:
+    required_paths:
+      - app/src/main/java/com/bocatta/pos/data/repository/InventoryRepository.kt
+      - app/src/main/java/com/bocatta/pos/data/repository/InventoryRepositoryImpl.kt
+      - app/src/main/java/com/bocatta/pos/data/repository/InventoryDeductions.kt
+  offline_sync:
+    required_paths:
+      - app/src/main/java/com/bocatta/pos/data/local/OfflineDatabase.kt
+      - app/src/main/java/com/bocatta/pos/data/queue/SQLiteStockAdjustmentQueue.kt
+      - app/src/main/java/com/bocatta/pos/data/sync/OfflineManager.kt
+      - app/src/main/java/com/bocatta/pos/data/sync/SyncWorker.kt
+
+guardrails:
+  - Do not modify files outside the requested scope.
+  - Do not revert existing user changes.
+  - Do not run destructive commands.
+  - Do not add architecture parallel to existing repositories, use cases, or Koin modules.
+  - Do not put business logic in Composables.
+  - Do not change stock deductions without online, offline, and sync validation.
+  - Do not use global Gradle; use .\gradlew.bat.
+  - Do not delete Gradle caches as a first-line fix.

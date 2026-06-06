@@ -1,168 +1,404 @@
-Notas Bocatta POS - Pendientes vivos
-Ultima actualizacion: 2026-05-26
+Notas Bocatta POS
+Ultima actualizacion: 2026-06-01
 
-Este archivo ya no repite decisiones cerradas ni trabajo base ya implementado.
-Aqui quedan solo pendientes abiertos, riesgos actuales y temas que requieren
-validacion, correccion o una fase propia.
-
-
-1. Bloqueos antes de operar realmente
-
-1.1. SalesScreen puede quedar sin productos
-
-- SalesScreen depende de `catalogoProcesado`.
-- SalesViewModelV2 declara `catalogoProcesado`, pero falta asignarlo cuando
-  termina `escucharMenu()`.
-- Correccion esperada:
-  - Despues de cargar `_productos`, llamar a `catalogoUseCase.clasificarYOrdenar`.
-  - Usar sucursal actual.
-  - Mantener fallback operativo si el catalogo procesado es nulo.
-
-1.2. Orden apartada o mesa puede quedar colgada despues de cobrar
-
-- Al cobrar se llama `limpiarEstadoPostVenta()`.
-- Eso limpia `activeHeldOrderId`.
-- SalesScreen intenta borrar la orden apartada despues, pero ya puede estar en
-  null.
-- Riesgo:
-  - La venta se cobra.
-  - La orden queda en `held_orders`.
-  - La mesa puede quedar ocupada aunque ya pago.
-- Correccion esperada:
-  - Capturar el ID de orden activa antes de limpiar estado post venta.
-  - O hacer que el ViewModel emita un evento de venta completada con
-    `heldOrderId` y `mesaId`.
-  - Borrar/liberar despues de venta exitosa, no antes.
-
-1.3. Dialogo viejo de ordenes apartadas borra antes de cobrar
-
-- En SalesScreen, el dialogo de ordenes apartadas carga items y borra la orden
-  inmediatamente.
-- Si el cobro falla o el telefono se apaga, se pierde la orden.
-- Correccion esperada:
-  - Reutilizar `cargarOrdenEnCarrito(...)`.
-  - Mantener `heldOrderId`.
-  - No borrar la orden hasta venta exitosa o cancelacion autorizada.
-
-1.4. Re-apartar una mesa puede liberar la mesa por carrera asincrona
-
-- El flujo guarda una nueva orden y luego borra la anterior.
-- Borrar la anterior libera la mesa.
-- Si la liberacion corre despues del nuevo vinculo, la mesa queda libre con una
-  orden real existente.
-- Correccion esperada:
-  - Crear metodo transaccional de reemplazo/movimiento de orden.
-  - O borrar sin liberar mesa cuando se trate de reemplazo.
-  - Evitar llamadas independientes que compitan entre guardar, borrar y vincular.
+Este archivo es la bitacora viva del proyecto: pendientes, hallazgos, riesgos,
+validaciones faltantes y temas para fases futuras. No documenta aqui trabajo ya
+cerrado ni decisiones de diseno estables; eso vive en codigo, commits o
+AGENTS.md.
 
 
-2. QA manual pendiente
+0. Verificacion reciente (2026-06-01)
 
-Antes de instalar para uso real de mostrador, probar en dispositivo:
+- compileDebugKotlin: OK (2026-06-01)
+- testDebugUnitTest: OK (287 tests unitarios, 2026-06-01)
+- git diff --check: OK sin errores de whitespace ni avisos CRLF/LF (2026-06-01)
+- OfflineDatabaseFolioInstrumentedTest: OK en AVD tablet (6 tests, 2026-05-30)
+- CajaViewModelContingencyInstrumentedTest: OK en AVD tablet (2 tests, 2026-05-30)
+- HeldOrderRepositoryInstrumentedTest: OK en AVD tablet (4 tests, 2026-05-30)
+- SalesScreenTest: OK en AVD tablet (2 tests, 2026-05-30)
+- CarritoPanelV2Test: OK en AVD tablet (5 tests, 2026-05-30)
+- Rama main: ~63 commits adelante de origin/main
+- Trabajo local sin commit en ventas, inventario, sync, reglas Firestore y UI
 
-- Login.
-- Seleccion de sucursal.
-- Turno existente.
-- Apertura de turno con usuario autorizado.
-- Bloqueo claro si usuario no autorizado intenta abrir turno.
-- SalesScreen con pestana Frecuentes.
-- Busqueda de producto.
-- Agregar producto simple.
-- Agregar producto configurable.
-- Marcar item Para llevar.
+
+1. Hallazgos corregidos en codigo - falta validar en dispositivo
+
+Estos bloqueos ya tienen parche en codigo. No cerrarlos hasta QA manual en
+mostrador real.
+
+1.1. catalogoProcesado
+
+- SalesViewModelV2.escucharMenu() ya asigna catalogoProcesado via
+  catalogoUseCase.clasificarYOrdenar(...).
+- Validar: pestana Frecuentes, categorias, productos sin precio ocultos,
+  materia prima/inactivos no visibles.
+
+1.2. Orden apartada o mesa colgada despues de cobrar
+
+- SalesViewModelV2 guarda lastCompletedHeldOrderId antes de
+  limpiarEstadoPostVenta().
+- SalesScreen borra la orden solo tras showSuccess de venta.
+- Validar: cobrar venta rapida apartada, cobrar mesa, mesa liberada, fallo de
+  cobro no borra orden.
+
+1.3. Recuperar orden apartada sin borrarla al cargar
+
+- ActividadScreen usa cargarOrdenEnCarrito(...) sin deleteOrder al recuperar.
+- Validar: recuperar orden, salir sin cobrar, orden sigue disponible; cobrar
+  correctamente la elimina.
+
+1.4. Re-apartar mesa sin liberar por carrera
+
+- SalesScreen.apartarOrden() borra orden anterior con liberarMesa = false.
+- HeldOrderMesaLinkPolicy + tests unitarios cubren la regla.
+- Validar: re-apartar mesa mantiene OCUPADA y apunta a orden vigente.
+
+
+2. Hallazgos abiertos
+
+2.1. Mover venta rapida a mesa no es transaccional
+
+- Corregido en codigo: ActividadScreen usa HeldOrderViewModel.assignOrderToMesa.
+- La orden local conserva el mismo ID y se actualiza en SQLite antes de vincular
+  la mesa en Firestore.
+- Falta QA manual: mover venta rapida a mesa, volver a ventas, cobrar y validar
+  que la mesa quede vinculada/liberada correctamente.
+
+2.2. Tests de ordenes apartadas / mesas insuficientes
+
+- Existe HeldOrderMesaLinkPolicyTest (politica pura).
+- Falta cobertura de integracion para:
+  - cobro exitoso elimina orden y libera mesa
+  - cobro fallido conserva orden
+  - cargar orden no la borra
+  - reemplazo de orden en mesa
+- Candidatos: test instrumentado con OfflineDatabase + HeldOrderRepository, o
+  helper de test con Room in-memory.
+
+2.3. Git y release sin cerrar
+
+- Muchos cambios locales sin commit (ventas, sync, firestore.rules, seguridad).
+- versionCode 1 / versionName 1.0 - primer release aun no publicado.
+- Crashlytics comentado en app/build.gradle.kts.
+- PUBLICACION_PLAY_STORE.txt existe; falta keystore, internal testing, Data
+  Safety, politica de privacidad y QA release.
+
+2.4. notas.txt desactualizado
+
+- Resuelto con esta actualizacion.
+
+2.5. Pendientes activos con identificador
+
+- BCT-F1-001: Corregido en codigo. Turnos/Apertura reutilizan el
+  InventoryViewModel con scope Activity; falta QA manual de apertura de turno.
+- BCT-F1-002: Corregido en codigo. MainActivity conserva una sola ruta de
+  ReportesInventario; falta smoke manual desde Admin/Bodega.
+- BCT-F1-003: Corregido en codigo. MesaViewModel usa scope Activity igual que
+  HeldOrderViewModel; falta QA manual de Actividad -> Ventas -> Actividad.
+- BCT-F2-001: Corregido en codigo. Propina ya pasa por PagoSheetV2,
+  SalesViewModel, VentaV2, repositorio online, SQLite offline, SyncWorker y
+  ticket WhatsApp. Cubierto por GenerarTicketWhatsAppUseCaseTest y
+  OfflineDatabaseFolioInstrumentedTest. Falta QA manual cobrando online/offline.
+- BCT-F2-002: Corregido en codigo. Nota de orden ya pasa por PagoSheetV2,
+  SalesViewModel, VentaV2, repositorio online, SQLite offline, SyncWorker y
+  ticket WhatsApp. Cubierto por GenerarTicketWhatsAppUseCaseTest y
+  OfflineDatabaseFolioInstrumentedTest. Falta QA manual cobrando online/offline.
+- BCT-F2-003: Pago mixto corregido en codigo para bloquear confirmacion si la
+  suma no cuadra y registrar desglose en metodoPago; falta QA manual en tablet
+  con efectivo + tarjeta/transferencia.
+- BCT-F2-004: Parcialmente corregido en codigo. PagoSheetV2 deja cobro rapido
+  visible, conserva propina visible y colapsa nota/split/consumo empleado tras
+  "Mas opciones". Falta QA visual en tablet.
+- BCT-F2-005: Corregido en codigo. El total de venta conserva propina, pero el
+  acumulado de lealtad usa total sin propina para no inflar visitas/compras.
+  Falta QA con cliente asociado en venta online.
+- BCT-F2-006: Corregido en codigo. Pago dividido recalcula sus partes si el
+  total cambia por propina despues de activar split. Falta QA con split +
+  propina.
+- BCT-F3-001: Corregido en codigo. Mover venta rapida a mesa actualiza la
+  misma held_order local con el mismo ID antes de vincular Firestore; falta QA
+  manual Actividad -> asignar mesa -> cobrar.
+- BCT-F3-002: Parcialmente cubierto. Hay tests instrumentados para mover venta
+  rapida a mesa conservando ID, recuperar sin borrar y borrar solo de forma
+  explicita. La decision de borrar orden solo en checkout exitoso quedo cubierta
+  por HeldOrderCheckoutCompletionPolicyTest. HeldOrderRepositoryInstrumentedTest
+  paso en AVD tablet. Falta QA manual end-to-end con SalesViewModel/Firebase
+  real.
+- BCT-F4-001: Corregido en codigo. SalesCatalogSection sube el ancho minimo de
+  tarjetas de producto en tablet para reducir toques equivocados, manteniendo
+  densidad menor en movil. Falta QA visual en tablet real.
+- BCT-F4-001A: Corregido en codigo. SalesScreen toma snapshot de alertasStock
+  con derivedStateOf para reflejar cambios de cantidad aunque el mapa conserve
+  el mismo tamano. Falta QA con stock cambiando en vivo.
+- BCT-F4-001B: Corregido en codigo. La barra movil de carrito ya descuenta
+  descuentoManual para no mostrar un total distinto al checkout. Falta smoke en
+  movil.
+- BCT-F4-002: Corregido en codigo. BocattaCartItemRow permite editar tocando la
+  fila completa y deja la X como unica accion explicita de borrado con touch
+  target de 48dp. CarritoPanelV2Test paso en AVD tablet; falta QA tactil en
+  tablet real.
+- BCT-F4-003: Corregido en codigo. CrepeBuilderDialog tiene accion principal
+  visible en el encabezado para avanzar/agregar sin llegar al final del scroll.
+  Falta QA tactil armando crepa y combo en tablet real.
+- BCT-F5-001: Corregido en codigo. Apertura puede saltar a caja en modo sin
+  conexion y permite abrir un turno local de contingencia con rol encargado/admin.
+  El turno queda en SQLite, desbloquea el POS y se marca para sincronizar.
+- BCT-F5-002: Corregido en codigo. CajaViewModel recupera turno local de
+  contingencia si Firestore falla al leer turno activo, exponiendolo como
+  turnoActivo para no bloquear cobro.
+- BCT-F5-003: Corregido en codigo. SyncWorker sincroniza turnos de contingencia
+  pendientes hacia TURNOS_CAJA con offlineContingency=true y marca syncPendiente=0.
+- BCT-F5-004: Corregido en codigo. OfflineDatabaseFolioInstrumentedTest cubre
+  persistencia/cierre/sync flag de turno local y consulta de ventas locales por
+  sucursal/fecha. Falta QA real: abrir contingencia sin internet, vender,
+  reconectar y verificar Firestore.
+- BCT-F5-005: Corregido en codigo. CajaViewModelContingencyInstrumentedTest
+  valida en emulador que admin abre contingencia, desbloquea caja y persiste
+  SQLite; vendedor queda bloqueado.
+- BCT-F6-001: Corregido en codigo. El reporte diagnostico compartible por
+  WhatsApp incluye estado local: ventas offline pendientes, operaciones offline,
+  turnos de contingencia pendientes, cantidad de archivos de log y carpeta local.
+- BCT-F6-002: Corregido en codigo. Ticket WhatsApp incluye propina, nota de
+  orden y modo de operacion cuando la venta queda offline o en fallback local
+  pendiente de sincronizacion.
+- BCT-F6-003: Corregido en codigo. Compartir ticket, cierre, nomina y
+  diagnostico registra breadcrumbs antes de abrir WhatsApp y registra fallback
+  cuando WhatsApp no esta disponible.
+- BCT-F6-004: Verificado. compileDebugKotlin OK y testDebugUnitTest OK con 283
+  tests unitarios. Falta QA manual: compartir ticket/diagnostico desde tablet
+  real con WhatsApp instalado y sin WhatsApp instalado.
+- BCT-F7-001: Corregido en codigo. El bloqueo por inactividad de SalesScreen
+  solo aplica online y fuera de contingencia; cualquier toque/tecla relevante
+  reinicia el temporizador y si cae offline/contingencia se desbloquea.
+- BCT-F7-002: Corregido en codigo. Desbloqueo de PIN se centraliza en
+  AuthorizationManager.validarPinDesbloqueo; se elimina fallback por nombre y
+  empleado solo desbloquea si authUid coincide con la sesion.
+- BCT-F7-003: Corregido en reglas. v2_employees permite get del propio empleado
+  por authUid, mantiene list/write solo admin.
+- BCT-F7-004: Corregido en codigo. SyncWorker sincroniza propina/notaOrden de
+  ventas offline y vuelve a considerar turnos de contingencia pendientes antes
+  de terminar exitosamente.
+- BCT-F7-005: Corregido en codigo. Merma de mostrador pasa por
+  RegistrarMermaProductoUseCase, descuenta SQLite, encola ajustes WASTE,
+  registra OperacionOffline tipo merma y dispara sync inmediato.
+- BCT-F7-006: Verificado. compileDebugKotlin OK, testDebugUnitTest OK con 287
+  tests unitarios y git diff --check OK. Falta QA real en tablet: lock online,
+  offline/contingencia, merma offline/reconexion y PIN de vendedor ligado por
+  authUid.
+- BCT-F7-007: Saneamiento aplicado. Se agrego .gitattributes para fijar line
+  endings del repo, se normalizaron archivos de texto tocados a LF y se corrigio
+  mojibake de comentario en BocattaDesign. DynamicFormEngine conserva literales
+  de mojibake de forma intencional porque los usa para detectar texto corrupto.
+- BCT-F7-008: Corregido en codigo/reglas. Turnos de contingencia cerrados pueden
+  crearse desde SyncWorker con offlineContingency=true; updates sensibles de
+  turnos/clientes usan hasOnly para evitar campos colados.
+- BCT-F7-009: Corregido en codigo. OperacionOffline mantiene estado pendiente
+  tras fallos transitorios y solo pasa a fallida al alcanzar MAX_INTENTOS.
+- BCT-F7-010: Corregido en codigo. syncOfflineAdjustment para unidad base ya no
+  escribe campo unit en v2_inventory_branch_portions, alineado con firestore.rules.
+- BCT-F8-001: Corregido en codigo. El total operativo de checkout ahora incluye
+  propina en ticket postventa y venta offline; el ticket WhatsApp recibe propina,
+  notaOrden y modo offline cuando aplica.
+- BCT-F8-002: Corregido en codigo. Estado de pago mixto se centraliza en
+  resetearEstadoPago y se limpia al cerrar venta o limpiar carrito para evitar
+  montos heredados entre clientes.
+- BCT-F8-003: Corregido en codigo. Ventas/operaciones offline disparan
+  SyncScheduler.scheduleImmediateSync tras guardarse; cancelaciones offline usan
+  JSONObject en vez de JSON armado a mano.
+- BCT-F8-004: Corregido en UX de mostrador. Boton "Cobrar efectivo exacto" hace
+  checkout de un toque, protegido por cargando/stock insuficiente.
+
+
+3. QA manual pendiente (mostrador)
+
+Antes de uso real, probar en tablet/dispositivo:
+
+- Login y seleccion de sucursal.
+- Turno existente y apertura con usuario autorizado.
+- Bloqueo si usuario no autorizado intenta abrir turno.
+- SalesScreen: Frecuentes, busqueda, producto simple, producto configurable.
+- Item Para llevar.
 - Venta rapida directa a cobro.
-- Apartar venta rapida.
-- Recuperar venta rapida.
-- Mover venta rapida a mesa.
-- Agregar mas productos a mesa.
-- Cancelar item con PIN.
-- Cobrar mesa.
-- Liberar mesa despues de cobro.
-- Cobro efectivo.
-- Cobro mixto si aplica.
-- Ticket de WhatsApp.
-- Venta sin internet.
-- Sincronizacion posterior.
+- Apartar venta rapida, recuperar, mover a mesa.
+- Agregar productos a mesa, cancelar item con PIN.
+- Cobrar mesa y liberar mesa despues de cobro.
+- Cobro efectivo y cobro mixto si aplica.
+- Ticket WhatsApp.
+- Venta sin internet y sincronizacion posterior.
+- Cobro efectivo exacto de un toque: cobrar, verificar ticket, carrito limpio y
+  que el siguiente cobro no hereda pago mixto.
+- Cobro con propina y nota: confirmar que WhatsApp/ticket y Firestore/offline
+  conservan propina, notaOrden y total cobrado.
+- Pago mixto: cobrar una venta, iniciar otra y validar que montos/metodos no se
+  heredan.
+- Cancelacion offline de item con comillas/acentos en nombre o motivo: reconectar
+  y validar log JSON en Firestore.
 
 
-3. QA de inventario y offline
+4. QA inventario y offline
 
 Probar con y sin internet:
 
-- Venta de crepa.
-- Venta de waffle.
-- Venta de frappe.
-- Venta de combo.
-- Venta con item Para llevar.
-- Descuento de ingredientes.
-- Descuento de preparados si aplica.
-- Descuento de consumibles.
-- Sync posterior al recuperar internet.
-- Que la venta no se pierda por consumible faltante local.
-- Que el stock no quede duplicado o negativo sin alerta.
+- Crepa, waffle, frappe, combo.
+- Item Para llevar.
+- Descuento de ingredientes, preparados y consumibles.
+- Sync al recuperar internet.
+- Venta no se pierde por consumible faltante local.
+- Stock no queda duplicado o negativo sin alerta.
 
 
-4. Riesgos tecnicos abiertos
+5. Riesgos tecnicos abiertos
 
-4.1. Tests de actividad no cubren flujo real
+5.1. Autorizaciones parciales
 
-- Los tests actuales de actividad simulan modelos con `copy(...)`.
-- Falta probar:
-  - HeldOrderRepository.
-  - OfflineDatabase.
-  - MesaRepository.
-  - Guardar, borrar, mover y cobrar ordenes reales.
+- PIN presencial en algunos flujos (ActividadScreen, cancelaciones, etc.).
+- Falta aprobacion remota, auditoria completa y regla unificada para:
+  cancelar, descuento, mover mesa, cerrar caja, ajustar inventario.
 
-4.2. Autorizaciones todavia son parciales
+5.2. Firestore listeners en ViewModels
 
-- PIN presencial existe en algunos puntos.
-- Falta aprobacion remota.
-- Falta auditoria completa en todos los cambios sensibles.
-- Falta unificar la regla de permisos para:
-  - Cancelar.
-  - Descuento.
-  - Mover mesa.
-  - Cerrar caja.
-  - Ajustar inventario.
+- Muchos addSnapshotListener; algunos se remueven en onCleared.
+- Riesgo: lecturas extra, fugas, costo Firebase.
+- Objetivo: centralizar o envolver con Flow/lifecycle controlado.
 
-4.3. Firestore listeners
+5.3. Inventario dinamico no cerrado
 
-- Hay muchos `addSnapshotListener` en ViewModels.
-- Algunos se remueven en `onCleared`, pero la estrategia final debe reducir
-  listeners persistentes o envolverlos con lifecycle/flow controlado.
-- Riesgo: lecturas innecesarias, fugas y costo.
+- Deducciones conocidas para consumibles/preparados por codigo.
+- Falta configuracion dinamica por producto/categoria/modo de consumo.
+- No refactor grande hasta cerrar QA de venta, mesa y cobro.
 
-4.4. Inventario dinamico aun no esta cerrado
+5.4. Codigo muerto y deuda menor (auditoria 2026-05-21)
 
-- Todavia hay reglas de deduccion conocidas para consumibles/preparados.
-- Falta migrar a configuracion dinamica por producto/categoria/modo de consumo.
-- No hacer refactor grande hasta cerrar primero venta, mesa y cobro.
+- OfflineManager: wrappers deprecated de folios/tickets legacy. (Corregido 2026-06-04)
+- AuthRepository.validarCodigoMaestro() deprecated sin callers.
+- Routes.Compras sin navigate detectado; decidir UX antes de eliminar.
+- Lint: recursos no usados, DefaultLocale en ComprasScreen, logo sin densidad.
 
 
-5. Pendientes aprobados para fases futuras
+6. Pendientes aprobados para fases futuras
 
 - Aprobacion remota de PIN por admin.
-- Configuracion dinamica de consumibles por producto, categoria y modo de consumo.
+- Configuracion dinamica de consumibles por producto, categoria y modo.
 - Recetas y preparados completamente dinamicos.
-- Reset de PIN/contrasena de empleados a 0000 con cambio obligatorio.
-- Modificacion de codigo maestro y codigo empleado desde Admin.
-- Configuracion del nombre del negocio en login.
-- Opcion para mostrar solo nombre del negocio y ocultar POS.
+- Reset PIN/contrasena empleados a 0000 con cambio obligatorio.
+- Modificar codigo maestro y codigo empleado desde Admin.
+- Nombre del negocio en login; opcion ocultar "POS".
 - Directorio de clientes en Administracion.
 - Configuracion general de fidelizacion.
-- Drawer definitivo con Administracion, Configuracion y Sistema separados.
+- Drawer definitivo: Administracion, Configuracion y Sistema separados.
 - Reorganizacion de gastos, sueldos, reportes y caja.
-- Flujo de cocina queda en standby, no entra en el lote actual.
-- QR/menu con imagenes queda como idea futura, no entra en SalesScreen actual.
+- Flujo de cocina en standby.
+- QR/menu con imagenes como idea futura, fuera de SalesScreen actual.
+- Multi-tenant SaaS, onboarding, licencias por plan (ver PUBLICACION_PLAY_STORE.txt).
+- KDS real, panel web dueno, CFDI, Play Integrity (post primer release).
 
 
-6. Orden recomendado desde aqui
+7. Orden recomendado desde aqui
 
-1. Corregir `catalogoProcesado`.
-2. Corregir borrado/liberacion de ordenes al cobrar.
-3. Corregir carga vieja de ordenes apartadas.
-4. Corregir reemplazo de orden en mesa sin liberar por accidente.
-5. Agregar tests unitarios o instrumentados para esos cuatro casos.
-6. Ejecutar `compileDebugKotlin`.
-7. Ejecutar `testDebugUnitTest`.
-8. Instalar en dispositivo y correr QA manual.
+1. Commit del trabajo local pendiente (ventas, sync, reglas, seguridad).
+2. QA manual en dispositivo (secciones 3 y 4).
+3. Tests de integracion para ordenes apartadas y mesas (2.2).
+4. Endurecer mover venta rapida a mesa (2.1).
+5. Preparar internal testing Play Store (keystore, .aab, Data Safety).
+6. Fases futuras segun prioridad de negocio (seccion 6).
+
+
+8. Hallazgos AVD mostrador real (2026-06-02)
+
+- BCT-F9-001: Bloqueo externo confirmado en AVD. La cuenta de prueba autentica
+  en Firebase Auth, pero Firestore live devuelve PERMISSION_DENIED para
+  v2_users/{uid}, v2_turnos_caja, v2_inventory_branch_portions, v2_supplies,
+  v2_ventas, v2_gastos, theme_global y parametros_caja. Resultado: no se puede
+  abrir turno online ni validar flujo de venta real con esa cuenta hasta alinear
+  reglas desplegadas y perfil operativo.
+- BCT-F9-002: Corregido en codigo. Apertura offline ahora salta al paso de caja
+  y muestra "ABRIR CONTINGENCIA LOCAL" como accion visible/usable, sin dejar el
+  boton online deshabilitado ocupando el area primaria. Validado en AVD: boton
+  visible con texto y touch target.
+- BCT-F9-003: Corregido en codigo. SessionViewModel guarda cache local minimo
+  de usuario operativo tras una carga exitosa de Firestore y lo restaura al
+  arrancar con el mismo FirebaseAuth UID. Si Firestore nunca entrega v2_users,
+  no se inventa rol ni se eleva permisos localmente.
+- BCT-F9-004: Pendiente critico. Crear/deployar configuracion Firebase del repo
+  o revisar consola para asegurar que firestore.rules actual este desplegado en
+  boccata-dce3d y que el UID de la cuenta de mostrador tenga documento
+  v2_users/{uid} con rol y sucursal operativa correctos.
+- BCT-F9-005: Pendiente UX/seguridad. Mostrar errorSesion de SessionViewModel en
+  Turnos/Apertura con copia operativa clara: "perfil no cargado, no se puede
+  operar". Actualmente el error remoto aparece como PERMISSION_DENIED y el
+  detalle de sesion se ve al intentar contingencia.
+- BCT-F10-001: Corregido en codigo. TurnosScreen ahora bloquea "Iniciar turno"
+  si no hay perfil operativo cargado y muestra copia clara de perfil requerido
+  cuando SessionViewModel reporta PERMISSION_DENIED/sesion no cargada.
+- BCT-F10-002: Corregido en repo. Se agregaron firebase.json y .firebaserc para
+  desplegar firestore.rules/firestore.indexes.json contra boccata-dce3d con:
+  firebase deploy --only firestore:rules,firestore:indexes --project boccata-dce3d
+- BCT-F10-003: Resuelto externo. Firebase CLI quedo autenticado en la maquina y
+  se desplegaron firestore.rules/firestore.indexes.json a boccata-dce3d. El
+  deploy compilo reglas, publico indices y libero las reglas de Firestore.
+- BCT-F10-004: Pendiente verificacion AVD. Revalidar login, carga de perfil,
+  apertura de turno y llegada a mostrador despues del deploy. Ultimo estado del
+  emulador: app instalada y abierta en Login; la escritura por ADB en campos de
+  texto fue inestable, asi que puede requerir entrada manual en el AVD.
+- BCT-F10-005: Pendiente UX mostrador/Admin. No hay una conexion clara entre
+  "Administrar tienda" y la accion operativa de actualizar stock; el flujo sigue
+  siendo un panel con demasiadas opciones y no una ruta rapida de mostrador. No
+  implementar ahora: queda para redisenar Admin/Inventario con entrada directa
+  para cargar stock minimo/corregir stock, separando tareas frecuentes de
+  configuracion avanzada.
+
+
+9. Implementacion P0 auditoria maxima (2026-06-04)
+
+- BCT-F11-001: Corregido en codigo. firestore.rules permite que el checkout
+  actualice clientes con los campos reales de fidelizacion:
+  visitasCicloActual, comprasCicloActual y fechaUltimaVisita, ademas de nombre
+  y telefono. Se agrego contrato de test para evitar regresion.
+- BCT-F11-002: Corregido en codigo. La venta offline conserva y sincroniza
+  metadatos operativos que antes podian perderse entre SQLite y Firestore:
+  propina, notaOrden, descuentoPromociones y descuentoManual.
+- BCT-F11-003: Corregido en codigo. SyncWorker ya no calcula stock offline con
+  lectura local remota + escritura absoluta; descuenta inventario con
+  FieldValue.increment(-cantidad), igualando la ruta online y reduciendo riesgo
+  de overwrite entre tablets.
+- BCT-F11-004: Verificado. compileDebugKotlin paso limpio tras reiniciar daemons
+  Gradle/Kotlin; testDebugUnitTest paso; tests contractuales de seguridad/offline
+  se forzaron con --rerun-tasks; detekt analizo 240 archivos Kotlin con 0 smells;
+  AVD bocatta_tablet_api36 ejecuto OfflineDatabaseFolioInstrumentedTest con
+  7 tests, 0 failures, 0 errors.
+- BCT-F11-005: Pendiente deploy. Si firestore.rules desplegadas en Firebase son
+  anteriores a esta fase, desplegar reglas/indices de nuevo antes de validar
+  ventas reales con cliente/fidelizacion.
+- BCT-F11-006: Pendiente QA mostrador real. Revalidar en AVD conectado a Firebase:
+  login, perfil v2_users, apertura de turno, venta exacta, venta con cliente,
+  propina/nota, descuento manual/promo, venta offline, reconexion y sync.
+- BCT-F11-007: Pendiente entorno. Resolver el conflicto de ADB en PATH:
+  C:\Windows\adb.exe reporta server version 40 y el SDK usa client 41. Las pruebas
+  instrumentadas pasan usando el ADB del SDK, pero el mismatch ensucia logs y puede
+  romper UTP/Android Studio.
+- BCT-F11-008: Pendiente UX ya identificado en BCT-F10-005. Redisenar Admin/Inventario
+  para que actualizar stock sea una ruta operativa directa y no una opcion perdida
+  dentro de Administrar tienda.
+
+
+10. Correcciones auditoria mostrador concurrente (2026-06-06)
+
+- BCT-F12-001: Corregido en codigo. AuthorizationManager ya no depende de un
+  query/list a v2_employees por authUid para abrir turno de vendedor; el rol
+  operativo VENDEDOR en v2_users puede abrir turno sin chocar con reglas que
+  mantienen list/write de empleados solo para admin.
+- BCT-F12-002: Corregido en codigo. SyncWorker recupera ajustes de stock que
+  quedaron en estado syncing antes de leer pendientes, usando resetStaleSyncing
+  con ventana de 15 minutos para evitar colas congeladas tras crash/reinicio.
+- BCT-F12-003: Corregido en codigo. syncOfflineAdjustment convierte cualquier
+  ajuste offline a unidad base y evita el fallback a adjustStock que podia
+  escribir campos no permitidos por reglas para vendedor.
+- BCT-F12-004: Corregido en codigo. Ticket WhatsApp muestra descuento manual
+  cuando afecta el total, evitando tickets con total rebajado sin explicacion.
+- BCT-F12-005: Corregido en codigo. CartManager queda como owner unico del undo
+  del carrito; SalesViewModel delega historial y la limpieza post-venta no guarda
+  undo para no restaurar carritos ya cobrados.
+- BCT-F12-006: Verificacion ejecutada. Antes de Gradle se confirmo que no habia
+  procesos Java/Kotlin/Gradle activos ni daemons corriendo. Pasaron:
+  .\gradlew.bat compileDebugKotlin --no-daemon --no-parallel --max-workers=1
+  .\gradlew.bat testDebugUnitTest --no-daemon --no-parallel --max-workers=1

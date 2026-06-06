@@ -63,8 +63,8 @@ fun <T> BuscadorSelector(
                     } else {
                         Text("${item.cantidad.toInt()} ${item.unidad}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                     }
-                    IconButton(onClick = { onRemoveItem(item.data) }, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = { onRemoveItem(item.data) }, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Default.Close, "Quitar", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -87,8 +87,20 @@ fun <T> BuscadorSelector(
                 textStyle = MaterialTheme.typography.bodySmall
             )
             if (showDropdown && query.isNotBlank()) {
-                val filtered = items.filter { filterPredicate(it, query) }
-                    .filter { item -> selectedItems.none { s -> s.data == item } }
+                val scoredItems = items
+                    .map { item -> item to SearchHelper.calcularScoreRelevancia(query, itemLabel(item)) }
+                    .filter { (_, score) -> score > 0 }
+                    .filter { (item, _) -> selectedItems.none { s -> s.data == item } }
+                    .sortedByDescending { (_, score) -> score }
+                    .map { (item, _) -> item }
+
+                val filtered = scoredItems.take(5)
+
+                val tieneSimilares = items.any { item ->
+                    val score = SearchHelper.calcularScoreRelevancia(query, itemLabel(item))
+                    score >= 30
+                }
+
                 if (filtered.isNotEmpty() || onCreateNew != null) {
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
@@ -97,7 +109,7 @@ fun <T> BuscadorSelector(
                         modifier = Modifier.fillMaxWidth().padding(top = 52.dp)
                     ) {
                         Column {
-                            filtered.take(8).forEach { item ->
+                            filtered.forEach { item ->
                                 Surface(
                                     onClick = { onAddItem(item); query = ""; showDropdown = false },
                                     modifier = Modifier.fillMaxWidth()
@@ -107,6 +119,34 @@ fun <T> BuscadorSelector(
                             }
                             if (onCreateNew != null) {
                                 HorizontalDivider()
+
+                                if (tieneSimilares) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.errorContainer.copy(0.15f),
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Row(
+                                            Modifier.padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Warning,
+                                                contentDescription = "Duplicado",
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                "Ya existe un registro similar. Evita duplicados.",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.error,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+
                                 Surface(
                                     onClick = { onCreateNew(query); query = ""; showDropdown = false },
                                     modifier = Modifier.fillMaxWidth()
@@ -125,5 +165,3 @@ fun <T> BuscadorSelector(
         }
     }
 }
-
-

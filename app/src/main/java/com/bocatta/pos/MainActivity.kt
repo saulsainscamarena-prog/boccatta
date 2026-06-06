@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity() {
     private val cajaVm: CajaViewModel by androidKoinViewModel()
     private val inventoryVm: InventoryViewModel by androidKoinViewModel()
     private val salesVmV2: SalesViewModelV2 by androidKoinViewModel()
+    private val heldOrderVm: HeldOrderViewModel by androidKoinViewModel()
+    private val mesaVm: MesaViewModel by androidKoinViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,9 +71,8 @@ class MainActivity : ComponentActivity() {
             android.util.Log.w("MainActivity", "Firestore settings ya configurados", e)
         }
 
-        com.bocatta.pos.data.sync.SyncScheduler.schedule(this)
-
         setContent {
+            val appContext = this@MainActivity.applicationContext
             val themeVm: ThemeViewModel = koinViewModel()
             val themeConfig by themeVm.config.collectAsStateWithLifecycle()
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -90,7 +91,10 @@ class MainActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(authVm.estaLogueado) {
-                    if (!authVm.estaLogueado) {
+                    if (authVm.estaLogueado) {
+                        com.bocatta.pos.data.sync.SyncScheduler.schedule(appContext)
+                        themeVm.iniciarObservacionSiAutenticado()
+                    } else {
                         navController.navigate(Routes.Login) { popUpTo(0) { inclusive = true } }
                     }
                 }
@@ -107,7 +111,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Routes.Turnos> {
-                        val ivmLocal: InventoryViewModel = koinViewModel()
                         val horarioVm: HorarioViewModel = koinViewModel()
                         val registroRepo = remember { RegistroJornadaRepository() }
                         val scope = rememberCoroutineScope()
@@ -127,7 +130,7 @@ class MainActivity : ComponentActivity() {
                         }
                         LaunchedEffect(sessionVm.sucursalActual, sessionVm.uid) {
                             cajaVm.configurarSucursal(sessionVm.sucursalActual)
-                            ivmLocal.configurarSucursal(sessionVm.sucursalActual)
+                            inventoryVm.configurarSucursal(sessionVm.sucursalActual)
                             if (sessionVm.uid.isNotBlank()) horarioVm.cargarJornadaActiva(sessionVm.uid)
                         }
                         val participList = remember { mutableStateListOf<RegistroJornada>() }
@@ -138,7 +141,7 @@ class MainActivity : ComponentActivity() {
                         TurnosScreen(
                             sessionVm = sessionVm,
                             cajaVm = cajaVm,
-                            inventarioVm = ivmLocal,
+                            inventarioVm = inventoryVm,
                             participantes = participList,
                             jornadaActiva = horarioVm.jornadaActiva != null,
                             onIniciarTurno = { navController.navigate(Routes.Apertura) { popUpTo<Routes.Turnos> { inclusive = true } } },
@@ -153,7 +156,6 @@ class MainActivity : ComponentActivity() {
 
                     composable<Routes.Apertura> {
                         val aperturaVmV2: AperturaViewModelV2 = koinViewModel()
-                        val aperturaIvm: com.bocatta.pos.presentation.viewmodel.InventoryViewModel = koinViewModel()
                         val registroRepo = remember { RegistroJornadaRepository() }
                         val scope = rememberCoroutineScope()
                         if (sessionVm.cargandoSesion) {
@@ -162,11 +164,14 @@ class MainActivity : ComponentActivity() {
                             }
                             return@composable
                         }
+                        LaunchedEffect(sessionVm.sucursalActual) {
+                            inventoryVm.configurarSucursal(sessionVm.sucursalActual)
+                        }
                         AperturaDiaScreen(
                             sessionVm = sessionVm,
                             aperturaVmV2 = aperturaVmV2,
                             cajaVm = cajaVm,
-                            vm = aperturaIvm,
+                            vm = inventoryVm,
                             onAperturaCompleta = {
                                 scope.launch {
                                     registroRepo.guardar(
@@ -201,6 +206,8 @@ class MainActivity : ComponentActivity() {
                         }
                         SalesScreen(
                             vmV2 = salesVmV2,
+                            cajaVm = cajaVm,
+                            heldOrderVm = heldOrderVm,
                             session = sessionVm,
                             onVerInventario = { navController.navigate(Routes.Inventario) },
                             onVerReportes = { if (sessionVm.esAdmin) navController.navigate(Routes.Reportes) },
@@ -294,10 +301,6 @@ class MainActivity : ComponentActivity() {
                         ReportesInventarioScreen(onBack = { navController.popBackStack() })
                     }
 
-                    composable<Routes.ReportesInventario> {
-                        ReportesInventarioScreen(onBack = { navController.popBackStack() })
-                    }
-
                     composable<Routes.SyncInventario> {
                         SyncInventarioScreen(onBack = { navController.popBackStack() })
                     }
@@ -312,8 +315,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Routes.Actividad> {
-                        val mesaVm: MesaViewModel = koinViewModel()
-                        val heldOrderVm: HeldOrderViewModel = koinViewModel()
                         com.bocatta.pos.presentation.ui.screens.ventas.ActividadScreen(
                             mesaVm = mesaVm,
                             heldOrderVm = heldOrderVm,
@@ -335,4 +336,3 @@ class MainActivity : ComponentActivity() {
 
 private fun normalizarSucursalNav(sucursal: String): String =
     sucursal.trim().lowercase(java.util.Locale.ROOT).replace(" ", "_")
-

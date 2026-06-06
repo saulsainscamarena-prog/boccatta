@@ -13,38 +13,59 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bocatta.pos.domain.model.Usuario
+import com.bocatta.pos.domain.model.EmpleadoV2
+import com.bocatta.pos.domain.model.PermisoEmpleado
 import com.bocatta.pos.presentation.viewmodel.AdminViewModel
 
 @Composable
 fun TabEmpleados(vm: AdminViewModel) {
     var searchQuery by remember { mutableStateOf("") }
-    var empleadoEditar by remember { mutableStateOf<Usuario?>(null) }
+    var empleadoEditar by remember { mutableStateOf<EmpleadoV2?>(null) }
 
-    // Dialogo de edicion — conectado a vm.actualizarUsuario
-    empleadoEditar?.let { usuario ->
+    // Dialogo de edicion unificado
+    empleadoEditar?.let { empleado ->
         DialogEmpleado(
-            user = usuario,
+            empleado = empleado,
             onDismiss = { empleadoEditar = null },
-            onSave = { actualizado ->
-                vm.actualizarUsuario(actualizado)
-                empleadoEditar = null
+            onSave = { empActualizado, permisos, pinNuevo ->
+                vm.guardarEmpleadoCompleto(empActualizado, permisos, pinNuevo) {
+                    empleadoEditar = null
+                }
             }
         )
     }
 
-    val empleados = vm.usuarios.filter {
+    val empleados = vm.empleadosOperativos.filter {
         searchQuery.isBlank() || it.nombre.lowercase().contains(searchQuery.lowercase())
-    }
+    }.sortedBy { it.nombre }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        OutlinedTextField(
-            value = searchQuery, onValueChange = { searchQuery = it },
-            placeholder = { Text("Buscar empleado...") },
-            leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp), singleLine = true
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Buscar empleado...") },
+                leadingIcon = { Icon(Icons.Default.Search, "Buscar") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
+
+            Button(
+                onClick = { empleadoEditar = EmpleadoV2() },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("NUEVO", fontWeight = FontWeight.Bold)
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
 
         if (empleados.isEmpty()) {
@@ -57,7 +78,7 @@ fun TabEmpleados(vm: AdminViewModel) {
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        if (vm.usuarios.isEmpty()) "No hay empleados registrados"
+                        if (vm.empleadosOperativos.isEmpty()) "No hay empleados operativos registrados"
                         else "Sin resultados para \"$searchQuery\"",
                         color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
                     )
@@ -65,7 +86,7 @@ fun TabEmpleados(vm: AdminViewModel) {
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(empleados, key = { it.uid }) { user ->
+                items(empleados, key = { it.id }) { empleado ->
                     ElevatedCard(
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -75,21 +96,21 @@ fun TabEmpleados(vm: AdminViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(user.nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(empleado.nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(
-                                    user.rol?.name ?: "Sin rol",
+                                    "Rol: ${empleado.rol} · Sucursal: ${empleado.sucursalAsignada.uppercase()}",
                                     color = MaterialTheme.colorScheme.outline,
                                     fontSize = 12.sp
                                 )
-                                if (user.correo.isNotBlank()) {
+                                if (empleado.authUid.isNotBlank()) {
                                     Text(
-                                        user.correo,
+                                        "UID: ${empleado.authUid}",
                                         color = MaterialTheme.colorScheme.outline.copy(0.7f),
                                         fontSize = 11.sp
                                     )
                                 }
                             }
-                            IconButton(onClick = { empleadoEditar = user }) {
+                            IconButton(onClick = { empleadoEditar = empleado }) {
                                 Icon(
                                     Icons.Default.Edit,
                                     contentDescription = "Editar empleado",

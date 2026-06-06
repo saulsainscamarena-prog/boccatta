@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -12,6 +14,17 @@ plugins {
 android {
     namespace = "com.bocatta.pos"
     compileSdk = 36
+
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        val stream = localPropertiesFile.inputStream()
+        localProperties.load(stream)
+        stream.close()
+    }
+    val demoEmail = localProperties.getProperty("DEMO_EMAIL") ?: ""
+    val demoPassword = localProperties.getProperty("DEMO_PASSWORD") ?: ""
+    val demoModeEnabled = localProperties.getProperty("DEMO_MODE_ENABLED") ?: "false"
 
     defaultConfig {
         applicationId = "com.bocatta.pos"
@@ -38,9 +51,9 @@ android {
         }
         debug {
             isMinifyEnabled = false
-            buildConfigField("String", "DEMO_EMAIL", "\"demo@bocatta.com\"")
-            buildConfigField("String", "DEMO_PASSWORD", "\"demo123\"")
-            buildConfigField("boolean", "DEMO_MODE_ENABLED", "true")
+            buildConfigField("String", "DEMO_EMAIL", "\"$demoEmail\"")
+            buildConfigField("String", "DEMO_PASSWORD", "\"$demoPassword\"")
+            buildConfigField("boolean", "DEMO_MODE_ENABLED", demoModeEnabled)
         }
     }
     compileOptions {
@@ -63,20 +76,20 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.compose.material.icons.extended)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation("androidx.compose.material:material-icons-extended")
+    androidTestImplementation(libs.androidx.compose.material.icons.extended)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
@@ -84,24 +97,24 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+
     // Jacoco for code coverage
     jacoco
-    // Crashlytics & Analytics (explicit versions to guarantee resolution)
-    //implementation("com.google.firebase:firebase-crashlytics-ktx:18.6.2")
-    implementation("com.google.firebase:firebase-analytics")
+
     // Timber (logging)
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation(libs.timber)
     implementation(libs.kotlinx.coroutines.play.services)
 
     // Navegación
-    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation(libs.androidx.navigation.compose)
 
     // Inyección de dependencias - Koin
-    implementation("io.insert-koin:koin-android:4.2.0")
-    implementation("io.insert-koin:koin-androidx-compose:4.2.0")
-    implementation("io.insert-koin:koin-core:4.2.0")
-    testImplementation("io.insert-koin:koin-test:4.2.0")
-
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.core)
+    testImplementation(libs.koin.test)
 
     // WorkManager (Sincronización en segundo plano)
     implementation(libs.work.runtime.ktx)
@@ -127,15 +140,59 @@ tasks.withType<Test> {
     }
 }
 
-// Simple task to list coverage files
-tasks.register("coverageCheck") {
+// Jacoco HTML + XML report generation
+tasks.register<JacocoReport>("jacocoTestReport") {
     group = "verification"
-    description = "Lists Jacoco coverage .exec files"
-    doLast {
-        val jacocoDir = project.layout.buildDirectory.dir("jacoco").get().asFile
-        if (jacocoDir.exists()) {
-            jacocoDir.listFiles()?.forEach { file ->
-                println("Coverage file: ${file.name} (${file.length()} bytes)")
+    description = "Generates Jacoco code coverage report for debug unit tests"
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+
+    val mainSrc = "${project.projectDir}/src/main/java"
+    val debugTree = fileTree("${project.layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+        exclude(
+            "**/R.class", "**/R${'$'}*.class", "**/BuildConfig.*",
+            "**/Manifest*.*", "**/*Test*.*",
+            "**/di/**", "**/*Module*",
+            "**/databinding/**", "**/BR.class"
+        )
+    }
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(debugTree)
+    executionData.setFrom(
+        fileTree(project.layout.buildDirectory) { include("jacoco/*.exec") }
+    )
+}
+
+// Jacoco coverage verification — fails build below 60%
+tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+    group = "verification"
+    description = "Verifies minimum 60% line coverage"
+    dependsOn("jacocoTestReport")
+
+    val debugTree = fileTree("${project.layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+        exclude(
+            "**/R.class", "**/R${'$'}*.class", "**/BuildConfig.*",
+            "**/Manifest*.*", "**/*Test*.*",
+            "**/di/**", "**/*Module*",
+            "**/databinding/**", "**/BR.class"
+        )
+    }
+
+    classDirectories.setFrom(debugTree)
+    executionData.setFrom(
+        fileTree(project.layout.buildDirectory) { include("jacoco/*.exec") }
+    )
+
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.60".toBigDecimal()
             }
         }
     }

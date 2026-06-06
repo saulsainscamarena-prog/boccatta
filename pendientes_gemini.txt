@@ -1,0 +1,129 @@
+========================================================================
+BOCATTA POS v2 - PENDIENTES DE AUDITORÍA Y UX APROBADA GEMINI
+========================================================================
+Última actualización: 2026-06-04
+
+Este archivo contiene la bitácora de tareas técnicas pendientes y el diseño
+de UX aprobado para la reestructuración del módulo de administración de
+productos e inventario de Bocatta POS v2.
+
+------------------------------------------------------------------------
+1. PENDIENTES Y HALLAZGOS CRÍTICOS DE LA AUDITORÍA
+------------------------------------------------------------------------
+
+[x] 1.1. FUGA DE DATOS DE LEALTAD DE CLIENTES EN MODO OFFLINE
+    - Resuelto quirúrgicamente en SyncWorker.kt. Las ventas offline ahora
+      actualizan de forma diferida el contador de visitas y compras del
+      cliente en la nube de forma transaccional.
+
+[x] 1.2. LATENCIA Y TRANSACCIONES PESADAS EN CHECKOUT ONLINE
+    - Ubicación: FirebaseSalesRepositoryV2.kt & SyncWorker.kt
+    - Acción: Resolver deducciones en base a la base de datos local SQLite
+      antes de disparar la transacción, y usar decrementos atómicos vía
+      FieldValue.increment en background para eliminar los transaction.get() remotos.
+
+[x] 1.3. ACOPLAMIENTO ESTRECHO EN INVENTARIO (TOPPINGS Y BASES HARDCODEADOS)
+    - Ubicación: InventoryDeductions.kt
+    - Acción: Migrar los mapeos estáticos a la tabla de opciones en base de
+      datos para permitir configuraciones 100% dinámicas desde la administración.
+
+[x] 1.4. REGRESO SEGURO A MESA Y EVITAR ALTAS DE TOTALES DE TURNO
+    - Ubicación: firestore.rules
+    - Acción: Hacer inmutables para el vendedor los campos de totales teóricos
+      de caja (totalVentasEfectivo, etc.) para evitar manipulación financiera.
+
+[x] 1.5. CONFLICTO DE VERSIONES DE ADB
+    - Ubicación: Entorno de Desarrollo (PATH)
+    - Acción: Eliminar C:\Windows\adb.exe (v40) y priorizar la carpeta
+      platform-tools del SDK de Android (v41).
+
+------------------------------------------------------------------------
+2. PROPUESTA DE UX APROBADA - PANEL DE ADMINISTRACIÓN Y PRODUCTOS
+------------------------------------------------------------------------
+
+[x] 2.1. PANEL DE CONTROL EN MOSAICO (DASHBOARD GRID)
+    - Reemplazar las 12 sub-pestañas con scroll horizontal en AdminScreen.kt
+      por un grid de tarjetas grandes con accesos visuales rápidos:
+      [ Menú y Precios ]  [ Inventario ]  [ Empleados ]  [ Ajustes ]
+
+[x] 2.2. ALERTA DE CONSISTENCIA DE RECETA (BADGES)
+    - En el catálogo de productos de AdminScreen.kt, mostrar alertas claras:
+      * [✔ RECETA OK] (Verde si el producto tiene ingredientes asociados).
+      * [⚠️ SIN RECETA] (Amarillo/Rojo si el producto no tiene receta).
+
+[x] 2.3. DIÁLOGO DE PRODUCTO EN HOJA ÚNICA (CREACIÓN RÁPIDA)
+    - Reemplazar el asistente rígido de 4 pasos por un formulario único vertical:
+      * Datos generales (Nombre, Categoría, Precio) al inicio.
+      * Botón [GUARDAR] siempre visible y activo en cuanto la info básica sea válida.
+      * Secciones avanzadas colapsables mediante switches (Receta, Toppings, Empaque).
+
+[x] 2.4. CREACIÓN DE INSUMO INLINE (CONTEXTUAL)
+    - Al buscar un ingrediente en la receta del producto y no encontrarlo,
+      habilitar un botón rápido:
+      [+] CREAR INSUMO
+    - Abrir un diálogo ligero que permita dar de alta el insumo (Nombre, Unidad
+      base [kg, L, g, ml, pz], costo, stock inicial) sin cerrar el producto, y
+      vincularlo automáticamente a la receta al guardarse.
+
+[x] 2.5. BUSCADOR INTELIGENTE EN TODA LA APP (FUZZY SEARCH + ANTIDUPLICADOS)
+    - Implementar en BuscadorSelector y generalizar en todos los buscadores de
+      la app (insumos, productos, clientes) la búsqueda difusa mediante el algoritmo
+      de Levenshtein para tolerar errores tipográficos y ortográficos.
+    - Estilo WhatsApp: Mostrar únicamente el top 3 a 5 resultados más relevantes
+      ordenados por relevancia (exacta > prefijo > subcadena > Levenshtein) para no
+      saturar la pantalla verticalmente.
+    - Mostrar advertencias visuales en Compose ("¿Quisiste decir...?") y alertas
+      de duplicado al intentar crear registros nuevos muy similares a existentes.
+
+[x] 2.6. UX DE MAPEO DE TOPPINGS EN CALIENTE (DENTRO DEL DIÁLOGO DE PRODUCTO)
+    - Reestructurar el Paso 2 de DialogProductoV2 para agregar opciones/toppings
+      de forma individualizada.
+    - Para cada opción (ej. Nutella, Fresa), añadir campos opcionales de vinculación
+      con el inventario físico: Insumo asociado (utilizando el buscador inteligente),
+      cantidad a descontar y unidad de medida (g, ml, pz, etc.).
+      Almacenar esta regla en el campo descuentosInsumo del ConfigOptionGroup
+      dentro del JSON del producto en Firestore v2_productos.
+
+[x] 2.7. ACOTO DE PRODUCTOS FRECUENTES A TOP 15
+    - Limitar la pestaña "FRECUENTES" en mostrador (SalesScreen) para mostrar
+      únicamente los 15 productos más vendidos, evitando el scroll infinito.
+
+[x] 2.8. ADVERTENCIA EN ADMIN DE PRODUCTOS/CATEGORÍAS SIN PRECIO (INVISIBLES)
+    - Añadir un banner informativo amarillo en DialogProducto si el producto tiene
+      precio de $0.00 en alguna sucursal, advirtiendo que no será visible en mostrador.
+
+[x] 2.9. AJUSTES OPERATIVOS DE ALMACÉN EN MOSTRADOR (EX EXISTENCIAS/AGOTADOS)
+    - Implementar una vista rápida llamada "Ajustes Operativos de Almacén" accesible
+      desde mostrador para incidencias rápidas de stock.
+    - Apoyarse en la lógica contable y de auditoría que ya tiene el código:
+      - Al marcar [Agotado], registrar una Merma (MermaV2) con motivo "Agotamiento"
+        y costo correspondiente.
+      - Al registrar entrada, generar una Compra (RegistroCompraV2) heredando el
+        último precio unitario del insumo.
+
+[x] 2.10. SECCIÓN UNIFICADA DE PERMISOS Y EMPLEADOS (FICHA ÚNICA DE CONFIGURACIÓN)
+    - Unificar en una sola sección principal ("Permisos y Empleados") toda la
+      configuración del personal de la app.
+    - El diálogo DialogEmpleado.kt consolidará:
+      * Información general y Puesto/Rol.
+      * Gestión de PIN de caja de 4 dígitos (encriptado en v2_pin_authorizations).
+      * Configuración Salarial (Nómina, Salario Base, CLABE).
+      * Permisos Operativos Granulares (Switches reactivos para puedeTomarOrden,
+        puedeCobrarEfectivo, puedeCerrarTurnoAjeno, etc., del modelo PermisoEmpleado).
+
+[x] 2.11. TARJETA UNIFICADA DE REPORTES Y AUDITORÍA EN EL MOSAICO
+    - Crear la tarjeta centralizada "Reportes y Auditoría" en el Dashboard principal en mosaico.
+    - Redirigir de forma directa a las vistas de reportes preexistentes en el código:
+      * Reportes de Ventas (ReportScreen.kt).
+      * Reportes de Almacén y Mermas (ReportesInventarioScreen.kt).
+      * Bitácora de Auditoría de Empleados (v2_auditoria_empleados).
+
+------------------------------------------------------------------------
+3. ACCIONES RECOMENDADAS PARA OPERATIVIDAD OFFLINE-FIRST
+------------------------------------------------------------------------
+
+[x] 3.1. Checkout unificado a SQLite: Procesar 100% de las ventas primero en
+    base de datos local (<50ms) y delegar el envío a Firebase asíncronamente.
+[x] 3.2. Pre-cargar el catálogo completo de recetas e insumos en memoria al
+    arrancar la aplicación para acelerar validaciones de stock.
+========================================================================

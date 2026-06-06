@@ -2,7 +2,12 @@ package com.bocatta.pos.presentation.viewmodel
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewModelScope
+import com.bocatta.pos.data.local.OfflineDatabase
+import com.bocatta.pos.data.local.TurnoContingenciaLocal
+import com.bocatta.pos.data.local.room.dao.VentaPendienteDao
+import com.bocatta.pos.data.local.room.entity.VentaPendienteEntity
 import com.bocatta.pos.data.repository.StockAllocationRepository
+import com.bocatta.pos.domain.model.Rol
 import com.bocatta.pos.domain.model.Usuario
 import com.bocatta.pos.domain.model.TurnoCajaV2
 import com.bocatta.pos.domain.usecase.AccionSensible
@@ -11,6 +16,10 @@ import com.bocatta.pos.core.constants.FirestoreCollections
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -18,7 +27,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class CajaViewModel(
-    private val authManager: com.bocatta.pos.domain.usecase.AuthorizationManager
+    private val authManager: com.bocatta.pos.domain.usecase.AuthorizationManager,
+    private val offlineDb: OfflineDatabase,
+    private val ventaPendienteDao: VentaPendienteDao
 ) : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
     private val allocationRepo = StockAllocationRepository()
@@ -35,11 +46,21 @@ class CajaViewModel(
         private set
     var errorTurno by mutableStateOf<String?>(null)
         private set
+    var modoContingenciaLocal by mutableStateOf(false)
+        private set
 
     // CANDADO DE SEGURIDAD
     var tieneCancelacionesPendientes by mutableStateOf(false)
         private set
     var numCancelacionesPendientes by mutableIntStateOf(0)
+        private set
+
+    // VENTAS OFFLINE FALLIDAS — badge presionable en Caja (solo admin puede actuar)
+    private val _conteoVentasFallidas = MutableStateFlow(0)
+    val conteoVentasFallidas = _conteoVentasFallidas.asStateFlow()
+    var ventasFallidas by mutableStateOf<List<com.bocatta.pos.data.local.VentaOffline>>(emptyList())
+        private set
+    var mostrarDialogoFallidas by mutableStateOf(false)
         private set
 
     fun verificarPendientes() {
@@ -63,7 +84,7 @@ class CajaViewModel(
         private set
     var totalGastosSistema by mutableStateOf(0.0)
         private set
-    
+
     var sucursalFiltro by mutableStateOf<String?>(null)
 
     // Parámetros de configuración remotos
@@ -92,6 +113,21 @@ class CajaViewModel(
         escucharTotalesDia()
         verificarPendientes()
         escucharParametrosCaja()
+        iniciarObservacionFallidas()
+    }
+
+    private fun iniciarObservacionFallidas() {
+        viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                try {
+                    val count = offlineDb.contarVentasFallidas()
+                    _conteoVentasFallidas.value = count
+                } catch (e: Exception) {
+                    timber.log.Timber.e(e, "Error polling failed sales count")
+                }
+                kotlinx.coroutines.delay(3000L)
+            }
+        }
     }
 
     private fun escucharParametrosCaja() {
@@ -123,15 +159,17 @@ class CajaViewModel(
             .addSnapshotListener { doc, error ->
                 if (error != null) {
                     errorTurno = error.message
+                    cargarTurnoContingenciaLocal(sucursal)
                     cargandoTurno = false
                     return@addSnapshotListener
                 }
                 if (doc != null && doc.exists() && doc.getString("estado") == "abierto") {
                     turnoActivo = doc.toObject(TurnoCajaV2::class.java)?.copy(id = doc.id)
+                    modoContingenciaLocal = false
                     cargandoTurno = false
                 } else {
                     viewModelScope.launch {
-                        turnoActivo = buscarTurnoAbiertoLegacy(sucursal)
+                        turnoActivo = buscarTurnoAbiertoLegacy(sucursal) ?: cargarTurnoContingenciaLocal(sucursal)
                         cargandoTurno = false
                     }
                 }
@@ -151,8 +189,17 @@ class CajaViewModel(
             }
         } catch (e: Exception) {
             errorTurno = e.message
+            cargarTurnoContingenciaLocal(sucursal)
             null
         }
+    }
+
+    private fun cargarTurnoContingenciaLocal(sucursal: String): TurnoCajaV2? {
+        val local = offlineDb.obtenerTurnoContingenciaAbierto(normalizarSucursal(sucursal)) ?: return null
+        val turno = local.toTurnoCajaV2()
+        turnoActivo = turno
+        modoContingenciaLocal = true
+        return turno
     }
 
     private fun escucharTotalesDia() {
@@ -172,7 +219,10 @@ class CajaViewModel(
                     snap?.documents?.forEach { doc ->
                         if (doc.getString("estado") == "devuelta") return@forEach
                         val total = doc.getDouble("total") ?: 0.0
-                        if (doc.getString("metodoPago") == "Tarjeta") tarjeta += total else efectivo += total
+                        val metodoPago = doc.getString("metodoPago") ?: "Efectivo"
+                        val (efec, tarj) = parsePaymentSplit(metodoPago, total)
+                        efectivo += efec
+                        tarjeta += tarj
                     }
                     withContext(Dispatchers.Main) {
                         totalEfectivoSistema = efectivo
@@ -195,6 +245,57 @@ class CajaViewModel(
             }
     }
 
+    private fun parsePaymentSplit(metodoPago: String, total: Double): Pair<Double, Double> {
+        val cleanPago = metodoPago.trim()
+        if (cleanPago.startsWith("Mixto:") || cleanPago.startsWith("Dividido:")) {
+            val start = cleanPago.indexOf('[')
+            val end = cleanPago.indexOf(']')
+            if (start != -1 && end != -1 && end > start) {
+                val content = cleanPago.substring(start + 1, end)
+                val parts = content.split(",")
+                var tarjetaAmount = 0.0
+                var efectivoAmount = 0.0
+                for (part in parts) {
+                    val trimmed = part.trim()
+                    if (trimmed.contains("Tarjeta", ignoreCase = true) ||
+                        trimmed.contains("Rappi", ignoreCase = true) ||
+                        trimmed.contains("Uber", ignoreCase = true) ||
+                        trimmed.contains("DiDi", ignoreCase = true) ||
+                        trimmed.contains("Transferencia", ignoreCase = true)) {
+                        val amountStr = trimmed.replace("Tarjeta", "", ignoreCase = true)
+                            .replace("Rappi", "", ignoreCase = true)
+                            .replace("Uber Eats", "", ignoreCase = true)
+                            .replace("UberEats", "", ignoreCase = true)
+                            .replace("Uber", "", ignoreCase = true)
+                            .replace("DiDi Food", "", ignoreCase = true)
+                            .replace("DiDiFood", "", ignoreCase = true)
+                            .replace("DiDi", "", ignoreCase = true)
+                            .replace("Transferencia", "", ignoreCase = true)
+                            .replace("$", "").trim()
+                        tarjetaAmount += amountStr.toDoubleOrNull() ?: 0.0
+                    } else if (trimmed.contains("Efectivo", ignoreCase = true)) {
+                        val amountStr = trimmed.replace("Efectivo", "", ignoreCase = true)
+                            .replace("$", "").trim()
+                        efectivoAmount += amountStr.toDoubleOrNull() ?: 0.0
+                    }
+                }
+                if (tarjetaAmount > 0.0 || efectivoAmount > 0.0) {
+                    return Pair(efectivoAmount, tarjetaAmount)
+                }
+            }
+        }
+
+        if (cleanPago.contains("Tarjeta", ignoreCase = true) ||
+            cleanPago.contains("Rappi", ignoreCase = true) ||
+            cleanPago.contains("Uber", ignoreCase = true) ||
+            cleanPago.contains("DiDi", ignoreCase = true) ||
+            cleanPago.contains("Transferencia", ignoreCase = true)) {
+            return Pair(0.0, total)
+        }
+
+        return Pair(total, 0.0)
+    }
+
     fun abrirTurno(
         fondoInicial: Double,
         sucursal: String,
@@ -207,7 +308,7 @@ class CajaViewModel(
             onResult?.invoke(true)
             return
         }
-        
+
         // VALIDACIÓN DE SEGURIDAD (DUEÑO/EMPLEADO)
         if (fondoInicial < 100.0) {
             mensajeError = "El fondo inicial debe ser de al menos $100.00 pesos."
@@ -278,14 +379,66 @@ class CajaViewModel(
                 exito = true
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
+                cargarTurnoContingenciaLocal(sucursal)
             }
             cargando = false
             onResult?.invoke(exito)
         }
     }
 
+    fun abrirTurnoContingenciaLocal(
+        fondoInicial: Double,
+        sucursal: String,
+        usuario: Usuario?,
+        onResult: ((Boolean) -> Unit)? = null
+    ) {
+        if (fondoInicial < 100.0) {
+            mensajeError = "El fondo inicial debe ser de al menos $100.00 pesos."
+            onResult?.invoke(false)
+            return
+        }
+        if (usuario == null) {
+            mensajeError = "Usuario de sesion no valido para contingencia."
+            onResult?.invoke(false)
+            return
+        }
+        if (usuario.rol == Rol.VENDEDOR) {
+            mensajeError = "La contingencia local requiere encargado o administrador."
+            onResult?.invoke(false)
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val sucursalId = normalizarSucursal(sucursal)
+            val fecha = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
+            val existente = offlineDb.obtenerTurnoContingenciaAbierto(sucursalId)
+            val turnoLocal = existente ?: TurnoContingenciaLocal(
+                id = "contingencia_${sucursalId}_$fecha",
+                sucursal = sucursalId,
+                usuarioId = usuario.uid,
+                usuarioNombre = usuario.nombre,
+                rol = usuario.rol.name,
+                fondoInicial = fondoInicial,
+                fechaApertura = System.currentTimeMillis()
+            ).also { offlineDb.guardarTurnoContingencia(it) }
+
+            withContext(Dispatchers.Main) {
+                turnoActivo = turnoLocal.toTurnoCajaV2()
+                modoContingenciaLocal = true
+                errorTurno = "Operando con turno local de contingencia. Se sincronizara al volver internet."
+                mensajeExito = "Turno local de contingencia abierto"
+                onResult?.invoke(true)
+            }
+        }
+    }
+
     fun cerrarTurno(usuarioNombre: String, esAdmin: Boolean, onExito: (String) -> Unit) {
         val turno = turnoActivo ?: return
+
+        if (modoContingenciaLocal || turno.id.startsWith("contingencia_")) {
+            cerrarTurnoContingenciaLocal(turno, onExito)
+            return
+        }
 
         if (!esAdmin) {
             if (tieneCancelacionesPendientes) {
@@ -313,11 +466,11 @@ class CajaViewModel(
                     "diferenciaTarjeta" to diferenciaTarjeta,
                     "estado" to "cerrado"
                 )
-                
+
                 // ATOMIC UPDATE
                 db.collection(FirestoreCollections.TURNOS_CAJA).document(turno.id).update(updates).await()
                 allocationRepo.liberarSucursal(turno.sucursal, usuarioNombre)
-                
+
                 // Forzar que la sucursal ya no queda abierta en su configuración
                 db.collection(FirestoreCollections.SUCURSAL_CONFIG).document(normalizarSucursal(turno.sucursal))
                     .update("abierta", false).await()
@@ -355,8 +508,54 @@ class CajaViewModel(
         }
     }
 
+    private fun cerrarTurnoContingenciaLocal(turno: TurnoCajaV2, onExito: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ventasLocales = offlineDb.obtenerVentasLocalesDesde(turno.sucursal, turno.fechaApertura)
+            val efectivo = ventasLocales
+                .filterNot { it.esConsumoEmpleado }
+                .filter { !it.metodoPago.contains("Tarjeta", ignoreCase = true) || it.metodoPago.contains("Efectivo", ignoreCase = true) }
+                .sumOf { it.total }
+            val tarjeta = ventasLocales
+                .filterNot { it.esConsumoEmpleado }
+                .filter { it.metodoPago.contains("Tarjeta", ignoreCase = true) && !it.metodoPago.contains("Efectivo", ignoreCase = true) }
+                .sumOf { it.total }
+
+            offlineDb.cerrarTurnoContingencia(
+                id = turno.id,
+                efectivoContado = efectivoContado.toDoubleOrNull() ?: 0.0,
+                tarjetaContada = tarjetaContada.toDoubleOrNull() ?: 0.0
+            )
+            val esperado = turno.fondoInicial + efectivo
+            val texto = generarTextoCierre(turno.copy(totalVentasEfectivo = efectivo, totalVentasTarjeta = tarjeta), esperado)
+            withContext(Dispatchers.Main) {
+                totalEfectivoSistema = efectivo
+                totalTarjetaSistema = tarjeta
+                mensajeExito = "Turno local cerrado"
+                turnoActivo = null
+                modoContingenciaLocal = false
+                efectivoContado = ""
+                tarjetaContada = ""
+                onExito(texto)
+            }
+        }
+    }
+
     private fun normalizarSucursal(sucursal: String): String =
         sucursal.trim().lowercase(Locale.ROOT).replace(" ", "_")
+
+    private fun TurnoContingenciaLocal.toTurnoCajaV2(): TurnoCajaV2 {
+        return TurnoCajaV2(
+            id = id,
+            sucursal = sucursal,
+            usuarioResponsable = usuarioNombre,
+            fechaApertura = fechaApertura,
+            fechaCierre = fechaCierre,
+            fondoInicial = fondoInicial,
+            efectivoContado = efectivoContado,
+            tarjetaContada = tarjetaContada,
+            estado = estado
+        )
+    }
 
 private fun generarTextoCierre(turno: TurnoCajaV2, esperado: Double): String {
         val localeMX = java.util.Locale.forLanguageTag("es-MX")
@@ -389,6 +588,41 @@ _Bocatta POS_
 
     override fun limpiarMensajes() { mensajeExito = null; mensajeError = null }
 
+    // ---- VENTAS FALLIDAS ----
+
+    /** Carga la lista de ventas fallidas para el diálogo de detalle. Solo admin puede actuar. */
+    fun abrirDialogoVentasFallidas() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val fallidas = offlineDb.obtenerVentasFallidas()
+            withContext(Dispatchers.Main) {
+                ventasFallidas = fallidas
+                mostrarDialogoFallidas = true
+            }
+        }
+    }
+
+    fun cerrarDialogoFallidas() {
+        mostrarDialogoFallidas = false
+    }
+
+    /** Reintentar sincronización de una venta fallida. Solo admin. */
+    fun reintentarVentaFallida(ventaId: String, esAdmin: Boolean) {
+        if (!esAdmin) {
+            mensajeError = "Solo un administrador puede reintentar ventas fallidas."
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            offlineDb.reintentarVenta(ventaId)
+            val fallidas = offlineDb.obtenerVentasFallidas()
+            val count = offlineDb.contarVentasFallidas()
+            withContext(Dispatchers.Main) {
+                ventasFallidas = fallidas
+                _conteoVentasFallidas.value = count
+                mensajeExito = "Venta marcada para reintento de sincronización."
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         listenerTurno?.remove()
@@ -398,6 +632,3 @@ _Bocatta POS_
         listenerParametros?.remove()
     }
 }
-
-
-

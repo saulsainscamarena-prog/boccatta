@@ -1,0 +1,213 @@
+version: 1
+description: Minimal Bocatta skill registry for SDD orchestration. Read this index first, then open only the skill files required by the current phase and domain.
+
+skills:
+  android_app_architecture:
+    path: .agents/skills/android-app-architecture/SKILL.md
+    use_when:
+      - ui_viewmodel_domain_repository_di_boundary
+      - firebase_or_repository_contract_change
+      - koin_wiring
+  android_compose_state_side_effects:
+    path: .agents/skills/android-compose-state-side-effects/SKILL.md
+    use_when:
+      - snackbar_dialog_success_event
+      - modal_close_after_success
+      - unidirectional_state
+  android_compose_performance:
+    path: .agents/skills/android-compose-performance/SKILL.md
+    use_when:
+      - sales_grid_jank
+      - cart_update_performance
+      - derived_totals_or_filters
+  android_room_offline_storage:
+    path: .agents/skills/android-room-offline-storage/SKILL.md
+    use_when:
+      - offline_database
+      - local_sale_folio
+      - durable_checkout_storage
+  android_background_work:
+    path: .agents/skills/android-background-work/SKILL.md
+    use_when:
+      - workmanager
+      - syncworker
+      - retry_policy
+      - offline_queue_processing
+  android_network_connectivity:
+    path: .agents/skills/android-network-connectivity/SKILL.md
+    use_when:
+      - online_offline_transition
+      - firestore_availability
+      - sync_trigger
+  android_testing_compose_room_workmanager:
+    path: .agents/skills/android-testing-compose-room-workmanager/SKILL.md
+    use_when:
+      - unit_test
+      - compose_ui_test
+      - room_test
+      - workmanager_test
+      - koin_test
+  android_gradle_build_optimization:
+    path: .agents/skills/android-gradle-build-optimization/SKILL.md
+    use_when:
+      - gradle_verification
+      - windows_daemon_lock
+      - version_catalog
+      - build_failure
+  android_security_permissions:
+    path: .agents/skills/android-security-permissions/SKILL.md
+    use_when:
+      - auth_roles
+      - manifest_exported_component
+      - sensitive_pos_data
+      - firebase_rules_impact
+  android_intents_sharing:
+    path: .agents/skills/android-intents-sharing/SKILL.md
+    use_when:
+      - whatsapp_ticket
+      - action_send
+      - share_report
+  android_accessibility_compose:
+    path: .agents/skills/android-accessibility-compose/SKILL.md
+    use_when:
+      - touch_target
+      - content_description
+      - keyboard_navigation
+      - contrast
+      - accessibility_review
+  android_user_identity_auth:
+    path: .agents/skills/android-user-identity-auth/SKILL.md
+    use_when:
+      - firebase_auth
+      - login_session
+      - role_permission
+      - employee_authorization
+      - admin_pin
+      - audit_access_control
+  android_data_files:
+    path: .agents/skills/android-data-files/SKILL.md
+    use_when:
+      - local_file
+      - export_report
+      - backup_file
+      - json_serialization
+      - log_file
+      - shareable_pos_data
+  android_backup_data_extraction:
+    path: .agents/skills/android-backup-data-extraction/SKILL.md
+    use_when:
+      - backup_rules
+      - data_extraction_rules
+      - restore_risk
+      - sensitive_offline_data
+  android_app_compatibility_target_sdk:
+    path: .agents/skills/android-app-compatibility-target-sdk/SKILL.md
+    use_when:
+      - target_sdk
+      - compile_sdk
+      - platform_behavior_change
+      - manifest_restriction
+      - permission_behavior
+  android_crash_reporting_observability:
+    path: .agents/skills/android-crash-reporting-observability/SKILL.md
+    use_when:
+      - logging
+      - crash_reporting
+      - sync_error_reporting
+      - diagnostics
+      - analytics
+  android_release_play_distribution:
+    path: .agents/skills/android-release-play-distribution/SKILL.md
+    use_when:
+      - app_bundle
+      - play_distribution
+      - release_config
+      - signing_readiness
+      - production_build
+  android_performance_baseline_profiles:
+    path: .agents/skills/android-performance-baseline-profiles/SKILL.md
+    use_when:
+      - startup_performance
+      - checkout_runtime_performance
+      - baseline_profile
+      - release_mode_measurement
+
+phase_mapping:
+  research:
+    read:
+      - skill_registry_entry_only
+      - relevant_skill_headers
+    purpose: Select the smallest skill set before reading full skill docs.
+  proposal:
+    read:
+      - relevant_full_skills
+    purpose: Identify scope, owners, risks, and verification before design.
+  spec:
+    read:
+      - business_domain_skills
+      - testing_skill_if_behavioral
+    purpose: Convert behavior to Given/When/Then scenarios.
+  design:
+    read:
+      - architecture_skill
+      - domain_specific_skills
+      - testing_skill
+    purpose: Map requirements to existing Android owners and contracts.
+  tasks:
+    read:
+      - testing_skill
+      - gradle_skill_if_verification_needed
+    purpose: Break into small implementation and verification tasks.
+  apply:
+    read:
+      - only_skills_needed_for_current_task
+    purpose: Avoid context pollution while editing.
+  review:
+    read:
+      - architecture_skill_if_boundary_changed
+      - testing_skill
+      - security_skill_if_sensitive
+    purpose: Audit implementation against spec/design/tasks.
+  verify:
+    read:
+      - gradle_skill
+      - testing_skill
+    purpose: Run the right Windows verification and diagnose failures.
+
+domain_bundles:
+  ventas_checkout:
+    skills:
+      - android_app_architecture
+      - android_compose_state_side_effects
+      - android_compose_performance
+      - android_testing_compose_room_workmanager
+      - android_room_offline_storage
+      - android_background_work
+  inventario_offline_sync:
+    skills:
+      - android_app_architecture
+      - android_room_offline_storage
+      - android_background_work
+      - android_network_connectivity
+      - android_testing_compose_room_workmanager
+  auth_roles:
+    skills:
+      - android_user_identity_auth
+      - android_security_permissions
+      - android_app_architecture
+      - android_testing_compose_room_workmanager
+  tickets_reportes_whatsapp:
+    skills:
+      - android_intents_sharing
+      - android_data_files
+      - android_testing_compose_room_workmanager
+  release_play:
+    skills:
+      - android_release_play_distribution
+      - android_app_compatibility_target_sdk
+      - android_security_permissions
+      - android_gradle_build_optimization
+  build_gradle_windows:
+    skills:
+      - android_gradle_build_optimization
+      - android_app_compatibility_target_sdk

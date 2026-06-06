@@ -84,7 +84,7 @@ class StockAdjustmentQueueStressTest {
     }
 
     @Test
-    fun fullSyncCycle_simulatesTwoPhaseCommit() = runBlocking {
+    fun fullSyncCycle_usesDurableAdjustmentQueue() = runBlocking {
         val ids = (1..10).map { enqueueItem("branch-1", "prod-$it", it * 1.0, "pza", "SALE") }
 
         val pending1 = queue.getAllPending()
@@ -180,14 +180,15 @@ class StockAdjustmentQueueStressTest {
     }
 
     @Test
-    fun recoveryAfterCrash_marksInProgressAsPending() = runBlocking {
+    fun resetStaleSyncing_marksOldInProgressAsPending() = runBlocking {
         val ids = (1..5).map { enqueueItem("branch-1", "prod-$it", 1.0, "pza", "SALE") }
 
         queue.markAsSyncing(ids)
 
-        queue.resetSyncingState(ids)
+        val recovered = queue.resetStaleSyncing(0)
 
         val pending = queue.getAllPending()
+        assertEquals(5, recovered)
         assertEquals(5, pending.size)
         assertEquals(ids.sorted(), pending.mapNotNull { it.id }.sorted())
     }
@@ -221,7 +222,8 @@ class InMemoryStockAdjustmentQueue : IStockAdjustmentQueue {
         val unit: String,
         val reason: String,
         val timestamp: Long,
-        val status: Int = 0
+        val status: Int = 0,
+        val syncStartedAt: Long? = null
     )
 
     private val store = mutableListOf<Entry>()
@@ -240,7 +242,8 @@ class InMemoryStockAdjustmentQueue : IStockAdjustmentQueue {
                     unit = adjustment.unit,
                     reason = adjustment.reason,
                     timestamp = adjustment.timestamp,
-                    status = 0
+                    status = 0,
+                    syncStartedAt = null
                 )
             )
             id
@@ -271,9 +274,25 @@ class InMemoryStockAdjustmentQueue : IStockAdjustmentQueue {
             synchronized(lock) {
                 val idSet = ids.toSet()
                 store.replaceAll { entry ->
-                    if (entry.id in idSet) entry.copy(status = 1) else entry
+                    if (entry.id in idSet) entry.copy(status = 1, syncStartedAt = System.currentTimeMillis()) else entry
                 }
             }
+        }
+    }
+
+    override suspend fun resetStaleSyncing(maxAgeMs: Long): Int = withContext(Dispatchers.Default) {
+        synchronized(lock) {
+            val cutoff = System.currentTimeMillis() - maxAgeMs
+            var recovered = 0
+            store.replaceAll { entry ->
+                if (entry.status == 1 && (entry.syncStartedAt == null || entry.syncStartedAt <= cutoff)) {
+                    recovered++
+                    entry.copy(status = 0, syncStartedAt = null)
+                } else {
+                    entry
+                }
+            }
+            recovered
         }
     }
 
@@ -283,7 +302,7 @@ class InMemoryStockAdjustmentQueue : IStockAdjustmentQueue {
             synchronized(lock) {
                 val idSet = ids.toSet()
                 store.replaceAll { entry ->
-                    if (entry.id in idSet) entry.copy(status = 0) else entry
+                    if (entry.id in idSet) entry.copy(status = 0, syncStartedAt = null) else entry
                 }
             }
         }

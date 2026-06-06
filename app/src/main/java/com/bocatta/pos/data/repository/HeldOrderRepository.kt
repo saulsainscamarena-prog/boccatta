@@ -10,18 +10,7 @@ class HeldOrderRepository(private val dbHelper: OfflineDatabase) : IHeldOrderRep
 
     override fun save(order: HeldOrder) {
         val db = dbHelper.writableDatabase
-        val cv = ContentValues().apply {
-            put("id", order.id)
-            put("carritoJson", order.carritoJson)
-            put("clienteJson", order.clienteJson)
-            put("nota", order.nota)
-            put("fecha", order.fecha)
-            put("sucursal", order.sucursal)
-            put("total", order.total)
-            put("modalidad", order.modalidad)
-            put("mesaId", order.mesaId)
-        }
-        db.insertWithOnConflict(TABLE, null, cv, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
+        db.insertWithOnConflict(TABLE, null, order.toContentValues(), android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     override fun getAll(): List<HeldOrder> {
@@ -41,6 +30,26 @@ class HeldOrderRepository(private val dbHelper: OfflineDatabase) : IHeldOrderRep
         val cursor = db.query(TABLE, null, "id = ?", arrayOf(id), null, null, null)
         return cursor.use { c ->
             if (c.moveToFirst()) fromCursor(c) else null
+        }
+    }
+
+    override fun assignToMesa(id: String, mesaId: String): HeldOrder? {
+        val db = dbHelper.writableDatabase
+        db.beginTransaction()
+        try {
+            val current = db.query(TABLE, null, "id = ?", arrayOf(id), null, null, null).use { cursor ->
+                if (cursor.moveToFirst()) fromCursor(cursor) else null
+            } ?: return null
+
+            val updated = current.copy(
+                modalidad = "LOCAL",
+                mesaId = mesaId
+            )
+            db.update(TABLE, updated.toContentValues(), "id = ?", arrayOf(id))
+            db.setTransactionSuccessful()
+            return updated
+        } finally {
+            db.endTransaction()
         }
     }
 
@@ -82,8 +91,19 @@ class HeldOrderRepository(private val dbHelper: OfflineDatabase) : IHeldOrderRep
         )
     }
 
+    private fun HeldOrder.toContentValues(): ContentValues = ContentValues().apply {
+        put("id", id)
+        put("carritoJson", carritoJson)
+        put("clienteJson", clienteJson)
+        put("nota", nota)
+        put("fecha", fecha)
+        put("sucursal", sucursal)
+        put("total", total)
+        put("modalidad", modalidad)
+        put("mesaId", mesaId)
+    }
+
     companion object {
         private const val TABLE = OfflineDatabase.TABLE_HELD_ORDERS
     }
 }
-

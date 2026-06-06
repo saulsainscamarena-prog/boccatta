@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bocatta.pos.domain.model.InsumoV2
 import com.bocatta.pos.domain.model.PresentacionCompraPreview
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,10 +118,11 @@ fun DialogCompraUnificado(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
+                                    val presActual = selectedPresentacion
                                     Text(
                                         when {
                                             presentacionManual -> "Otra / peso real"
-                                            selectedPresentacion != null -> selectedPresentacion!!.nombre
+                                            presActual != null -> presActual.nombre
                                             else -> "Seleccionar presentacion"
                                         },
                                         color = MaterialTheme.colorScheme.onSurface
@@ -249,6 +251,16 @@ fun DialogCompraUnificado(
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.error,
                                             fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                    if (insumo.unidadBase.lowercase(Locale.ROOT) in setOf("g", "ml")) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            "\uD83D\uDCA1 Nota: Estas registrando en ${insumo.unidadBase.uppercase(Locale.ROOT)}. Asegurate de que el contenido multiplique las unidades reales (ej. 1 caja de 5kg = 5000g).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.SemiBold,
+                                            lineHeight = 14.sp
                                         )
                                     }
                                 }

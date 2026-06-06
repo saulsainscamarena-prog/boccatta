@@ -1,13 +1,13 @@
 # Technical debt
 
-## ? Room habilitado v�a KSP2 (compatible con Kotlin 2.2.10).
+## Room habilitado vía KSP2 (compatible con Kotlin 2.2.10).
 - KSP updated to `2.2.10-2.0.2`. Plugin + Room runtime re-enabled.
-- ? Room habilitado v�a KSP2 (compatible con Kotlin 2.2.10).
-- **Future‑proofing**: KSP 2.3.0+ is standalone (not tied to Kotlin version).
+- Room habilitado vía KSP2 (compatible con Kotlin 2.2.10).
+- **Future-proofing**: KSP 2.3.0+ is standalone (not tied to Kotlin version).
 
 ## Legacy model consolidation (RESOLVED)
-- `ProductoV2`/`SalesProductV2` → `SalesInventoryProductV2` consolidated.
-- `ProductMappers.kt` tagged `@Deprecated` — removal scheduled for v2.2.
+- `ProductoV2`/`SalesProductV2` -> `SalesInventoryProductV2` consolidated.
+- `ProductMappers.kt` tagged `@Deprecated` - removal scheduled for v2.2.
 - **Next step (v2.2)**: Migrate ViewModel Firestore listeners to `IProductRepository.getAllProducts(): Flow<InventoryProductV2>`.
 
 ## Test coverage (2026-05-11)
@@ -20,9 +20,13 @@
 - **3 cards** with hardcoded alpha replaced with `primaryContainer`/`surfaceVariant`.
 - **contentDescription** added to interactive icons in SalesScreen, ClientesScreen, InventoryScreen.
 
-## Dynamic multi‑giro form engine (2026-05-11)
+## Dynamic multi-giro form engine (2026-05-11)
 - `DynamicFormEngine` with 3 schemas: FOOD (6 fields), RETAIL (5), SERVICE (5).
 - `DynamicProductForm` + `GiroSelector` composables ready.
-- **Pending**: Load real `product_definitions` from Firestore to validate non‑food giro rendering on physical devices.
+- **Pending**: Load real `product_definitions` from Firestore to validate non-food giro rendering on physical devices.
+
+## Legacy SharedPreferences folios in OfflineManager (RESOLVED 2026-06-04)
+- Deprecated methods `generarCodigoTicket`, `obtenerUltimoTicketLocal`, `guardarUltimoTicketLocal` and helper `leerUltimoTicketLocalLegacy` removed from `OfflineManager.kt`.
+- All folio and ticket generation migrated to transactional SQLite-based counts in `OfflineDatabase`.
 
 ---

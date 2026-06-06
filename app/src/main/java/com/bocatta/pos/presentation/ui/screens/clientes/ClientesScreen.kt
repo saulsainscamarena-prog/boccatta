@@ -41,9 +41,9 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
         DialogCliente(
             clienteInicial = clienteEditar,
             onGuardar = { nombre, tel ->
-                if (clienteEditar != null) {
-                    vm.editarCliente(clienteEditar!!.copy(nombre = nombre))
-                } else {
+                clienteEditar?.let {
+                    vm.editarCliente(it.copy(nombre = nombre))
+                } ?: run {
                     vm.registrarCliente(nombre, tel) {}
                 }
                 mostrarRegistro = false; clienteEditar = null
@@ -58,7 +58,7 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Column {
                         Text("GESTION DE CLIENTES", color = MaterialTheme.colorScheme.onSecondary, fontWeight = FontWeight.Black, fontSize = 16.sp)
                         Text("Fidelizacion Industrial V2", color = MaterialTheme.colorScheme.onSecondary.copy(0.7f), fontSize = 10.sp)
@@ -88,13 +88,13 @@ fun ClientesScreen(vm: ClienteViewModel, onBack: () -> Unit) {
 
             val numDescuentos = vm.clientes.count { it.visitasCicloActual == 5 }
             val totalClientes = vm.clientes.size
-            
+
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 MetricLealtadCard("DESCUENTOS", numDescuentos.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                 MetricLealtadCard("EN REGISTRO", totalClientes.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
             }
 
-            val clientesMostrados = if (busquedaLocal.isBlank()) vm.clientes else vm.clientes.filter { 
+            val clientesMostrados = if (busquedaLocal.isBlank()) vm.clientes else vm.clientes.filter {
                 it.nombre.contains(busquedaLocal, ignoreCase = true) || it.telefono.contains(busquedaLocal)
             }
 
@@ -140,7 +140,7 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                 Text(cliente.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(cliente.telefono, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
-                
+
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                     repeat(5) { i ->
                         val active = i < cliente.visitasCicloActual
@@ -179,6 +179,3 @@ private fun DialogCliente(clienteInicial: ClienteV2?, onGuardar: (String, String
         dismissButton = { TextButton(onClick = onCancelar) { Text("CANCELAR") } }
     )
 }
-
-
-

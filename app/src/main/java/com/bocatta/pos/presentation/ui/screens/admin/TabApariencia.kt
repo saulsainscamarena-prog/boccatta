@@ -4,7 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -321,7 +322,7 @@ private fun ColorWheelPicker(
         modifier = modifier
             .size(wheelSize)
             .pointerInput(sizePx) {
-                detectTapGestures { offset ->
+                fun selectColor(offset: Offset) {
                     val radius = sizePx / 2f
                     val dx = offset.x - radius
                     val dy = offset.y - radius
@@ -332,6 +333,19 @@ private fun ColorWheelPicker(
                         val argb = AndroidColor.HSVToColor(floatArrayOf(hue, saturation, 1f))
                         onColorSelected("#%06X".format(0xFFFFFF and argb))
                     }
+                }
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    selectColor(down.position)
+                    val pointerId = down.id
+                    do {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId } ?: event.changes.first()
+                        if (change.pressed) {
+                            selectColor(change.position)
+                            change.consume()
+                        }
+                    } while (event.changes.any { it.id == pointerId && it.pressed })
                 }
             }
     ) {

@@ -15,9 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.domain.model.*
-import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.presentation.ui.components.BuscadorSelector
 import com.bocatta.pos.presentation.ui.components.ItemSeleccionable
 import com.bocatta.pos.presentation.ui.components.SeccionConfiguracion
@@ -57,6 +55,7 @@ fun DialogProducto(
     var editandoType = remember { mutableStateOf("SINGLE_CHIP") }
     var editandoOptions = remember { mutableStateOf("") }
     var editandoPremium = remember { mutableStateMapOf<String, Double>() }
+    val editandoDescuentos = remember { mutableStateMapOf<String, DescuentoOpcion>() }
     var showGroupEditor by remember { mutableStateOf(false) }
     var consumibles by remember { mutableStateOf(productoInicial?.consumiblesAsociados ?: emptyList()) }
 
@@ -142,6 +141,25 @@ fun DialogProducto(
                                     OutlinedTextField(value = preciosMap[suc] ?: "0", onValueChange = { preciosMap[suc] = it }, label = { Text("Precio \$") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                                 }
                             }
+                            val tienePrecioCero = preciosMap.values.any { it.toDoubleOrNull() == null || it.toDoubleOrNull() == 0.0 }
+                            if (tienePrecioCero) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                ) {
+                                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "Advertencia: Al menos una sucursal tiene precio de $0.00 o inválido.",
+                                            color = MaterialTheme.colorScheme.onErrorContainer,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
                         }
                         HorizontalDivider()
                         SeccionConfiguracion(titulo = "OPCIONES PARA EL CLIENTE (ConfigSchema)", ayuda = "Opciones que el cliente elige al comprar (salsas, toppings, extras). NO son productos ni ingredientes.", ejemplos = "SALSA: [Verde, Roja], TOPPINGS: [Queso, Cebolla]", contraejemplos = "NO: precios, recetas, consumibles") {
@@ -177,28 +195,110 @@ fun DialogProducto(
                                         Text("Escribe cada opción y marca si tiene costo extra (Premium):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
                                         val optsList = editandoOptions.value.split(",").map { it.trim() }.filter { it.isNotBlank() }
                                         optsList.forEach { opt ->
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(opt, modifier = Modifier.weight(1f), fontSize = 13.sp)
-                                                var isPrem by remember(opt) { mutableStateOf(editandoPremium.containsKey(opt)) }
-                                                Switch(checked = isPrem, onCheckedChange = { v ->
-                                                    isPrem = v
-                                                    if (v) { if (!editandoPremium.containsKey(opt)) editandoPremium[opt] = 10.0 }
-                                                    else editandoPremium.remove(opt)
-                                                }, modifier = Modifier.height(28.dp))
-                                                if (isPrem) {
-                                                    OutlinedTextField(
-                                                        value = if (editandoPremium.containsKey(opt)) "%.0f".format(editandoPremium[opt]) else "10",
-                                                        onValueChange = { editandoPremium[opt] = it.toDoubleOrNull() ?: 10.0 },
-                                                        modifier = Modifier.width(60.dp).height(40.dp),
-                                                        label = { Text("\$", fontSize = 9.sp) },
-                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                                        singleLine = true,
-                                                        textStyle = MaterialTheme.typography.labelSmall
-                                                    )
+                                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    Text(opt, modifier = Modifier.weight(1f), fontSize = 13.sp)
+                                                    var isPrem by remember(opt) { mutableStateOf(editandoPremium.containsKey(opt)) }
+                                                    Switch(checked = isPrem, onCheckedChange = { v ->
+                                                        isPrem = v
+                                                        if (v) { if (!editandoPremium.containsKey(opt)) editandoPremium[opt] = 10.0 }
+                                                        else editandoPremium.remove(opt)
+                                                    }, modifier = Modifier.height(28.dp))
+                                                    if (isPrem) {
+                                                        OutlinedTextField(
+                                                            value = if (editandoPremium.containsKey(opt)) "%.0f".format(editandoPremium[opt]) else "10",
+                                                            onValueChange = { editandoPremium[opt] = it.toDoubleOrNull() ?: 10.0 },
+                                                            modifier = Modifier.width(60.dp).height(40.dp),
+                                                            label = { Text("\$", fontSize = 9.sp) },
+                                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                                            singleLine = true,
+                                                            textStyle = MaterialTheme.typography.labelSmall
+                                                        )
+                                                    }
+                                                    var hasInsumo by remember(opt) { mutableStateOf(editandoDescuentos.containsKey(opt)) }
+                                                    IconButton(onClick = {
+                                                        if (hasInsumo) {
+                                                            editandoDescuentos.remove(opt)
+                                                            hasInsumo = false
+                                                        } else {
+                                                            editandoDescuentos[opt] = DescuentoOpcion("", 10.0, "g")
+                                                            hasInsumo = true
+                                                        }
+                                                    }) {
+                                                        Icon(
+                                                            Icons.Default.Inventory,
+                                                            contentDescription = "Mapear Inventario",
+                                                            tint = if (hasInsumo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
+                                                var hasInsumoState by remember(opt) { mutableStateOf(editandoDescuentos.containsKey(opt)) }
+                                                LaunchedEffect(editandoDescuentos.containsKey(opt)) {
+                                                    hasInsumoState = editandoDescuentos.containsKey(opt)
+                                                }
+                                                if (hasInsumoState) {
+                                                    val currentDesc = editandoDescuentos[opt] ?: DescuentoOpcion("", 10.0, "g")
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        var expandInsumo by remember { mutableStateOf(false) }
+                                                        Box(modifier = Modifier.weight(1f)) {
+                                                            val selectedInsumo = vm.insumosMaestros.find { it.id == currentDesc.insumoId }
+                                                            OutlinedButton(
+                                                                onClick = { expandInsumo = true },
+                                                                modifier = Modifier.fillMaxWidth().height(40.dp),
+                                                                shape = RoundedCornerShape(8.dp),
+                                                                contentPadding = PaddingValues(horizontal = 8.dp)
+                                                            ) {
+                                                                Text(selectedInsumo?.nombre ?: "Vincular Insumo...", fontSize = 11.sp)
+                                                            }
+                                                            DropdownMenu(
+                                                                expanded = expandInsumo,
+                                                                onDismissRequest = { expandInsumo = false }
+                                                            ) {
+                                                                vm.insumosMaestros.forEach { ins ->
+                                                                    DropdownMenuItem(
+                                                                        text = { Text(ins.nombre, fontSize = 12.sp) },
+                                                                        onClick = {
+                                                                            editandoDescuentos[opt] = currentDesc.copy(insumoId = ins.id, unidad = ins.unidadBase)
+                                                                            expandInsumo = false
+                                                                        }
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                        OutlinedTextField(
+                                                            value = if (currentDesc.cantidad == 0.0) "" else currentDesc.cantidad.toString(),
+                                                            onValueChange = {
+                                                                val v = it.toDoubleOrNull() ?: 0.0
+                                                                editandoDescuentos[opt] = currentDesc.copy(cantidad = v)
+                                                            },
+                                                            label = { Text("Cant", fontSize = 9.sp) },
+                                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                                            modifier = Modifier.width(65.dp).height(45.dp),
+                                                            textStyle = MaterialTheme.typography.labelSmall,
+                                                            singleLine = true,
+                                                            shape = RoundedCornerShape(8.dp)
+                                                        )
+                                                        OutlinedTextField(
+                                                            value = currentDesc.unidad,
+                                                            onValueChange = {
+                                                                editandoDescuentos[opt] = currentDesc.copy(unidad = it)
+                                                            },
+                                                            label = { Text("Unid", fontSize = 9.sp) },
+                                                            modifier = Modifier.width(55.dp).height(45.dp),
+                                                            textStyle = MaterialTheme.typography.labelSmall,
+                                                            singleLine = true,
+                                                            shape = RoundedCornerShape(8.dp)
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
-                                        OutlinedTextField(value = editandoOptions.value, onValueChange = { editandoOptions.value = it; editandoPremium.clear() }, label = { Text("Opciones (separadas por coma)") }, placeholder = { Text("Oreja, Bombón, Nuez, Fresa") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
+                                        OutlinedTextField(value = editandoOptions.value, onValueChange = { editandoOptions.value = it; editandoPremium.clear(); editandoDescuentos.clear() }, label = { Text("Opciones (separadas por coma)") }, placeholder = { Text("Oreja, Bombón, Nuez, Fresa") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
                                         Text("💡 Las opciones marcadas como Premium generan un cargo extra al cliente.", fontSize = 10.sp, color = MaterialTheme.colorScheme.tertiary)
                                     }
                                 }, confirmButton = {
@@ -208,11 +308,12 @@ fun DialogProducto(
                                             key = editandoKey.value, title = editandoTitle.value,
                                             type = try { ConfigFieldType.valueOf(editandoType.value) } catch (_: Exception) { ConfigFieldType.SINGLE_CHIP },
                                             options = opts,
-                                            preciosExtra = editandoPremium.toMap()
+                                            preciosExtra = editandoPremium.toMap(),
+                                            descuentosInsumo = editandoDescuentos.toMap()
                                         )
-                                        showGroupEditor = false; editandoKey.value = ""; editandoTitle.value = ""; editandoOptions.value = ""; editandoPremium.clear()
+                                        showGroupEditor = false; editandoKey.value = ""; editandoTitle.value = ""; editandoOptions.value = ""; editandoPremium.clear(); editandoDescuentos.clear()
                                     }, enabled = editandoKey.value.isNotBlank() && editandoTitle.value.isNotBlank()) { Text("Agregar") }
-                                }, dismissButton = { TextButton(onClick = { showGroupEditor = false }) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
+                                }, dismissButton = { TextButton(onClick = { showGroupEditor = false; editandoKey.value = ""; editandoTitle.value = ""; editandoOptions.value = ""; editandoPremium.clear(); editandoDescuentos.clear() }) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
                             }
                         }
                         HorizontalDivider()
@@ -297,7 +398,7 @@ fun DialogProducto(
             when (paso) {
                 3 -> Button(
                     onClick = {
-                        val id = productoInicial?.id ?: FirebaseFirestoreProvider.db.collection(FirestoreCollections.PRODUCTOS).document().id
+                        val id = productoInicial?.id ?: vm.generarNuevoProductoId()
                         val prod = SalesInventoryProductV2(
                             id = id, nombre = nombre, emoji = emoji, categoria = categoria, subcategoria = subcategoria,
                             tipoProducto = tipoProducto,
@@ -335,5 +436,3 @@ private fun labelConfigTypeProducto(type: ConfigFieldType): String = when (type)
     ConfigFieldType.MULTI_CHECKBOX -> "Casillas"
     ConfigFieldType.TEXT -> "Texto libre"
 }
-
-

@@ -1,11 +1,16 @@
 package com.bocatta.pos
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.presentation.ui.components.CarritoPanelV2
 import org.junit.Rule
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.math.BigDecimal
@@ -37,11 +42,15 @@ class CarritoPanelV2Test {
                 descuentoLealtad = 0.0,
                 descuentoPromociones = 0.0,
                 clienteSeleccionado = null,
+                modalidad = ModalidadOrden.LOCAL,
+                onModalidadChanged = {},
+                onToggleParaLlevarItem = {},
+                modifier = Modifier.height(700.dp),
                 onEliminarItem = {},
                 onCobrar = {}
             )
         }
-        composeTestRule.onNodeWithText("CARRITO VACÍO").assertExists()
+        composeTestRule.onNodeWithText("ORDEN VACIA", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -53,14 +62,17 @@ class CarritoPanelV2Test {
                 descuentoLealtad = 0.0,
                 descuentoPromociones = 0.0,
                 clienteSeleccionado = null,
+                modalidad = ModalidadOrden.LOCAL,
+                onModalidadChanged = {},
+                onToggleParaLlevarItem = {},
                 onEliminarItem = {},
                 onCobrar = {}
             )
         }
         // Verificar que se muestra el nombre del producto
         composeTestRule.onNodeWithText("CREPA DULCE").assertExists()
-        // Verificar que el botón de finalizar está habilitado
-        composeTestRule.onNodeWithText("FINALIZAR PEDIDO").assertIsEnabled()
+        // Verificar que el boton de finalizar esta habilitado
+        composeTestRule.onNodeWithText("COBRAR").assertIsEnabled()
     }
 
     @Test
@@ -74,13 +86,16 @@ class CarritoPanelV2Test {
                 descuentoLealtad = 0.0,
                 descuentoPromociones = 0.0,
                 clienteSeleccionado = null,
+                modalidad = ModalidadOrden.LOCAL,
+                onModalidadChanged = {},
+                onToggleParaLlevarItem = {},
                 onEliminarItem = { itemEliminado = it },
                 onCobrar = {}
             )
         }
-        // Tocar el botón de eliminar (icono de cerrar)
-        composeTestRule.onNodeWithContentDescription("Eliminar").performClick()
-        assert(itemEliminado != null)
+        // Tocar el boton de eliminar (icono de cerrar)
+        composeTestRule.onNodeWithContentDescription("Eliminar Crepa Dulce").performClick()
+        assertNotNull(itemEliminado)
     }
 
     @Test
@@ -94,6 +109,9 @@ class CarritoPanelV2Test {
                 descuentoLealtad = 0.0,
                 descuentoPromociones = 0.0,
                 clienteSeleccionado = null,
+                modalidad = ModalidadOrden.LOCAL,
+                onModalidadChanged = {},
+                onToggleParaLlevarItem = {},
                 onEliminarItem = {},
                 onCobrar = {},
                 onApplyDiscount = { descuentoAplicado = it }
@@ -101,7 +119,7 @@ class CarritoPanelV2Test {
         }
         // Tocar descuento 10%
         composeTestRule.onNodeWithText("10%").performClick()
-        assert(descuentoAplicado == 10)
+        assertEquals(10, descuentoAplicado)
     }
 
     @Test
@@ -113,10 +131,13 @@ class CarritoPanelV2Test {
                 descuentoLealtad = 0.0,
                 descuentoPromociones = 0.0,
                 clienteSeleccionado = null,
+                modalidad = ModalidadOrden.LOCAL,
+                onModalidadChanged = {},
+                onToggleParaLlevarItem = {},
                 onEliminarItem = {},
                 onCobrar = {}
             )
         }
-        composeTestRule.onNodeWithText("FINALIZAR PEDIDO").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("COBRAR").assertIsNotEnabled()
     }
 }

@@ -3,6 +3,8 @@ package com.bocatta.pos.presentation.viewmodel
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.data.repository.ThemeRepository
 import com.bocatta.pos.domain.model.ThemeConfigV2
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,9 +16,15 @@ class ThemeViewModel(
 
     private val _config = MutableStateFlow(ThemeConfigV2())
     val config: StateFlow<ThemeConfigV2> = _config.asStateFlow()
+    private var observeJob: Job? = null
 
     init {
-        viewModelScope.launch(safeHandler) {
+        iniciarObservacionSiAutenticado()
+    }
+
+    fun iniciarObservacionSiAutenticado() {
+        if (observeJob != null || FirebaseAuth.getInstance().currentUser == null) return
+        observeJob = viewModelScope.launch(safeHandler) {
             repository.observarTema().collect { _config.value = it }
         }
     }
@@ -65,4 +73,3 @@ class ThemeViewModel(
         return "#${clean.uppercase()}"
     }
 }
-

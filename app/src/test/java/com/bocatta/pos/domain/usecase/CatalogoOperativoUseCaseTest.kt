@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.domain.usecase
+package com.bocatta.pos.domain.usecase
 
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
 import com.bocatta.pos.domain.usecase.impl.CatalogoOperativoUseCaseImpl
@@ -92,7 +92,7 @@ class CatalogoOperativoUseCaseTest {
         // El orden esperado de frecuentes debe ser:
         // 1. C (25 ventas)
         // 2. A (10 ventas)
-        // 3. B y D ordenados alfabÃ©ticamente (0 ventas cada uno) -> B, luego D.
+        // 3. B y D ordenados alfabeticamente (0 ventas cada uno) -> B, luego D.
         assertEquals(4, resultado.frecuentes.size)
         assertEquals("C", resultado.frecuentes[0].id)
         assertEquals("A", resultado.frecuentes[1].id)

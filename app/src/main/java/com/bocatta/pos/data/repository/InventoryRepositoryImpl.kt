@@ -207,16 +207,47 @@ class InventoryRepositoryImpl(
     }
 
     override suspend fun syncOfflineAdjustment(adjustment: StockAdjustmentEntity): Boolean {
-        // Reuse the existing adjustStock logic with placeholder reference/user IDs.
-        return adjustStock(
-            branchId = adjustment.branchId,
-            productId = adjustment.productId,
-            quantity = adjustment.quantity,
-            unit = adjustment.unit,
-            reason = adjustment.reason,
-            referenceId = "",
-            userId = "offline_sync"
-        )
+        return try {
+            val baseQuantity = if (adjustment.unit == "base") {
+                adjustment.quantity
+            } else {
+                UnitConverter.toBase(adjustment.quantity, adjustment.unit)
+            }
+            val docId = "${adjustment.branchId}_${adjustment.productId}"
+            val batch = db.batch()
+            batch.set(
+                inventoryCollection.document(docId),
+                mapOf(
+                    "id" to docId,
+                    "branchId" to adjustment.branchId,
+                    "productId" to adjustment.productId,
+                    "currentQty" to FieldValue.increment(baseQuantity),
+                    "cantidadEnBase" to FieldValue.increment(baseQuantity),
+                    "lastUpdated" to System.currentTimeMillis()
+                ),
+                SetOptions.merge()
+            )
+            val movementRef = movementsCollection.document()
+            batch.set(
+                movementRef,
+                MovementV2(
+                    id = movementRef.id,
+                    branchId = adjustment.branchId,
+                    type = adjustment.reason.uppercase(Locale.ROOT),
+                    referenceId = "",
+                    productId = adjustment.productId,
+                    quantity = baseQuantity,
+                    unit = "base",
+                    userId = "offline_sync",
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+            batch.commit().await()
+            true
+        } catch (e: Exception) {
+            Timber.tag("INV_REPO").e(e, "Error syncing offline adjustment for ${adjustment.productId}")
+            false
+        }
     }
 
     override suspend fun hasSufficientStock(
@@ -323,6 +354,7 @@ class InventoryRepositoryImpl(
                     "productId" to insumoId,
                     "currentQty" to FieldValue.increment(totalUnidades),
                     "cantidadEnBase" to FieldValue.increment(totalUnidades),
+                    "cantidadDisponible" to FieldValue.increment(totalUnidades),
                     "lastUpdated" to System.currentTimeMillis()
                 ),
                 SetOptions.merge()
@@ -358,11 +390,13 @@ class InventoryRepositoryImpl(
             batch.set(gastoRef, mapOf(
                 "id" to gastoRef.id,
                 "descripcion" to "Compra: $cantidadComprada $presentacionNombre de $insumoId",
+                "concepto" to "Compra: $cantidadComprada $presentacionNombre de $insumoId",
                 "monto" to costoTotal,
                 "categoria" to "Insumo",
                 "fecha" to System.currentTimeMillis(),
                 "sucursal" to branchId,
                 "usuarioId" to userId,
+                "usuario" to userId,
                 "insumoId" to insumoId,
                 "cantidadSurtida" to totalUnidades,
                 "presentacionCompra" to presentacionNombre,

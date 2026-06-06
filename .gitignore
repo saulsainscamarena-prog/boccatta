@@ -7,6 +7,8 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/
+/.vscode/
 .DS_Store
 /build
 /captures
@@ -18,5 +20,9 @@ local.properties
 maestro.zip
 *.log
 build_output*.txt
-*.xml
+build_output*.xml
 scratch/
+.kotlin/
+hs_err_pid*
+replay_pid*
+audit-avd/

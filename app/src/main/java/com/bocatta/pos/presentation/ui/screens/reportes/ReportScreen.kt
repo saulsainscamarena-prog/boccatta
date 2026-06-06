@@ -29,6 +29,7 @@ import com.bocatta.pos.presentation.ui.components.BocattaSectionTitle
 import com.bocatta.pos.presentation.ui.components.BocattaTopBar
 import com.bocatta.pos.presentation.ui.theme.*
 import com.bocatta.pos.presentation.viewmodel.ReportViewModelV2
+import com.bocatta.pos.logging.LogHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +49,7 @@ fun ReportScreen(vmV2: ReportViewModelV2, sucursal: String, onBack: () -> Unit) 
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = {
+                        LogHelper.recordBreadcrumb("share_report_whatsapp", "sucursal=$sucursal")
                         val texto = vmV2.generarTextoCierreWhatsApp(sucursal)
                         val intent = Intent().apply {
                             action = Intent.ACTION_SEND
@@ -356,4 +358,3 @@ private fun GraficaBarras(datos: List<VentaPorDia>, color: Color) {
         datos.forEach { Text(it.etiqueta, fontSize = 9.sp, color = MaterialTheme.colorScheme.outline) }
     }
 }
-

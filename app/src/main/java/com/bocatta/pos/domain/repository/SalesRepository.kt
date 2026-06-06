@@ -18,7 +18,10 @@ interface SalesRepository {
         esConsumoEmpleado: Boolean,
         descuentoPromociones: Double = 0.0,
         descuentoManual: Double = 0.0,
-        splitPartes: List<com.bocatta.pos.domain.model.SplitParte> = emptyList()
+        propina: Double = 0.0,
+        notaOrden: String = "",
+        splitPartes: List<com.bocatta.pos.domain.model.SplitParte> = emptyList(),
+        forcedVentaId: String? = null
     ): ResultadoVenta
 
     suspend fun registrarGastoValidado(
@@ -28,5 +31,3 @@ interface SalesRepository {
         usuarioId: String
     ): Boolean
 }
-
-

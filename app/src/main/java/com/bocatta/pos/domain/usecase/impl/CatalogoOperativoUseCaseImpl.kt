@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.domain.usecase.impl
+package com.bocatta.pos.domain.usecase.impl
 
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
 import com.bocatta.pos.domain.usecase.CatalogoOperativoUseCase
@@ -23,11 +23,11 @@ class CatalogoOperativoUseCaseImpl : CatalogoOperativoUseCase {
             (prod.precioVenta[sucursalKey] ?: 0.0) > 0.0
         }
 
-        // 2. Frecuentes: todos los vendibles ordenados por historial y nombre
+        // 2. Frecuentes: top 15 más vendidos ordenados por historial y nombre
         val frecuentes = vendibles.sortedWith(
             compareByDescending<SalesInventoryProductV2> { ventasHistorial[it.id] ?: 0 }
                 .thenBy { it.nombre.lowercase(Locale.ROOT) }
-        )
+        ).take(15)
 
         // 3. Categorias visibles
         val categoriasVisibles = vendibles

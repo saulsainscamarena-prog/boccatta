@@ -4,9 +4,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 
 object BocattaDesign {
-    
+
     /**
-     * Devuelve el color corporativo asociado a cada categor�a de men�.
+     * Devuelve el color corporativo asociado a cada categoria de menu.
      */
     fun getColorPorCategoria(categoria: String?): Color {
         return when (categoria?.lowercase()) {
@@ -39,5 +39,3 @@ object BocattaDesign {
         }
     }
 }
-
-

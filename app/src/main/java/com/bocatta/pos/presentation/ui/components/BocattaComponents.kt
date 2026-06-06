@@ -6,7 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -343,7 +342,10 @@ fun BocattaCartItemRow(
     onToggleParaLlevar: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val rowClick = onEditar ?: {}
     Surface(
+        onClick = rowClick,
+        enabled = onEditar != null,
         color = MaterialTheme.colorScheme.onSurface.copy(0.03f),
         shape = RoundedCornerShape(12.dp),
         modifier = modifier.fillMaxWidth()
@@ -358,7 +360,7 @@ fun BocattaCartItemRow(
                     fontWeight = FontWeight.Black,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface,
-                    letterSpacing = 0.5.sp
+                    letterSpacing = 0.sp
                 )
                 if (item.nota.isNotBlank()) {
                     Text(
@@ -376,10 +378,10 @@ fun BocattaCartItemRow(
                         onClick = onToggleParaLlevar,
                         label = {
                             Text(
-                                if (item.paraLlevar) "LLEVAR" else "AQUÍ",
+                                if (item.paraLlevar) "LLEVAR" else "AQUI",
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Black,
-                                letterSpacing = 0.5.sp
+                                letterSpacing = 0.sp
                             )
                         },
                         colors = SuggestionChipDefaults.suggestionChipColors(
@@ -396,19 +398,12 @@ fun BocattaCartItemRow(
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp
             )
-            Spacer(Modifier.width(8.dp))
-            if (onEditar != null) {
-                IconButton(onClick = onEditar, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Create, contentDescription = "Editar",
-                        tint = MaterialTheme.colorScheme.onSurface.copy(0.5f),
-                        modifier = Modifier.size(16.dp))
-                }
-            }
+            Spacer(Modifier.width(12.dp))
             IconButton(
                 onClick = onEliminar,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(48.dp)
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Eliminar",
+                Icon(Icons.Default.Close, contentDescription = "Eliminar ${item.nombre}",
                     tint = MaterialTheme.colorScheme.error.copy(0.6f),
                     modifier = Modifier.size(16.dp))
             }
@@ -457,7 +452,7 @@ fun BocattaSearchBar(
                     onQueryChange("")
                     onSearch?.invoke("")
                 }) {
-                    Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Close, "Limpiar busqueda", tint = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.size(18.dp))
                 }
             }
         },
@@ -472,5 +467,3 @@ fun BocattaSearchBar(
         )
     )
 }
-
-

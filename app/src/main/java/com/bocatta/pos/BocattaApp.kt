@@ -8,16 +8,18 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
-// BuildConfig import removed
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
+import com.bocatta.pos.domain.usecase.AnalyticsConsentManager
 
 class BocattaApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        // Inicializa Timber y el ·rbol de archivo. Siempre habilitado en debug.
-        LogHelper.init(this, true)
-        // Programa limpieza diaria de logs (>15 dÌas) mediante WorkManager
+        // Inicializa Timber y el arbol de archivo. DebugTree solo se habilita en debug.
+        LogHelper.init(this, BuildConfig.DEBUG)
+        // Inicializar consentimiento de Analytics (deshabilitado por defecto)
+        AnalyticsConsentManager.initializeWithSavedPreference(this)
+        // Programa limpieza diaria de logs (>15 d√≠as) mediante WorkManager
         val cleanupRequest = PeriodicWorkRequestBuilder<LogCleanupWorker>(1, TimeUnit.DAYS).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "log_cleanup",
@@ -31,5 +33,3 @@ class BocattaApp : Application() {
         }
     }
 }
-
-

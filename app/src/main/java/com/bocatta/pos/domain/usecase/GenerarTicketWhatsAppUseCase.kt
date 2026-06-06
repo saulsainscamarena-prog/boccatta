@@ -12,35 +12,51 @@ class GenerarTicketWhatsAppUseCase {
         total: Double,
         descuentoLealtad: Double,
         descuentoPromociones: Double,
-        metodoPago: String
+        metodoPago: String,
+        descuentoManual: Double = 0.0,
+        propina: Double = 0.0,
+        notaOrden: String = "",
+        modoOperacion: String = ""
     ): String {
         val localeMX = java.util.Locale.forLanguageTag("es-MX")
         val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", localeMX)
         val sb = StringBuilder()
-        sb.append("🍩 *BOCATTA - TICKET DIGITAL* 🍩\n")
-        sb.append(" Ticket: #$codigoTicket\n")
-        sb.append(" Fecha: ${sdf.format(java.util.Date())}\n")
-        sb.append(" Sucursal: ${sucursal.uppercase()}\n")
-        sb.append("─────────────────────\n")
-        
-        items.forEach { item ->
-            sb.append("• ${item.cantidad}x ${item.nombre}\n")
-            if (item.nota.isNotBlank()) sb.append("  ↳ _${item.nota}_\n")
-            sb.append("  *$${"%.2f".format(item.precioFinal.multiply(BigDecimal(item.cantidad)).toDouble())}*\n")
+        sb.append("*BOCATTA - TICKET DIGITAL*\n")
+        sb.append("Ticket: #$codigoTicket\n")
+        sb.append("Fecha: ${sdf.format(java.util.Date())}\n")
+        sb.append("Sucursal: ${sucursal.uppercase()}\n")
+        if (modoOperacion.isNotBlank()) {
+            sb.append("Modo: ${modoOperacion.trim()}\n")
         }
-        
-        sb.append("─────────────────────\n")
+        sb.append("---------------------\n")
+
+        items.forEach { item ->
+            sb.append("${item.cantidad}x ${item.nombre}\n")
+            if (item.nota.isNotBlank()) sb.append("  Nota item: ${item.nota}\n")
+            sb.append("  $${"%.2f".format(item.precioFinal.multiply(BigDecimal(item.cantidad)).toDouble())}\n")
+        }
+
+        sb.append("---------------------\n")
         if (descuentoLealtad > 0) {
-            sb.append("🎁 Desc. Lealtad: -$${"%.2f".format(descuentoLealtad)}\n")
+            sb.append("Desc. lealtad: -$${"%.2f".format(descuentoLealtad)}\n")
         }
         if (descuentoPromociones > 0) {
-            sb.append("🏷️ Promo Aplicada: -$${"%.2f".format(descuentoPromociones)}\n")
+            sb.append("Promo aplicada: -$${"%.2f".format(descuentoPromociones)}\n")
+        }
+        if (descuentoManual > 0) {
+            sb.append("Desc. manual: -$${"%.2f".format(descuentoManual)}\n")
+        }
+        if (propina > 0) {
+            sb.append("Propina: $${"%.2f".format(propina)}\n")
         }
         sb.append("*TOTAL: $${"%.2f".format(total)}*\n")
-        sb.append(" Pago: $metodoPago\n")
-        sb.append("─────────────────────\n")
-        sb.append("_¡Gracias por ser parte de la familia Bocatta!_")
-        
+        sb.append("Pago: $metodoPago\n")
+        if (notaOrden.isNotBlank()) {
+            sb.append("Nota orden: ${notaOrden.trim()}\n")
+        }
+        sb.append("---------------------\n")
+        sb.append("_Gracias por ser parte de la familia Bocatta!_")
+
         return sb.toString()
     }
 
@@ -51,7 +67,11 @@ class GenerarTicketWhatsAppUseCase {
         total: Double,
         descuentoLealtad: Double,
         descuentoPromociones: Double,
-        metodoPago: MetodoPago
+        metodoPago: MetodoPago,
+        descuentoManual: Double = 0.0,
+        propina: Double = 0.0,
+        notaOrden: String = "",
+        modoOperacion: String = ""
     ): String {
         return invoke(
             sucursal = sucursal,
@@ -60,8 +80,11 @@ class GenerarTicketWhatsAppUseCase {
             total = total,
             descuentoLealtad = descuentoLealtad,
             descuentoPromociones = descuentoPromociones,
-            metodoPago = metodoPago.valor
+            descuentoManual = descuentoManual,
+            metodoPago = metodoPago.valor,
+            propina = propina,
+            notaOrden = notaOrden,
+            modoOperacion = modoOperacion
         )
     }
 }
-

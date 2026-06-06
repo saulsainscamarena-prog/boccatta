@@ -6,7 +6,7 @@ service cloud.firestore {
     function esAutenticado() {
       return request.auth != null;
     }
-    
+
     function getDatosUsuario() {
       return get(/databases/$(database)/documents/v2_users/$(request.auth.uid)).data;
     }
@@ -14,27 +14,82 @@ service cloud.firestore {
     function esAdmin() {
       return esAutenticado() && getDatosUsuario().rol in ['ADMIN', 'DUEÑO'];
     }
-    
+
     function esVendedor() {
-      return esAutenticado(); // Todo usuario autenticado es al menos VENDEDOR
+      return esAutenticado() && getDatosUsuario().rol in ['VENDEDOR', 'ADMIN', 'DUEÑO'];
+    }
+
+    function keysHaveAny(requiredA, requiredB) {
+      return request.resource.data.keys().hasAll(requiredA) || request.resource.data.keys().hasAll(requiredB);
+    }
+
+    function stockFieldsOnly() {
+      return ['cantidadEnBase', 'cantidadDisponible', 'currentQty', 'ultimaActualizacion', 'lastUpdated'];
+    }
+
+    function sellerStockCreateKeysOnly(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    function sellerCreatesStockDeduction(allowedFields) {
+      return sellerStockCreateKeysOnly(allowedFields)
+        && request.resource.data.cantidadEnBase is number
+        && request.resource.data.cantidadEnBase <= 0
+        && (!request.resource.data.keys().hasAny(['cantidadDisponible'])
+          || (request.resource.data.cantidadDisponible is number && request.resource.data.cantidadDisponible <= 0))
+        && (!request.resource.data.keys().hasAny(['currentQty'])
+          || (request.resource.data.currentQty is number && request.resource.data.currentQty <= 0));
+    }
+
+    function sellerUpdatesStockDownOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(stockFieldsOnly())
+        && request.resource.data.cantidadEnBase is number
+        && resource.data.cantidadEnBase is number
+        && request.resource.data.cantidadEnBase <= resource.data.cantidadEnBase
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['cantidadDisponible'])
+          || (request.resource.data.cantidadDisponible is number
+            && ((resource.data.cantidadDisponible is number
+                && request.resource.data.cantidadDisponible <= resource.data.cantidadDisponible)
+              || (!resource.data.keys().hasAny(['cantidadDisponible'])
+                && request.resource.data.cantidadDisponible <= 0))))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['currentQty'])
+          || (request.resource.data.currentQty is number
+            && ((resource.data.currentQty is number
+                && request.resource.data.currentQty <= resource.data.currentQty)
+              || (!resource.data.keys().hasAny(['currentQty'])
+                && request.resource.data.currentQty <= 0))));
     }
 
     // ── Usuarios ─────────────────────────────────────────────
     match /v2_users/{uid} {
       allow read: if esAutenticado() && (request.auth.uid == uid || esAdmin());
-      allow create: if esAutenticado() && request.auth.uid == uid 
+      allow create: if esAutenticado() && request.auth.uid == uid
                     && request.resource.data.keys().hasAll(['uid', 'nombre', 'correo', 'rol'])
                     && request.resource.data.rol in ['VENDEDOR', 'ADMIN', 'DUEÑO'];
-      allow update: if esAutenticado() && (request.auth.uid == uid || esAdmin());
+      allow update: if esAutenticado() && (
+        (request.auth.uid == uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'uid']))
+        || esAdmin()
+      );
+      allow delete: if esAdmin();
+    }
+
+    match /v2_pin_authorizations/{pinHash} {
+      allow get: if esVendedor();
+      allow list: if false;
+      allow create, update: if esAdmin()
+        && request.resource.data.keys().hasAll(['pinHash', 'userId', 'displayName', 'role', 'branchId', 'active', 'updatedAt'])
+        && request.resource.data.pinHash == pinHash
+        && request.resource.data.active is bool;
       allow delete: if esAdmin();
     }
 
     // ── Ventas y Operaciones de Caja ──────────────────────────────────────
     match /v2_ventas/{docId} {
+      // Vendedores filtran por sucursal en query de la app; rules validan rol real
       allow read: if esVendedor();
-      allow create: if esVendedor() 
+      allow create: if esVendedor()
         && request.resource.data.keys().hasAll(['id', 'total', 'fecha', 'sucursal', 'atendio'])
-        && request.resource.data.total is number 
+        && request.resource.data.total is number
         && request.resource.data.fecha is number;
       allow update: if esAdmin();
       allow delete: if false;
@@ -63,17 +118,60 @@ service cloud.firestore {
 
     match /v2_turnos_caja/{docId} {
       allow read: if esVendedor();
-      allow create: if esVendedor() 
-        && request.resource.data.keys().hasAll(['id', 'sucursal', 'abierta', 'fondoInicial'])
-        && request.resource.data.abierta == true;
-      allow update: if esVendedor() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['abierta', 'fondoFinal', 'cierreFecha']);
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'sucursal', 'estado', 'fondoInicial'])
+        && (
+          request.resource.data.estado == 'abierto'
+          || (
+            request.resource.data.offlineContingency == true
+            && request.resource.data.estado in ['abierto', 'cerrado']
+            && request.resource.data.keys().hasOnly([
+              'id', 'sucursal', 'usuarioId', 'usuarioNombre', 'rol',
+              'fondoInicial', 'fechaApertura', 'fechaCierre', 'estado',
+              'efectivoContado', 'tarjetaContada', 'offlineContingency',
+              'syncTimestamp'
+            ])
+          )
+        );
+      allow update: if esVendedor()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'estado', 'fechaCierre', 'efectivoContado', 'tarjetaContada',
+          'diferenciaEfectivo', 'diferenciaTarjeta',
+          'totalVentasEfectivo', 'totalVentasTarjeta', 'totalGastosTurno'
+        ]);
       allow delete: if false;
+    }
+
+    match /v2_jornadas/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['empleadoId', 'empleadoNombre', 'dia', 'inicioReal', 'estado'])
+        && request.resource.data.empleadoId == request.auth.uid
+        && request.resource.data.inicioReal is number
+        && request.resource.data.dia is number;
+      allow update: if esAdmin() || (esVendedor()
+        && resource.data.empleadoId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'pausas', 'estado', 'finReal', 'horasEfectivas', 'notas'
+        ]));
+      allow delete: if false;
+    }
+
+    match /v2_registro_jornadas/{docId} {
+      allow read: if esVendedor();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['usuario', 'sucursal', 'accion', 'rol', 'sesionId', 'timestamp'])
+        && request.resource.data.sesionId == request.auth.uid
+        && request.resource.data.timestamp is number
+        && request.resource.data.accion in ['inicio_turno', 'unirse_turno', 'pausa', 'cierre_turno'];
+      allow update, delete: if false;
     }
 
     match /v2_gastos/{docId} {
       allow read: if esVendedor();
-      allow create: if esVendedor() 
-        && request.resource.data.keys().hasAll(['id', 'monto', 'concepto', 'fecha', 'sucursal'])
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'monto', 'fecha', 'sucursal'])
+        && keysHaveAny(['concepto'], ['descripcion'])
         && request.resource.data.monto is number;
       allow update: if esAdmin();
       allow delete: if false;
@@ -82,10 +180,20 @@ service cloud.firestore {
     // ── Catálogos y Configuración (Lectura Global, Escritura Admin) ─────────
     match /v2_products/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
     match /v2_recetas/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
-    match /v2_supplies/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_supplies/{docId} {
+      allow read: if esAutenticado();
+      allow create, delete: if esAdmin();
+      allow update: if esAdmin() || (esVendedor() && sellerUpdatesStockDownOnly());
+    }
     match /v2_categorias/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
     match /v2_sucursales/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
-    match /v2_configuracion/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_configuracion/{docId} {
+      allow read: if esAutenticado();
+      allow create, update: if esAdmin() || (esVendedor()
+        && docId.matches('contadores_.*')
+        && request.resource.data.keys().hasOnly(['ultimo_ticket', 'sucursal', 'creado']));
+      allow delete: if esAdmin();
+    }
     match /v2_sucursal_config/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
     match /v2_units_catalog/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
     match /v2_discounts/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
@@ -94,14 +202,16 @@ service cloud.firestore {
     // ── Inventario y Stock ───────────────────────────────────────────────
     match /v2_inventory_global/{docId} {
       allow read: if esVendedor();
-      allow write: if esAdmin();
+      allow create: if esAdmin() || (esVendedor() && sellerCreatesStockDeduction(['id', 'insumoId', 'productId', 'cantidadEnBase', 'cantidadDisponible', 'currentQty', 'ultimaActualizacion', 'lastUpdated']));
+      allow update: if esAdmin() || (esVendedor() && sellerUpdatesStockDownOnly());
+      allow delete: if esAdmin();
     }
 
     match /v2_inventory_branch_portions/{docId} {
       allow read: if esVendedor();
-      allow write: if esAdmin()
-        && request.resource.data.keys().hasAll(['cantidadEnBase', 'cantidadDisponible', 'ultimaActualizacion'])
-        && request.resource.data.cantidadDisponible is number;
+      allow create: if esAdmin() || (esVendedor() && sellerCreatesStockDeduction(['id', 'insumoId', 'productId', 'sucursal', 'branchId', 'cantidadEnBase', 'cantidadDisponible', 'currentQty', 'ultimaActualizacion', 'lastUpdated']));
+      allow update: if esAdmin() || (esVendedor() && sellerUpdatesStockDownOnly());
+      allow delete: if esAdmin();
     }
 
     match /v2_inventory_movements/{docId} {
@@ -125,15 +235,15 @@ service cloud.firestore {
     // ── Auditoría y Logs (Vendedor Crea, Admin Lee) ──────────────────────
     match /v2_auditoria_cancelaciones/{docId} {
       allow read: if esAdmin();
-      allow create: if esVendedor() 
-        && request.resource.data.keys().hasAll(['ventaId', 'motivo', 'sucursal', 'usuario']);
-      allow update: if false;
-      allow delete: if false;
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'productoNombre', 'precio', 'cantidad', 'motivo', 'usuario', 'sucursal', 'estado', 'fecha']);
+      allow update: if esAdmin();
+      allow delete: if esAdmin();
     }
 
     match /v2_merma_logs/{docId} {
       allow read: if esAdmin();
-      allow create: if esVendedor() 
+      allow create: if esVendedor()
         && request.resource.data.keys().hasAll(['insumoId', 'cantidad', 'motivo', 'sucursal', 'fecha'])
         && request.resource.data.cantidad is number;
       allow update, delete: if false;
@@ -143,45 +253,115 @@ service cloud.firestore {
     match /v2_customers/{docId} {
       allow read: if esVendedor();
       allow create: if esVendedor() && request.resource.data.keys().hasAll(['nombre', 'telefono']);
-      allow update: if esVendedor() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['nombre', 'telefono', 'visitasCicloActual']);
+      allow update: if esVendedor()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'nombre', 'telefono', 'visitasCicloActual', 'comprasCicloActual', 'fechaUltimaVisita'
+        ]);
       allow delete: if esAdmin();
     }
 
     // ── Operaciones Administrativas y Cierres ───────────────────────────
     match /v2_aperturas/{docId} {
       allow read: if esAdmin();
-      allow create: if esVendedor() && request.resource.data.keys().hasAll(['sucursal', 'fecha', 'usuario']);
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['sucursal', 'fecha'])
+        && keysHaveAny(['usuario'], ['usuarioId']);
       allow update, delete: if false;
     }
 
     match /v2_inventory_closures/{docId} {
       allow read: if esAdmin();
-      allow create: if esVendedor() && request.resource.data.keys().hasAll(['sucursal', 'fecha', 'usuario', 'inventarioFinal']);
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['sucursal', 'fecha'])
+        && keysHaveAny(['usuario'], ['usuarioId'])
+        && keysHaveAny(['inventarioFinal'], ['sobrantes']);
       allow update, delete: if false;
     }
 
     match /v2_inventory_openings/{docId} {
       allow read: if esAdmin();
-      allow create: if esVendedor() && request.resource.data.keys().hasAll(['sucursal', 'fecha', 'usuario']);
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['sucursal', 'fecha'])
+        && keysHaveAny(['usuario'], ['usuarioId']);
       allow update, delete: if false;
     }
 
     match /v2_operaciones_generales/{docId} {
       allow read: if esAdmin();
-      allow create: if esVendedor() && request.resource.data.keys().hasAll(['tipo', 'descripcion', 'usuario', 'fecha']);
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['tipo', 'descripcion', 'fecha'])
+        && keysHaveAny(['usuario'], ['usuarioId']);
       allow update, delete: if false;
     }
 
     // ── Resto de colecciones administrativas ─────────────────────────────
     match /v2_purchase_history/{docId} { allow read, write: if esAdmin(); }
     match /v2_suppliers/{docId} { allow read, write: if esAdmin(); }
-    match /v2_employees/{docId} { allow read, write: if esAdmin(); }
-    match /v2_auditoria_empleados/{docId} { allow read, write: if esAdmin(); }
+    match /v2_employees/{docId} {
+      allow get: if esAdmin() || (esAutenticado() && resource.data.authUid == request.auth.uid);
+      allow list: if esAdmin();
+      allow write: if esAdmin();
+    }
+    match /v2_auditoria_empleados/{docId} {
+      allow read, update, delete: if esAdmin();
+      allow create: if esVendedor()
+        && request.resource.data.keys().hasAll(['id', 'empleadoId', 'nombreEmpleado', 'accion', 'responsable', 'sucursal', 'fecha']);
+    }
     match /v2_devoluciones/{docId} {
       allow read: if esVendedor();
       allow create: if esVendedor() && request.resource.data.estado == 'pendiente';
       allow update: if esAdmin();
       allow delete: if false;
+    }
+
+    // ── Colecciones Adicionales (Operación, Menú y Administración) ──────────
+    match /promociones/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_presentaciones_compra/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_catalogo_opciones/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_recetas_produccion/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_proveedores/{docId} { allow read, write: if esAdmin(); }
+    match /v2_combos/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_grupos_configuracion/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+    match /v2_configuracion_salarial/{docId} { allow read: if esAutenticado(); allow write: if esAdmin(); }
+
+    match /v2_pagos/{docId} {
+      allow read, create: if esAdmin();
+      allow update, delete: if false;
+    }
+
+    match /v2_transferencias_mesa/{docId} {
+      allow read, create: if esVendedor();
+      allow update, delete: if esAdmin();
+    }
+
+    match /v2_mesas/{docId} {
+      allow read: if esAutenticado();
+      allow create, update: if esVendedor();
+      allow delete: if esAdmin();
+    }
+
+    match /v2_zonas/{docId} {
+      allow read: if esAutenticado();
+      allow write: if esAdmin();
+    }
+
+    match /v2_nominas/{docId} { allow read, write: if esAdmin(); }
+    match /v2_incidencias/{docId} { allow read, write: if esAdmin(); }
+
+    match /v2_turnos_personal/{docId} {
+      allow read: if esAutenticado();
+      allow create, update: if esVendedor();
+      allow delete: if esAdmin();
+    }
+
+    match /v2_solicitudes/{docId} {
+      allow read: if esAutenticado();
+      allow create: if esAutenticado()
+        && request.resource.data.keys().hasOnly(['empleadoId', 'tipo', 'fecha', 'motivo', 'sucursalId', 'estado'])
+        && request.resource.data.empleadoId is string
+        && request.resource.data.tipo in ['permiso', 'cambio', 'incapacidad']
+        && request.resource.data.fecha is number;
+      allow update, delete: if esAdmin();
     }
 
     // ── Denegar todo lo no especificado ─────────────────────────────────

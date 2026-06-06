@@ -9,6 +9,7 @@ object FirestoreCollections {
     const val TURNOS_CAJA = "v2_turnos_caja"
     const val GASTOS = "v2_gastos"
     const val USUARIOS = "v2_users"
+    const val PIN_AUTHORIZATIONS = "v2_pin_authorizations"
     const val CLIENTES = "v2_customers"
     const val DEVOLUCIONES = "v2_devoluciones"
     const val CANCELACIONES = "v2_auditoria_cancelaciones"
@@ -43,4 +44,3 @@ object FirestoreCollections {
     // Configuración de Negocio
     const val MEMBRESIA_CICLO_VISITAS = 5
 }
-

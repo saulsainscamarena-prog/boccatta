@@ -35,9 +35,14 @@ interface IStockAdjustmentQueue {
     suspend fun resetSyncingState(ids: List<Long>)
 
     /**
+     * Resets stale IN_PROGRESS rows back to PENDING after a worker/process death.
+     * Returns the number of recovered rows.
+     */
+    suspend fun resetStaleSyncing(maxAgeMs: Long): Int
+
+    /**
      * Clears the entire queue – useful for debugging or a hard reset.
      */
     suspend fun clearAll()
 
 }
-

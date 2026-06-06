@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.domain.usecase.AuthorizationManager
+import timber.log.Timber
+import kotlin.random.Random
 
 class EmployeeViewModelV2(
     private val authRepo: AuthRepository,
@@ -31,7 +33,11 @@ class EmployeeViewModelV2(
             if (snap != null) {
                 listaEmpleados.clear()
                 snap.documents.forEach { doc ->
-                    doc.toObject(EmpleadoV2::class.java)?.let { listaEmpleados.add(it.copy(id = doc.id)) }
+                    doc.toObject(EmpleadoV2::class.java)?.let { empleado ->
+                        val normalized = empleado.copy(id = doc.id)
+                        listaEmpleados.add(normalized)
+                        migrarPinLegacySiExiste(normalized)
+                    }
                 }
             }
         }
@@ -47,7 +53,7 @@ class EmployeeViewModelV2(
             try {
                 db.collection(FirestoreCollections.EMPLEADOS).document(empleadoId)
                     .update("rol", nuevoRol).await()
-                mensajeExito = "Rol actualizado con éxito"
+                mensajeExito = "Rol actualizado con exito"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -69,7 +75,7 @@ class EmployeeViewModelV2(
                 )
                 db.collection(FirestoreCollections.AUDITORIA_EMPLEADOS).document(historialId).set(historial).await()
                 db.collection(FirestoreCollections.EMPLEADOS).document(empleadoId).delete().await()
-                mensajeExito = "Empleado despedido con éxito"
+                mensajeExito = "Empleado despedido con exito"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -95,7 +101,7 @@ class EmployeeViewModelV2(
     }
 
     /**
-     * Lógica de registro con llaves maestras
+     * Logica de registro con llaves maestras
      */
     fun registrarNuevoUsuario(nombre: String, codigoInput: String, sucursal: String) {
         viewModelScope.launch {
@@ -103,14 +109,30 @@ class EmployeeViewModelV2(
             try {
                 val rol = authRepo.validarCodigoYObtenerRol(codigoInput)
                 if (rol == null) {
-                    mensajeError = "Código de autorización inválido"
+                    mensajeError = "Codigo de autorizacion invalido"
                     return@launch
                 }
-                
+
                 val id = db.collection(FirestoreCollections.EMPLEADOS).document().id
-                val nuevo = EmpleadoV2(id = id, nombre = nombre, rol = rol.name, pinAcceso = "0000", sucursalAsignada = sucursal)
-                db.collection(FirestoreCollections.EMPLEADOS).document(id).set(nuevo).await()
-                mensajeExito = "Empleado registrado con éxito"
+                val pinTemporal = generarPinTemporal()
+                val pinHash = AuthorizationManager.hashPinForStorage(pinTemporal)
+                val nuevo = EmpleadoV2(id = id, nombre = nombre, rol = rol.name, pinAcceso = "", sucursalAsignada = sucursal, authUid = "")
+                val batch = db.batch()
+                batch.set(db.collection(FirestoreCollections.EMPLEADOS).document(id), nuevo)
+                batch.set(
+                    db.collection(FirestoreCollections.PIN_AUTHORIZATIONS).document(pinHash),
+                    mapOf(
+                        "pinHash" to pinHash,
+                        "userId" to id,
+                        "displayName" to nombre,
+                        "role" to rol.name,
+                        "branchId" to sucursal.lowercase(),
+                        "active" to true,
+                        "updatedAt" to System.currentTimeMillis()
+                    )
+                )
+                batch.commit().await()
+                mensajeExito = "Empleado registrado con exito. PIN temporal: $pinTemporal"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             } finally {
@@ -118,6 +140,58 @@ class EmployeeViewModelV2(
             }
         }
     }
+
+    private fun generarPinTemporal(): String =
+        Random.nextInt(100000, 1000000).toString()
+
+    private fun migrarPinLegacySiExiste(empleado: EmpleadoV2) {
+        val pinLegacy = empleado.pinAcceso.trim()
+        if (pinLegacy.isBlank() || pinLegacy == "0000") return
+
+        viewModelScope.launch {
+            val result = runCatching {
+                val pinHash = AuthorizationManager.hashPinForStorage(pinLegacy)
+                val authRef = db.collection(FirestoreCollections.PIN_AUTHORIZATIONS).document(pinHash)
+                val employeeRef = db.collection(FirestoreCollections.EMPLEADOS).document(empleado.id)
+                db.runTransaction { transaction ->
+                    val existing = transaction.get(authRef)
+                    val existingUserId = existing.getString("userId")
+                    if (existing.exists() && existingUserId != empleado.id) {
+                        false
+                    } else {
+                        transaction.set(
+                            authRef,
+                            mapOf(
+                                "pinHash" to pinHash,
+                                "userId" to empleado.id,
+                                "displayName" to empleado.nombre,
+                                "role" to empleado.rol,
+                                "branchId" to empleado.sucursalAsignada.lowercase(),
+                                "active" to true,
+                                "updatedAt" to System.currentTimeMillis()
+                            )
+                        )
+                        transaction.update(employeeRef, "pinAcceso", "")
+                        true
+                    }
+                }.await()
+            }
+            result
+                .onSuccess { migrated ->
+                    if (!migrated) {
+                        Timber.tag("AUTH").w(
+                            "No se migro PIN legacy de empleado %s porque el hash ya pertenece a otro usuario",
+                            empleado.id
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    Timber.tag("AUTH").e(
+                        error,
+                        "Error al migrar PIN legacy de empleado %s",
+                        empleado.id
+                    )
+                }
+        }
+    }
 }
-
-
