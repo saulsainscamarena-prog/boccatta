@@ -232,7 +232,7 @@ fun AdminScreen(
                                     title = stringResource(R.string.admin_card_personal),
                                     subtitle = stringResource(R.string.admin_card_sub_permisos),
                                     icon = Icons.Default.People,
-                                    color = Color(0xFFE91E63),
+                                    color = MaterialTheme.colorScheme.tertiary,
                                     onClick = { seccionActiva = "empleados" }
                                 )
                             }
@@ -241,7 +241,7 @@ fun AdminScreen(
                                     title = stringResource(R.string.admin_card_reportes),
                                     subtitle = stringResource(R.string.admin_card_sub_estadisticas),
                                     icon = Icons.Default.Analytics,
-                                    color = Color(0xFFFF9800),
+                                    color = MaterialTheme.colorScheme.secondary,
                                     onClick = { seccionActiva = "reportes" }
                                 )
                             }
@@ -250,7 +250,7 @@ fun AdminScreen(
                                     title = stringResource(R.string.admin_card_ajustes),
                                     subtitle = stringResource(R.string.admin_card_sub_parametros),
                                     icon = Icons.Default.Settings,
-                                    color = Color(0xFF9C27B0),
+                                    color = MaterialTheme.colorScheme.primary,
                                     onClick = { seccionActiva = "config" }
                                 )
                             }
@@ -469,23 +469,12 @@ private fun TabDashboard(
                         onClick = {
                             LogHelper.recordBreadcrumb("share_diagnostics", "admin_dashboard")
                             val texto = LogHelper.buildDiagnosticReport(context)
-                            val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.admin_diagnostico_subject))
-                                putExtra(Intent.EXTRA_TEXT, texto)
-                                setPackage("com.whatsapp")
-                            }
-                            try {
-                                context.startActivity(whatsappIntent)
-                            } catch (e: Exception) {
-                                LogHelper.recordBreadcrumb("share_diagnostics_fallback", e.javaClass.simpleName)
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.admin_diagnostico_subject))
-                                    putExtra(Intent.EXTRA_TEXT, texto)
-                                }
-                                context.startActivity(Intent.createChooser(intent, context.getString(R.string.admin_btn_compartir_diag)))
-                            }
+                            com.bocatta.pos.core.ShareUtils.shareTextWhatsAppFallback(
+                                context = context,
+                                text = texto,
+                                subject = context.getString(R.string.admin_diagnostico_subject),
+                                logContext = "share_diagnostics"
+                            )
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

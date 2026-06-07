@@ -164,9 +164,11 @@ service cloud.firestore {
       allow read: if esAutenticado() && (request.auth.uid == uid || esAdmin());
       allow create: if esAutenticado() && request.auth.uid == uid
                     && request.resource.data.keys().hasAll(['uid', 'nombre', 'correo', 'rol'])
-                    && request.resource.data.rol in ['VENDEDOR', 'ADMIN', 'DUEÑO'];
+                    && request.resource.data.keys().hasOnly(['uid', 'nombre', 'correo', 'rol', 'activo', 'sucursalBase'])
+                    && request.resource.data.rol == 'VENDEDOR'
+                    && (!request.resource.data.keys().hasAny(['activo', 'sucursalBase']));
       allow update: if esAutenticado() && (
-        (request.auth.uid == uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'uid']))
+        (request.auth.uid == uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'uid', 'activo', 'sucursalBase']))
         || esAdmin()
       );
       allow delete: if esAdmin();
@@ -177,6 +179,7 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if esAdmin()
         && request.resource.data.keys().hasAll(['pinHash', 'userId', 'displayName', 'role', 'branchId', 'active', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['pinHash', 'userId', 'displayName', 'role', 'branchId', 'active', 'updatedAt'])
         && request.resource.data.pinHash == pinHash
         && request.resource.data.active is bool;
       allow delete: if esAdmin();
@@ -411,7 +414,8 @@ service cloud.firestore {
     match /v2_auditoria_empleados/{docId} {
       allow read, update, delete: if esAdmin();
       allow create: if esVendedor()
-        && request.resource.data.keys().hasAll(['id', 'empleadoId', 'nombreEmpleado', 'accion', 'responsable', 'sucursal', 'fecha']);
+        && request.resource.data.keys().hasAll(['id', 'empleadoId', 'nombreEmpleado', 'accion', 'responsable', 'sucursal', 'fecha'])
+        && request.resource.data.responsable == request.auth.uid;
     }
     match /v2_devoluciones/{docId} {
       allow read: if esVendedor();
@@ -464,7 +468,7 @@ service cloud.firestore {
       allow read: if esAutenticado();
       allow create: if esAutenticado()
         && request.resource.data.keys().hasOnly(['empleadoId', 'tipo', 'fecha', 'motivo', 'sucursalId', 'estado'])
-        && request.resource.data.empleadoId is string
+        && request.resource.data.empleadoId == request.auth.uid
         && request.resource.data.tipo in ['permiso', 'cambio', 'incapacidad']
         && request.resource.data.fecha is number;
       allow update, delete: if esAdmin();

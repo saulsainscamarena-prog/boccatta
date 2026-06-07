@@ -207,6 +207,28 @@ mostrador real.
   JSONObject en vez de JSON armado a mano.
 - BCT-F8-004: Corregido en UX de mostrador. Boton "Cobrar efectivo exacto" hace
   checkout de un toque, protegido por cargando/stock insuficiente.
+- BCT-F9-001: Corregido en codigo. Checkout/sync dejan de usar `currentQty` como
+  fuente operativa de stock; lecturas remotas priorizan `cantidadEnBase`, luego
+  `cantidadDisponible`, luego `currentQty`. Falta QA real post-fix porque el AVD
+  quedo bloqueado por ANR de arranque.
+- BCT-F9-002: Datos de prueba corregidos en Firebase. Se crearon stock minimo y
+  cantidades base para consumibles/vendibles de Metepec: charola, tenedor,
+  papel_hamburguesero, servilletas, vaso, domo, cuchara, masa_crepa, boneless,
+  nuggets y postres por unidad. Falta validar desde Admin que el negocio pueda
+  mantener este stock sin editar Firebase manualmente.
+- BCT-F9-003: P0 nuevo. APK debug se queda en splash y Android mata el proceso
+  por "failed to complete startup" en AVD despues de reinstalar. Se movio
+  limpieza/programacion de logs fuera del hilo principal y se sacaron
+  Analytics/Crashlytics del runtime debug, pero el AVD aun no llega a UI. Abrir
+  spec especifica de startup/performance antes de seguir QA visual.
+- BCT-F9-004: Pendiente UX/operacion. "Administrar tienda" sigue sin una ruta
+  clara para actualizar stock de mostrador; redisenar Admin/Inventario como flujo
+  de entrada, ajuste, merma y conteo fisico con menos opciones y mayor foco.
+- BCT-F9-005: Pendiente local. Hay conflicto de herramientas Android: existe
+  `C:\Windows\adb.exe` 1.0.40 y SDK `D:\Android\Sdk\platform-tools\adb.exe`
+  1.0.41. Cuando otra tarea instrumentada usa el AVD, reinicia el servidor y
+  deja `device offline`. Normalizar PATH o retirar el adb viejo antes de QA
+  intensiva.
 
 
 3. QA manual pendiente (mostrador)
@@ -402,3 +424,1397 @@ Probar con y sin internet:
   procesos Java/Kotlin/Gradle activos ni daemons corriendo. Pasaron:
   .\gradlew.bat compileDebugKotlin --no-daemon --no-parallel --max-workers=1
   .\gradlew.bat testDebugUnitTest --no-daemon --no-parallel --max-workers=1
+
+
+11. Validacion AVD mostrador real (2026-06-07)
+
+- BCT-F13-001: Corregido en codigo. En debug ya no se agenda el mantenimiento
+  diario de logs desde BocattaApp.onCreate; se conserva en release. Esto evita
+  sumar trabajo no critico al arranque de AVD sin desactivar WorkManager para
+  sync/offline.
+- BCT-F13-002: Verificado AVD. Despues del ajuste, install -r + force-stop +
+  am start -W en bocatta_tablet_api36 devolvio Status ok, LaunchState COLD,
+  TotalTime 8732ms. Antes el mismo flujo devolvia timeout y habia ANR historico
+  de startup por FirebaseInitProvider/Crashlytics/WorkManager.
+- BCT-F13-003: Verificado flujo mostrador. En AVD se entro a Turnos, se unio al
+  turno activo, se agrego Carlota de Limon al carrito, se abrio Pago final y se
+  cobro con "Cobrar efectivo exacto". Resultado UI: VENTA EXITOSA, ticket
+  MT0706-005, sucursal METEPEC.
+- BCT-F13-004: Verificado persistencia local. Tras MT0706-005, las tablas
+  ventas_pendientes, operaciones_pendientes y stock_adjustments quedaron en 0.
+  Logcat mostro online_save_start y sale_finish_success, por lo que esta venta
+  no quedo congelada en cola offline.
+- BCT-F13-005: Pendiente rendimiento/UX. El arranque ya no bloquea, pero sigue
+  pesado para mostrador: cold start ~8.7s, Firebase/WorkManager aun inicializan
+  en startup y Compose compila SalesScreen en runtime debug. Tambien persiste
+  deuda UX en PagoSheetV2: bottom sheet con ScrollView y boton Confirmar pago
+  abajo; "Cobrar efectivo exacto" funciona y reduce friccion, pero el flujo
+  necesita redisenio final para no depender de scroll en tablet.
+- BCT-F13-006: Corregido micro UX. PantallaLockInactividad ya no usa
+  MaterialTheme.colorScheme.scrim para el fondo del bloqueo porque con temas
+  personalizados puede renderizarse demasiado claro. Ahora usa scrim negro
+  semitransparente estable y deja una sola tarjeta clara para el PIN.
+
+
+--- SUBA GENT PLANS ---
+
+# a11y-compose
+# Plan Tecnico: a11y-compose
+
+Spec ID: `a11y-compose`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- `BocattaComponents.kt`
+
+## Punto de Entrada Real
+
+- UI: `BocattaComponents.kt` contiene la biblioteca de componentes base de Jetpack Compose. Modificaremos los Modifier que construyen estos componentes.
+
+## Archivos Probables
+
+- `app/src/main/java/com/bocatta/pos/presentation/ui/components/BocattaComponents.kt`
+
+## Estrategia
+
+1. Modificar `BocattaMetricCard`: Agregar `Modifier.semantics(mergeDescendants = true) {}` a su layout principal.
+2. Modificar `BocattaButton`: Añadir `Modifier.semantics { if (cargando) stateDescription = "Cargando" }` para exponer explícitamente a TalkBack cuando está procesando.
+3. Modificar `BocattaSectionTitle`: Agregar `Modifier.semantics { heading() }` al Row o al Text.
+4. Modificar `BocattaFilaResumen`: Agregar `Modifier.semantics(mergeDescendants = true) {}` al Row que agrupa la etiqueta y el valor.
+5. Modificar `BocattaCartItemRow`: Evaluar el uso de `clearAndSetSemantics` o `mergeDescendants` en la información textual, dejando intacto el `IconButton` de borrar para que mantenga un touch target adecuado.
+
+## Contratos a Revisar
+
+- Modelos: N/A
+- Interfaces: N/A
+- Koin: N/A
+- Firestore/Room: N/A
+- WorkManager/sync: N/A
+
+## Impacto Offline
+
+- Venta online: Sin impacto.
+- Venta offline: Sin impacto.
+- Reconexion: Sin impacto.
+- Deduccion de inventario: Sin impacto.
+- Idempotencia/reintentos: Sin impacto.
+
+## Impacto UI
+
+- Movil: Sin impacto visual, solo lector de pantalla.
+- Tablet: Sin impacto visual, solo lector de pantalla.
+- Estados de carga/error: TalkBack narrará "Cargando" en los botones primarios.
+- Eventos consumibles: N/A
+- Accesibilidad: Las métricas, resúmenes y títulos serán navegables lógicamente por TalkBack.
+
+## Plan de Pruebas
+
+- Unit: N/A
+- Instrumented: N/A
+- Compose UI: N/A
+- Maestro/manual: Compilación con `./gradlew.bat compileDebugKotlin`.
+- Gradle: Compilación local para validar la sintaxis.
+
+## Criterio para No Continuar
+
+- Si alguna modificación rompe el rendering visual de un componente.
+
+
+# ajuste-memoria-y-saneamiento
+# Plan Técnico: Ajuste de Memoria y Saneamiento Técnico
+
+Spec ID: `ajuste-memoria-y-saneamiento`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- [gradle.properties](file:///c:/Users/ia/AndroidStudioProjects/bocatta/gradle.properties)
+- [OfflineManager.kt](file:///c:/Users/ia/AndroidStudioProjects/bocatta/app/src/main/java/com/bocatta/pos/data/sync/OfflineManager.kt)
+
+## Punto de Entrada Real
+
+- Configuración compilación: `gradle.properties` en la raíz del proyecto.
+- Repositorio/data: `OfflineManager.kt` para remover SharedPreferences obsoletas de folios.
+
+## Archivos Probables
+
+- [gradle.properties](file:///c:/Users/ia/AndroidStudioProjects/bocatta/gradle.properties)
+- [OfflineManager.kt](file:///c:/Users/ia/AndroidStudioProjects/bocatta/app/src/main/java/com/bocatta/pos/data/sync/OfflineManager.kt)
+
+## Estrategia
+
+1. Modificar `gradle.properties` reduciendo los límites de memoria heap y metaspace a la mitad (2GB/1GB).
+2. Detener daemons de Gradle huérfanos ejecutando `cmd.exe /c ".\gradlew.bat --stop"`.
+3. Editar `OfflineManager.kt` para remover las 4 funciones deprecadas de persistencia de folios.
+4. Ajustar `guardarVentaOffline` en `OfflineManager.kt` para no hacer referencia al contador legacy.
+5. Ejecutar la compilación mediante `./gradlew.bat compileDebugKotlin` para verificar que la reducción de memoria permite instanciar el compilador con éxito.
+6. Correr el script de verificación de Mojibake.
+
+## Plan de Pruebas
+
+- Gradle: `cmd.exe /c ".\gradlew.bat compileDebugKotlin"`
+- Unit: `cmd.exe /c ".\gradlew.bat testDebugUnitTest"`
+
+
+# architecture
+# Plan de Acción: Auditoría y Refactor de Arquitectura
+
+## Identificación del Punto de Entrada
+El punto principal de deuda técnica radica en los ViewModels principales, como `SalesViewModelV2`, interactuando con la base de datos de manera directa. El almacenamiento de la capa offline (`OfflineDatabase`) funciona pero carece de la validación de tiempo de compilación.
+
+## Fases del Plan
+
+### Fase 1: Desacoplamiento de Firestore de ViewModels
+1. **Actualizar Repositorios:**
+   - Añadir métodos en `IProductRepository` (y su implementación) que devuelvan `Flow<List<SalesInventoryProductV2>>` escuchando la colección `PRODUCTOS`.
+   - Añadir métodos en `IInventoryRepository` para exponer alertas de stock en tiempo real (`Flow<Map<String, Double>>`).
+2. **Refactor de `SalesViewModelV2`:**
+   - Eliminar `menuListener`, `stockListener` y las importaciones directas de Firestore.
+   - Consumir los `Flow` provenientes de los repositorios usando `collectAsStateWithLifecycle()` o `stateIn()`.
+3. **Manejo de Clientes:**
+   - Mover la lógica de `buscarCliente` y `registrarClienteNuevo` a un `CustomerRepository` o Caso de Uso, eliminando las consultas `.whereEqualTo` del ViewModel.
+
+### Fase 2: Modernización del Storage Offline (Opcional pero Recomendado)
+1. **Diseño de Room Entities:** Crear entidades para `VentaOfflineEntity`, `OperacionOfflineEntity`, `TurnoContingenciaEntity` mapeando la estructura existente.
+2. **Implementación de DAOs:** Construir DAOs que imiten las firmas actuales de `OfflineDatabase`, usando `@Transaction` donde se requiere atomicidad.
+3. **Estrategia de Migración:** Mantener `OfflineDatabase.kt` para dispositivos en producción, pero preparar la base de Room con un fallback destructivo para datos en caché.
+   - *Nota de la Constitución:* Todo cambio de stock/ventas offline debe validarse rigurosamente.
+
+### Fase 3: Verificación
+- Ejecutar suite de pruebas actual:
+  ```powershell
+  .\gradlew.bat testDebugUnitTest --tests "*Koin*" --tests "*Offline*"
+  .\gradlew.bat compileDebugKotlin
+  ```
+- Pruebas manuales simulando caídas de red para comprobar que la lógica local (ahora aislada) interactúa correctamente con los nuevos Flows y repoblando las tablas.
+
+**Nota:** Este documento se genera solo para auditoría según los requerimientos solicitados, sin modificar código todavía.
+
+
+# backup-data
+# Plan Tecnico: Audit Android backup data extraction rules
+
+Spec ID: `backup-data`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- UI: N/A
+- ViewModel: N/A
+- Dominio/use case: N/A
+- Repositorio/data: N/A
+- DI: N/A
+- Configuración de App: `AndroidManifest.xml` y recursos XML asociados. Son el estándar de Android para reglas de backup y data extraction.
+
+## Archivos Probables
+
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/res/xml/backup_rules.xml`
+- `app/src/main/res/xml/data_extraction_rules.xml`
+
+## Estrategia
+
+1. En `AndroidManifest.xml`, dentro de `<application>`, añadir `android:dataExtractionRules="@xml/data_extraction_rules"` y `android:fullBackupContent="@xml/backup_rules"`.
+2. En `backup_rules.xml`, dentro del tag `<full-backup-content>`, añadir las exclusiones: `<exclude domain="file" path="logs"/>` y `<exclude domain="external" path="logs"/>`.
+3. En `data_extraction_rules.xml`, dentro de `<cloud-backup>` y `<device-transfer>`, añadir las mismas exclusiones para logs.
+
+## Contratos a Revisar
+
+- Modelos: N/A
+- Interfaces: N/A
+- Koin: N/A
+- Firestore/Room: Ya están excluidas las BD offline (`bocatta_offline.db`, `offline_queue.db`) en las reglas XML.
+- WorkManager/sync: N/A
+
+## Impacto Offline
+
+- Venta online: N/A
+- Venta offline: Los datos offline quedan protegidos localmente y no viajan con copias de seguridad del sistema o D2D.
+- Reconexion: N/A
+- Deduccion de inventario: N/A
+- Idempotencia/reintentos: N/A
+
+## Impacto UI
+
+- Movil: N/A
+- Tablet: N/A
+- Estados de carga/error: N/A
+- Eventos consumibles: N/A
+- Accesibilidad: N/A
+
+## Plan de Pruebas
+
+- Unit: N/A
+- Instrumented: N/A
+- Compose UI: N/A
+- Maestro/manual: N/A
+- Gradle: Correr `.\gradlew.bat compileDebugKotlin` o `.\gradlew.bat assembleDebug` para asegurar que el Manifest y los XML no introducen errores de sintaxis o empaquetado.
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+- La validación del `<application>` arroja error porque algún atributo requiere un nivel específico de target API y no se configura correctamente, aunque targetSdk está en 36. No deberia pasar.
+
+
+# blindaje-mostrador-bct-f12
+# Plan Tecnico: Blindaje de mostrador BCT-F12
+
+Spec ID: `bct-f12-blindaje-mostrador`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Skills locales de arquitectura, background work, offline storage, auth y testing.
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+- UI: no aplica en esta fase.
+- ViewModel: `SalesViewModelV2` delega undo y checkout hacia use cases/manager.
+- Dominio/use case: `AuthorizationManager`, `CheckoutUseCase`, `CartManager`, `GenerarTicketWhatsAppUseCase`.
+- Repositorio/data: `InventoryRepositoryImpl`, `SyncWorker`.
+- DI: no se modifica.
+- Tests: unit/contract tests existentes en `app/src/test/java`.
+
+## Archivos Probables
+
+- `app/src/main/java/com/bocatta/pos/domain/usecase/AuthorizationManager.kt`
+- `app/src/main/java/com/bocatta/pos/data/sync/SyncWorker.kt`
+- `app/src/main/java/com/bocatta/pos/data/repository/InventoryRepositoryImpl.kt`
+- `app/src/main/java/com/bocatta/pos/domain/usecase/GenerarTicketWhatsAppUseCase.kt`
+- `app/src/main/java/com/bocatta/pos/domain/usecase/CheckoutUseCase.kt`
+- `app/src/main/java/com/bocatta/pos/domain/usecase/CartManager.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/viewmodel/SalesViewModelV2.kt`
+- `app/src/test/java/com/bocatta/pos/domain/usecase/AuthorizationManagerTest.kt`
+- `app/src/test/java/com/bocatta/pos/security/PinAuthorizationRegressionTest.kt`
+- `app/src/test/java/com/bocatta/pos/security/OfflineOperationsContractTest.kt`
+- `app/src/test/java/com/bocatta/pos/domain/usecase/GenerarTicketWhatsAppUseCaseTest.kt`
+- `notas.txt`
+
+## Estrategia
+
+1. Resolver apertura de turno para vendedor en `AuthorizationManager` sin depender de list query.
+2. Recuperar estados stale en `SyncWorker` antes de procesar pendientes.
+3. Normalizar cantidades de stock offline a unidad base en repositorio remoto.
+4. Alinear ticket WhatsApp con descuento manual.
+5. Centralizar undo en `CartManager`.
+6. Agregar tests de contrato/unitarios.
+7. Saneamiento puntual de whitespace en archivos tocados.
+8. Verificar con `git diff --check` del alcance y Gradle cuando no haya procesos concurrentes.
+
+## Contratos a Revisar
+
+- Modelos: sin cambios.
+- Interfaces: `IStockAdjustmentQueue`.
+- Koin: sin cambios.
+- Firestore/Room: sin schema nuevo.
+- WorkManager/sync: `SyncWorker.doWork`.
+
+## Impacto Offline
+
+- Venta online: sin cambios en persistencia principal.
+- Venta offline: no se altera guardado de venta.
+- Reconexion: stock adjustment queue puede recuperar estados antiguos.
+- Deduccion de inventario: cantidades remotas salen en base.
+- Idempotencia/reintentos: no se marca completado antes de sync remoto.
+
+## Impacto UI
+
+- Movil: sin cambios visuales.
+- Tablet: sin cambios visuales.
+- Estados de carga/error: sin cambios.
+- Eventos consumibles: undo queda centralizado.
+- Accesibilidad: no aplica.
+
+## Plan de Pruebas
+
+- Unit:
+  - `AuthorizationManagerTest`
+  - `GenerarTicketWhatsAppUseCaseTest`
+- Contract:
+  - `PinAuthorizationRegressionTest`
+  - `OfflineOperationsContractTest`
+- Instrumented:
+  - Pendiente, no requerido para esta fase quirurgica salvo regresion.
+- Compose UI:
+  - Pendiente, no hubo UI.
+- Maestro/manual:
+  - Abrir turno vendedor, cobrar con descuento manual y probar undo en carrito.
+- Gradle:
+  - `.\gradlew.bat compileDebugKotlin --no-daemon --no-parallel --max-workers=1`
+  - `.\gradlew.bat testDebugUnitTest --no-daemon --no-parallel --max-workers=1`
+
+## Criterio para No Continuar
+
+- Hay procesos Java/Gradle activos de otra sesion y correr Gradle puede pisarlos.
+- Aparece fallo de compilacion en owner critico que requiere cambio amplio.
+- Se detecta que una regla Firestore exige cambio coordinado de backend.
+- El usuario pide pausar para revisar UX/admin/stock antes de tocar mas codigo.
+
+
+# code-quality
+# Execution Plan: Code Quality Enhancements
+
+## Scope
+This plan details the step-by-step process for resolving the code quality issues identified in the codebase without introducing new features or modifying the underlying application architecture. 
+
+**Note:** As per the current mandate, no code modifications are to be executed directly in this phase. This plan serves as the blueprint for future execution.
+
+## Tasks
+
+### Phase 1: Lint Warnings (Compose and Resources)
+1. **Optimize Compose State (AutoboxingStateCreation):**
+   - Search the codebase for `mutableStateOf(0)`, `mutableStateOf(0f)`, `mutableStateOf(0.0)`.
+   - Replace with `mutableIntStateOf(0)`, `mutableFloatStateOf(0f)`, `mutableDoubleStateOf(0.0)`.
+2. **Standardize Modifiers (ModifierParameter):**
+   - Locate the 4 Composable functions with incorrect modifier parameters.
+   - Reorder parameters so that `modifier: Modifier = Modifier` is the first optional parameter.
+3. **Remove Dead Resources (UnusedResources):**
+   - Review the Android Lint report to identify the exact 41 unused resources.
+   - Delete unused strings from `res/values/strings.xml`.
+   - Delete unused drawables and vector icons.
+
+### Phase 2: Detekt Violations (Imports and Formatting)
+1. **Fix Wildcard Imports:**
+   - Go through the 280 files flagged by Detekt.
+   - Manually expand `import com.bocatta.pos.*` and `import androidx.compose.*` statements into explicit imports.
+   - Remove redundant or unused imports along the way.
+2. **Enforce Explicit Locales:**
+   - Update the 4 instances of `.uppercase()`, `.lowercase()`, and `String.format()` to use `Locale.ROOT` or `Locale.getDefault()`.
+
+### Phase 3: Pending Code (TODOs)
+1. **Resolve `OnboardingScreen` TODO:**
+   - Analyze line 81 in `app/src/main/java/com/bocatta/pos/presentation/ui/screens/onboarding/OnboardingScreen.kt`.
+   - Determine the correct repository injection needed or remove the comment if the data layer is already wired correctly via ViewModel.
+
+### Phase 4: Verification
+1. **Re-run Detekt:**
+   - Execute `.\gradlew.bat detekt --no-parallel` to ensure 0 weighted issues remain and the task passes successfully.
+2. **Re-run Android Lint:**
+   - Execute `.\gradlew.bat lintDebug --no-parallel` to verify the total warning count drops significantly.
+3. **Ensure Compatibility:**
+   - Compile the app using `.\gradlew.bat compileDebugKotlin` to verify no compilation errors were introduced by the import replacements.
+
+
+# correcciones-pendientes-auditoria
+# Plan: Correcciones Pendientes de Auditoría
+
+## Estrategia
+1. Reemplazar tests frágiles con tests de comportamiento real (reflection/integración)
+2. Reemplazar CountDownLatch con runTest en test instrumentado
+3. Extraer strings a resources por pantalla, empezando por las de mayor impacto
+
+## Archivos Probables
+- `app/src/test/java/com/bocatta/pos/security/OfflineOperationsContractTest.kt`
+- `app/src/test/java/com/bocatta/pos/security/PinAuthorizationRegressionTest.kt`
+- `app/src/test/java/com/bocatta/pos/security/FirestoreRulesContractTest.kt`
+- `app/src/androidTest/.../CajaViewModelContingencyInstrumentedTest.kt`
+- `app/src/main/res/values/strings.xml`
+- Screens: LoginScreen, SalesScreen, CarritoPanelV2, CierreCajaScreen, AdminScreen
+
+
+# dead-code
+# Plan Tecnico: Dead Code & Redundant Configurations Audit
+
+Spec ID: `dead-code-001`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo (en este caso, `app/proguard-rules.pro` y el reporte de Lint).
+
+## Punto de Entrada Real
+
+El "comportamiento" reside en el proceso de build (Lint y R8).
+- UI: N/A
+- ViewModel: N/A
+- Dominio/use case: N/A
+- Repositorio/data: N/A
+- DI: N/A
+- Tests: N/A
+
+## Archivos Probables
+
+- `app/proguard-rules.pro`
+- `app/build/reports/lint-results-debug.xml` o equivalente.
+- Clases fuentes y XMLs reportados.
+
+## Estrategia
+
+1. Ejecutar `./gradlew lintDebug` para forzar la recolección de warnings sobre `UnusedResources` y `UnusedDeclaration`.
+2. Analizar `app/proguard-rules.pro` manualmente:
+   - Identificar si `com.bocatta.pos.domain.model.**` requiere keep absoluto de campos, o si `@Keep` o `@Serializable` es suficiente.
+   - Revisar si Koin requiere reglas adicionales.
+3. Extraer y filtrar los reportes de Lint.
+4. Generar un listado de recomendaciones y reportar al usuario. No aplicar cambios de código.
+
+## Contratos a Revisar
+
+- Modelos: Validar por qué los modelos de dominio están excluidos completamente de la ofuscación en Firestore (`toObject()`).
+- Interfaces: N/A
+- Koin: N/A
+- Firestore/Room: N/A
+- WorkManager/sync: N/A
+
+## Impacto Offline
+
+- Venta online: N/A
+- Venta offline: N/A
+- Reconexion: N/A
+- Deduccion de inventario: N/A
+- Idempotencia/reintentos: N/A
+
+## Impacto UI
+
+- Movil: N/A
+- Tablet: N/A
+- Estados de carga/error: N/A
+- Eventos consumibles: N/A
+- Accesibilidad: N/A
+
+## Plan de Pruebas
+
+- Unit: N/A
+- Instrumented: N/A
+- Compose UI: N/A
+- Maestro/manual: N/A
+- Gradle: Verificar que tras aplicar la limpieza futura, el app compile y ofusque correctamente con `assembleRelease`.
+
+## Criterio para No Continuar
+
+- Fallo persistente en el daemon de Gradle al intentar ejecutar Lint (ya mitigado si lo corremos offline).
+- Si el usuario solicita modificar el código en este issue, deberemos crear un PR separado.
+
+
+# extract-hardcoded-strings
+# Plan: Extract Hardcoded Strings
+
+## 1. Milestones
+1. Write the extraction script.
+2. Review the script.
+3. Run the script and verify the changes.
+
+## 2. Testing Strategy
+- Run the script on a subset of files or print the proposed changes first (dry run mode).
+- Compile the app after applying the changes.
+- Verify UI visually.
+
+## 3. Deployment
+- The script is a one-time utility.
+
+## 4. Rollback
+- Since changes will be tracked in git, rollback is as simple as `git reset --hard` if the script produces incorrect results.
+
+
+# fix-counter-opening-rules
+# Plan: Fix Counter Opening Rules
+
+Spec ID: `fix-counter-opening-rules`
+
+1. Agregar helpers estrechos en `firestore.rules`.
+2. Permitir create/update operativo en `v2_inventory_branch_portions`.
+3. Permitir schema legacy real de `v2_inventory_movements`.
+4. Permitir create/update operativo en `v2_sucursal_config`.
+5. Desplegar reglas con Firebase CLI.
+6. Repetir apertura en AVD.
+
+
+
+# fix-debug-startup-anr
+# Plan
+
+1. Update `BocattaApp` so log cleanup scheduling is release-only.
+2. Keep local file logging active in debug.
+3. Verify no whitespace errors in touched files.
+4. Run Gradle with Windows daemon pre-check.
+5. Install existing/new debug APK on AVD and validate startup.
+6. Continue full sale flow validation after startup is stable enough.
+
+
+# gradle-optimization
+# Plan Tecnico: Gradle Optimization Audit
+
+Spec ID: `gradle-optimization`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- `app/build.gradle.kts`
+- `build.gradle.kts`
+- `gradle/libs.versions.toml`
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- Build System: Los scripts de configuracion en Kotlin DSL (`build.gradle.kts`, `app/build.gradle.kts`) y el catalogo TOML (`libs.versions.toml`).
+
+## Archivos Probables
+
+- `gradle/libs.versions.toml`
+- `build.gradle.kts`
+- `app/build.gradle.kts`
+
+## Estrategia
+
+1. **Ajuste del TOML**:
+   - Agregar las versiones y plugins para Detekt, Ktlint y Jacoco en `libs.versions.toml`.
+   - Modificar la version de KSP si esta usando un esquema erroneo (`2.3.7`) y no alineado con `2.3.21-1.0.x`.
+2. **Refactor de Scripts de Gradle**:
+   - Reemplazar los ids en duro en los bloques `plugins { }` de `build.gradle.kts` y `app/build.gradle.kts` con alias del catalogo.
+3. **Metricas de Compose**:
+   - En `app/build.gradle.kts`, agregar el bloque `composeCompiler` y utilizar project properties para habilitarlo unicamente bajo demanda:
+     ```kotlin
+     composeCompiler {
+         if (project.hasProperty("enableComposeCompilerReports")) {
+             metricsDestination = layout.buildDirectory.dir("compose_metrics")
+             reportsDestination = layout.buildDirectory.dir("compose_metrics")
+         }
+     }
+     ```
+
+## Contratos a Revisar
+
+- Modelos: N/A
+- Interfaces: N/A
+- Koin: N/A
+- Firestore/Room: Asegurarse de que KSP siga compilando exitosamente las entidades de Room despues del cambio de versionamiento (si aplica).
+- WorkManager/sync: N/A
+
+## Impacto Offline
+
+- Venta online: N/A
+- Venta offline: N/A
+- Reconexion: N/A
+- Deduccion de inventario: N/A
+- Idempotencia/reintentos: N/A
+
+## Impacto UI
+
+- Movil: N/A
+- Tablet: N/A
+- Estados de carga/error: N/A
+- Eventos consumibles: N/A
+- Accesibilidad: N/A
+
+## Plan de Pruebas
+
+- Gradle:
+  - Ejecutar `.\gradlew.bat compileDebugKotlin` despues del cambio de dependencias.
+  - Ejecutar `.\gradlew.bat assembleDebug -PenableComposeCompilerReports=true` y verificar la existencia de archivos de diagnostico en el output del build.
+  - Ejecutar la tarea de lint/check (`.\gradlew.bat detekt`) para asegurar que el plugin portado sigue activo.
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+- No se debe aplicar codigo si la compilacion inicial con `compileDebugKotlin` falla antes de hacer modificaciones, lo que sugeriria un problema en el entorno local (e.g. daemons de Gradle bloqueados en Windows).
+
+
+# hardware-memory
+# Plan: Hardware SDKs and Memory Leaks Audit
+
+## Objective
+To close the audit task as "Complete - No Action Required" after verifying the absence of hardware SDK integrations and confirming the proper lifecycle management of existing listeners.
+
+## Steps
+1. ~~Review codebase for hardware-specific SDKs and connections (printers, scanners, scales).~~ (Completed in `research.md` - None found).
+2. ~~Audit ViewModels, singletons, and core app classes for improperly retained `Context` and `Activity` references.~~ (Completed - No issues found).
+3. ~~Verify cleanup of background listeners (e.g., Firestore `ListenerRegistration`, Network Callbacks) in lifecycle hooks like `onCleared()`.~~ (Completed - All listeners properly released).
+4. Create SDD documentation (`research.md`, `proposal.md`, `plan.md`). (Completed).
+5. Report findings back to the parent agent/user, emphasizing that no code modifications are necessary. (Pending).
+
+## Status
+The audit concludes that the codebase is structurally safe regarding the parameters requested. No further action is required.
+
+
+# identity-auth
+# Plan Tecnico: User Identity and Auth Audit
+
+Spec ID: `identity-auth`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- UI: N/A
+- ViewModel: `AuthViewModelV2.kt`, `SessionViewModel.kt`
+- Dominio/use case: `AuthorizationManager.kt`
+- Repositorio/data: `AuthRepository.kt` (mencionado en ViewModels)
+- DI: `AppModules.kt`
+- Tests: N/A
+
+## Archivos Probables
+
+- `app/src/main/java/com/bocatta/pos/domain/usecase/AuthorizationManager.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/viewmodel/AuthViewModelV2.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/viewmodel/SessionViewModel.kt`
+
+## Estrategia
+
+1. Analizar el `AuthorizationManager` para entender los roles (`ADMIN`, `DUEÑO`), permisos granulares (`PermisoEmpleado`), control de acceso mediante PIN, limite de tasa (Rate Limiting), y bitacora de auditoria.
+2. Analizar `AuthViewModelV2` para entender el flujo de login con Firebase Auth.
+3. Analizar `SessionViewModel` para entender el manejo de la sesion, cache local (`bocatta_session`), sucursales, modos manuales, y estado de conexion.
+4. Documentar los hallazgos sin realizar modificaciones en el codigo fuente.
+
+## Contratos a Revisar
+
+- Modelos: `Usuario`, `PermisoEmpleado`, `EmpleadoV2`, `PinAuthorization`.
+- Interfaces: `PinRateLimitStore`.
+- Koin: Resolucion de `AuthorizationManager`, `AuthViewModelV2`, y `SessionViewModel`.
+- Firestore/Room: Colecciones `usuarios`, `empleados`, `pin_authorizations`, `v2_auditoria_empleados`.
+- WorkManager/sync: N/A
+
+## Impacto Offline
+
+- Venta online: N/A
+- Venta offline: N/A
+- Reconexion: N/A
+- Deduccion de inventario: N/A
+- Idempotencia/reintentos: N/A
+
+## Impacto UI
+
+- Movil: N/A
+- Tablet: N/A
+- Estados de carga/error: N/A
+- Eventos consumibles: N/A
+- Accesibilidad: N/A
+
+## Plan de Pruebas
+
+- Unit: N/A
+- Instrumented: N/A
+- Compose UI: N/A
+- Maestro/manual: N/A
+- Gradle: N/A
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+- Si se detecta un problema critico de seguridad durante la auditoria, se debe detener y reportar antes de continuar con cualquier otra tarea.
+
+
+# intents-sharing
+# Plan Tecnico: Implementación de Unified Sharing
+
+Spec ID: `intents-sharing`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Revisión de las 5 pantallas principales identificadas en la fase de auditoría.
+
+## Punto de Entrada Real
+
+- Dominio/use case: El helper vivirá en el layer `core` (e.g. `core/utils/ShareUtils.kt`), accesible estáticamente o inyectado para cualquier capa de UI o ViewModel que requiera interactuar con el contexto de la Activity para lanzar Intents.
+- UI: Llamadas refactorizadas desde los botones onClick de Compose.
+
+## Archivos Probables
+
+- `app/src/main/java/com/bocatta/pos/core/ShareUtils.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/ui/components/DialogosVentas.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/ui/screens/admin/AdminScreen.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/ui/screens/admin/TabSueldos.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/ui/screens/caja/CierreCajaScreen.kt`
+- `app/src/main/java/com/bocatta/pos/presentation/ui/screens/reportes/ReportScreen.kt`
+
+## Estrategia
+
+1. Crear un utilitario `ShareUtils.kt` con función `shareTextWhatsAppFallback(context: Context, text: String, subject: String?, logContext: String)`.
+2. Refactorizar la función `compartirNomina` en `TabSueldos.kt` para usar esta función centralizada.
+3. Refactorizar `AdminScreen.kt` (Diagnóstico) y `DialogosVentas.kt` (Ticket) para reemplazar sus bloques try/catch manuales.
+4. Refactorizar `CierreCajaScreen.kt` y `ReportScreen.kt` para que adopten el mismo estándar.
+5. Ejecutar la app localmente y verificar que ninguna clase quede con imports rotos.
+
+## Contratos a Revisar
+
+- Android Context: Verificar que las funciones reciban un Context de compose `LocalContext.current` puro y sin fugas de memoria.
+
+## Impacto Offline
+
+- Venta online: Sin impacto.
+- Venta offline: Sin impacto.
+
+## Impacto UI
+
+- Eventos consumibles: Las llamadas a Intents bloquean momentáneamente la UI mientras se abre el resolver del sistema. Manejar el click adecuadamente o deshabilitar botón mientras lanza si es necesario.
+
+## Plan de Pruebas
+
+- Manual: Compartir ticket y verificar que salte WhatsApp o Chooser. 
+- Manual: Compartir nómina, cierre y reportes de la misma forma.
+- Manual: Desinstalar WhatsApp (o en un emulador que no lo tenga) y verificar que nunca haya crash.
+- Gradle: `.\gradlew.bat compileDebugKotlin` para asegurar compatibilidad y sintaxis pura.
+
+## Criterio para No Continuar
+
+- Si el PO requiere que los reportes de "Cierre de Caja" SIEMPRE den a elegir en Chooser, habrá que agregar un flag a la función de share (e.g. `forceChooser: Boolean = false`). Esto debe aclararse antes de iniciar.
+
+
+# issue-tracker
+# Plan - Issue Tracker Fix Execution
+
+## Objective
+Execute the prioritized fixes identified in the proposal without modifying the `domain/` or `data/` layers. 
+
+## Step-by-Step Execution Plan
+
+### Step 1: Baseline and Setup
+- [ ] Verify or initialize Git repository (`git init`, `git add .`, `git commit -m "snapshot seguro pre-corrección-ux-ops"`).
+- [ ] Run `./gradlew testDebugUnitTest` to establish a passing baseline (expecting 218 tests passing).
+
+### Step 2: Resolve Functional Blockages (State & UI Logic)
+- [ ] **SalesViewModelV2.kt**: 
+  - Update `escucharMenu()` to assign `catalogoProcesado`.
+  - Capture `heldOrderId` and `mesaId` securely during `aplicarResultadoVenta()` to prevent premature cleanup.
+- [ ] **SalesScreen.kt**:
+  - Update the held orders dialog logic to load the order without deleting it.
+  - Fix the re-reservation race condition by ensuring order replacement does not free the table incorrectly.
+
+### Step 3: Implement UX and Presentation Feedback
+- [ ] **SalesViewModelV2.kt**: Wrap `onCobrar()` in a `try/catch`. Update the `SalesUiState` to include `isLoading`, `error`, and `showSuccess`.
+- [ ] **SalesScreen.kt**: Add `CircularProgressIndicator` and `LaunchedEffect` Snackbar triggers for `error` and `showSuccess`.
+- [ ] **ProductionRegistrationDialog.kt**: Remove raw material inputs; implement a single numeric yield input field.
+- [ ] **DynamicFormEngine.kt**: Add fallback decoding and regex to clean UTF-8 characters from labels.
+- [ ] **CrepeBuilderDialog.kt**: Replace single-choice elements with `FlowRow` and `FilterChip` for multiselection, and update state handling.
+
+### Step 4: Verification
+- [ ] Run `./gradlew testDebugUnitTest` to ensure no domain/data tests were broken.
+- [ ] Run `./gradlew compileDebugKotlin` to ensure syntax correctness.
+- [ ] (Manual/Operator) Verify sales flows with Snackbars, crepe multiselection, and held order preservation.
+
+### Step 5: Address Remaining Tech Debt (Future Iteration)
+- [ ] Migrate ViewModels to use `IProductRepository.getAllProducts()`.
+- [ ] Load `product_definitions` from Firestore for `DynamicFormEngine`.
+- [ ] Triage and resolve the ~261 `TODO` comments logged in the codebase.
+
+
+# m3-standardization
+# Plan: Material 3 Refactoring Execution
+
+## Prerequisites
+- Confirm that the proposed color tokens visually align with the intended UI design in light and dark themes.
+
+## Execution Steps
+
+### Step 1: Update `admin/AdminScreen.kt`
+- Replace hardcoded hex colors in `DashboardCardPremium` instantiations.
+  - Line 235 (Personal): Change `Color(0xFFE91E63)` to `MaterialTheme.colorScheme.tertiary`
+  - Line 244 (Reportes): Change `Color(0xFFFF9800)` to `MaterialTheme.colorScheme.secondary`
+  - Line 253 (Ajustes): Change `Color(0xFF9C27B0)` to `MaterialTheme.colorScheme.primary`
+
+### Step 2: Update `admin/GestionSucursalesScreen.kt`
+- Target: Line 140
+  - Change: `color = Color.White.copy(0.7f)`
+  - To: `color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)` (or context-appropriate on-color).
+
+### Step 3: Update `admin/TabApariencia.kt`
+- Target: Line 252 & 469 (Fallback colors)
+  - Change: `Color.Gray`
+  - To: `MaterialTheme.colorScheme.outline`
+- Target: Line 354
+  - Change: `color = Color.White.copy(alpha = 0.92f)`
+  - To: `color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)`
+- Target: Line 360
+  - Change: `color = Color.Black.copy(alpha = 0.65f)`
+  - To: `color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)`
+
+### Step 4: Verification
+- Compile and build the project `.\gradlew.bat compileDebugKotlin` to ensure no syntax errors.
+- Ensure no `.kt` file changes are committed yet as per user instructions.
+- Present the SDD to the user/parent agent for review before proceeding with `.kt` code edits.
+
+
+# observability
+# Action Plan
+
+Since the task explicitly mandates **DO NOT modify any code**, the execution plan ends at documentation delivery.
+
+## Completed Tasks
+1. Evaluated `LogHelper.kt` (Timber configurations, Breadcrumbs, Local File Logging, Crashlytics Reflection).
+2. Evaluated `BocattaApp.kt` and `LogCleanupWorker.kt` for worker initialization and cleanup strategies.
+3. Examined `SyncWorker.kt`, `SyncErrorRepositoryImpl.kt`, and `SyncError.kt` to map out offline sync error handling.
+4. Checked `build.gradle.kts` to verify Crashlytics and Analytics dependency injection scoping.
+5. Prepared `research.md` and `proposal.md` with findings and recommendations.
+
+## Next Steps (Pending User Approval)
+- None. The audit and SDD workflow is complete. Wait for the user to review the documentation.
+
+
+# optimizacion-checkout-y-mosaicos
+# Plan Tecnico: Optimizacion Checkout y Mosaicos
+
+Spec ID: `optimizacion-checkout-y-mosaicos`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- UI:
+- ViewModel:
+- Dominio/use case:
+- Repositorio/data:
+- DI:
+- Tests:
+
+## Archivos Probables
+
+-
+
+## Estrategia
+
+1.
+2.
+3.
+
+## Contratos a Revisar
+
+- Modelos:
+- Interfaces:
+- Koin:
+- Firestore/Room:
+- WorkManager/sync:
+
+## Impacto Offline
+
+- Venta online:
+- Venta offline:
+- Reconexion:
+- Deduccion de inventario:
+- Idempotencia/reintentos:
+
+## Impacto UI
+
+- Movil:
+- Tablet:
+- Estados de carga/error:
+- Eventos consumibles:
+- Accesibilidad:
+
+## Plan de Pruebas
+
+- Unit:
+- Instrumented:
+- Compose UI:
+- Maestro/manual:
+- Gradle:
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+-
+
+
+# perf-compose
+# Plan Tecnico: SalesScreen Compose Performance Audit
+
+Spec ID: `perf-compose`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Skill `android-compose-performance`
+
+## Punto de Entrada Real
+
+- **UI**: `SalesScreen.kt` (Raíz del problema de inactividad que dispara recomposiciones masivas).
+- **Dominio/Data**: `ModelsV2.kt` y `SalesInventoryProductV2.kt` (Requieren anotaciones de estabilidad).
+- **Gradle**: `libs.versions.toml` (Para añadir inmutabilidad a Jetpack Compose).
+
+## Archivos Probables
+
+1. `gradle/libs.versions.toml`
+2. `app/build.gradle.kts`
+3. `app/src/main/java/com/bocatta/pos/domain/model/ModelsV2.kt`
+4. `app/src/main/java/com/bocatta/pos/domain/model/SalesInventoryProductV2.kt`
+5. `app/src/main/java/com/bocatta/pos/presentation/ui/screens/ventas/SalesScreen.kt`
+6. `app/src/main/java/com/bocatta/pos/presentation/ui/screens/ventas/SalesScreenSections.kt`
+7. `app/src/main/java/com/bocatta/pos/presentation/ui/components/CarritoPanelV2.kt`
+
+## Estrategia
+
+1. **Gradle**: Agregar `kotlinx-collections-immutable` en el `libs.versions.toml` y sincronizar.
+2. **Estabilidad de Modelos**: Anotar `SalesInventoryProductV2`, `ItemCarritoV2` y `ClienteV2` con `@Immutable`.
+3. **Corrección de Eventos (SalesScreen.kt)**: 
+   - Mover `ultimaInteraccion` fuera del block de la `key` de `LaunchedEffect`. Crear un loop interno `while(bloqueoPermitido)` con `delay(1000)` que compare con `ultimaInteraccion` para no forzar la recomposición del árbol completo.
+4. **Adopción de Immutable Collections**:
+   - `SalesScreen.kt`: En `filteredProducts`, retornar `baseProducts.filter { ... }.toImmutableList()`.
+   - `SalesScreen.kt`: Cambiar `alertasStockEstable` para que regrese un `ImmutableMap` (`vmV2.alertasStock.toImmutableMap()`) u omitir la conversión manual a Map inestable.
+   - `SalesScreenSections.kt`: Cambiar la firma de `SalesCatalogSection` para requerir `ImmutableList` y `ImmutableMap`.
+   - `SalesScreenSections.kt`: Cambiar la firma de `SalesCartSection` y `SalesMobileCartBar` para requerir `ImmutableList<ItemCarritoV2>`.
+   - `CarritoPanelV2.kt`: Requerir `ImmutableList<ItemCarritoV2>`.
+
+## Contratos a Revisar
+
+- **Modelos**: Modificar data classes para cumplir con `@Immutable`.
+- **UI Components**: Firmas de Compose que hoy aceptan `List<T>`.
+
+## Impacto Offline
+
+- Venta online: N/A
+- Venta offline: N/A
+- Reconexion: N/A
+- Deduccion de inventario: N/A
+- Idempotencia/reintentos: N/A
+
+## Impacto UI
+
+- Movil: Interfaz reactiva fluida (60+ fps), reduciendo el jank de scrolling y escaneo de productos.
+- Tablet: Evita redibujos globales de la cuadrícula, fundamental para dispositivos POS con menor memoria o CPU.
+
+## Plan de Pruebas
+
+- **Compose UI**: Recomposición local usando Layout Inspector. Un toque a la pantalla debería registrar 0 recomposiciones extra. Agregar un producto debería recomponer solo el área del carrito.
+- **Gradle**: Build exitoso tras incorporar `kotlinx.collections.immutable`.
+- **Manual**: Probar escaneo de productos por barcode, flujo de inactividad, split accounts y carrito para validar que todo funcione normal sin regresiones visuales.
+
+## Criterio para No Continuar
+
+- Si por alguna razón Gradle rechaza la versión de la librería inmutable, pausar y consultar alternativa con un Wrapper `@Immutable` local.
+
+
+# play-release
+# Plan Tecnico: Play Distribution Readiness Audit
+
+Spec ID: `play-release`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+- Skill `android-release-play-distribution`.
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- UI: N/A
+- ViewModel: N/A
+- Dominio/use case: N/A
+- Repositorio/data: N/A
+- DI: N/A
+- Tests: N/A
+- Build/Config: La configuración vive en `app/build.gradle.kts` (y `gradle.properties`). Este es el único responsable de configurar cómo se empaqueta, ofusca y firma la app.
+
+## Archivos Probables
+
+- `app/build.gradle.kts`
+- `local.properties` (para agregar las keys de ejemplo localmente)
+- `.gitignore` (para verificar que `*.jks` y `local.properties` están ignorados)
+
+## Estrategia
+
+1. **Revisar / Modificar `.gitignore`**: Validar que `*.jks` y `*.keystore` estén excluidos para no fugar llaves de producción.
+2. **Configuración de Versiones**: Extraer `versionCode` y `versionName` a variables leídas desde un archivo de configuración (ej. `version.properties`) o definir un esquema manual en la cabecera de `build.gradle.kts` que sea fácil de mantener.
+3. **Firma de Release**: 
+   - Añadir la lógica para cargar las credenciales del keystore desde `local.properties`.
+   - Crear el bloque `signingConfigs { create("release") { ... } }` y asignarlo al `buildType` de `release`.
+   - Configurar esto condicionalmente, de modo que si las credenciales no existen, el build no falle abruptamente (útil para CI o desarrolladores nuevos), o emitir un warning en consola.
+4. **Validación de App Bundles**: Asegurarse de que el comando `bundleRelease` funcionaría y usar R8 de manera estricta pero segura.
+
+## Contratos a Revisar
+
+- Modelos: Validar que `proguard-rules.pro` cubra bien la persistencia offline, aunque ya tiene reglas para Firestore y Serialización.
+- Interfaces: N/A
+- Koin: N/A
+- Firestore/Room: N/A
+- WorkManager/sync: N/A
+
+## Impacto Offline
+
+- Venta online: Sin impacto.
+- Venta offline: Sin impacto.
+- Reconexion: Sin impacto.
+- Deduccion de inventario: Sin impacto.
+- Idempotencia/reintentos: Sin impacto.
+
+## Impacto UI
+
+- Movil: Sin impacto.
+- Tablet: Sin impacto.
+- Estados de carga/error: Sin impacto.
+- Eventos consumibles: Sin impacto.
+- Accesibilidad: Sin impacto.
+
+## Plan de Pruebas
+
+- Unit: N/A
+- Instrumented: N/A
+- Compose UI: N/A
+- Maestro/manual: N/A
+- Gradle: 
+  - Validar que compile en release: `.\gradlew.bat compileReleaseKotlin`
+  - Validar bundle: `.\gradlew.bat bundleRelease`
+  - Validar que las keys no existan en repositorios públicos (`git status`).
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+- Falta de decisión sobre quién administrará el archivo de firma local (.jks) y el control de versiones automatizado. Para la prueba inicial, se asume que el usuario desarrollador lo mantendrá localmente.
+
+
+# prevenir-mojibake
+# Plan Tecnico: Prevenir mojibake recurrente
+
+Spec ID: `prevenir-mojibake`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- UI: no aplica.
+- ViewModel: no aplica.
+- Dominio/use case: no aplica.
+- Repositorio/data: no aplica.
+- DI: no aplica.
+- Tests: `tools/encoding/Find-Mojibake.ps1` y CI.
+
+## Archivos Probables
+
+- `.github/workflows/ci.yml`
+- `tools/encoding/Find-Mojibake.ps1`
+- `tools/encoding/README.md`
+- `tools/sdd/Invoke-BocattaSddInit.ps1`
+- `openspec/changes/prevenir-mojibake/*`
+
+## Estrategia
+
+1. Validar si ya hay configuracion UTF-8 local.
+2. Ejecutar detector existente y ajustar falsos positivos.
+3. Conectar detector a CI y documentarlo.
+
+## Contratos a Revisar
+
+- Modelos: no aplica.
+- Interfaces: no aplica.
+- Koin: no aplica.
+- Firestore/Room: no aplica.
+- WorkManager/sync: no aplica.
+
+## Impacto Offline
+
+- Venta online: no aplica.
+- Venta offline: no aplica.
+- Reconexion: no aplica.
+- Deduccion de inventario: no aplica.
+- Idempotencia/reintentos: no aplica.
+
+## Impacto UI
+
+- Movil: no aplica.
+- Tablet: no aplica.
+- Estados de carga/error: no aplica.
+- Eventos consumibles: no aplica.
+- Accesibilidad: no aplica.
+
+## Plan de Pruebas
+
+- Unit: no aplica.
+- Instrumented: no aplica.
+- Compose UI: no aplica.
+- Maestro/manual: no aplica.
+- Gradle: no aplica porque no cambia Kotlin/Compose.
+- Tooling: `.\tools\encoding\Find-Mojibake.ps1`, `.\tools\sdd\Invoke-BocattaSddInit.ps1`.
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+- Si el check normal falla por historico/generados, revisar exclusiones antes de ampliar alcance.
+
+
+# refine-counter-payment-lock-ux
+# Plan
+
+1. Apply lock overlay microchange.
+2. Record remaining payment sheet redesign debt.
+3. Verify whitespace.
+4. Compile when Gradle is free.
+5. Reinstall and manually inspect AVD if feasible.
+
+
+# saas-multi-giro
+# Plan Tecnico: {{TITLE}}
+
+Spec ID: `{{ID}}`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+Describe donde vive hoy el comportamiento y por que ese es el owner correcto.
+
+- UI:
+- ViewModel:
+- Dominio/use case:
+- Repositorio/data:
+- DI:
+- Tests:
+
+## Archivos Probables
+
+-
+
+## Estrategia
+
+1.
+2.
+3.
+
+## Contratos a Revisar
+
+- Modelos:
+- Interfaces:
+- Koin:
+- Firestore/Room:
+- WorkManager/sync:
+
+## Impacto Offline
+
+- Venta online:
+- Venta offline:
+- Reconexion:
+- Deduccion de inventario:
+- Idempotencia/reintentos:
+
+## Impacto UI
+
+- Movil:
+- Tablet:
+- Estados de carga/error:
+- Eventos consumibles:
+- Accesibilidad:
+
+## Plan de Pruebas
+
+- Unit:
+- Instrumented:
+- Compose UI:
+- Maestro/manual:
+- Gradle:
+
+## Criterio para No Continuar
+
+Enumera condiciones que deben detener implementacion hasta aclarar alcance o datos.
+
+-
+
+
+# sec-manifest
+# Security Remediation Plan
+
+## Phase 1: Preparation
+1. Review `firestore.rules` current schema dependencies for `v2_ventas`, `v2_turnos_caja`, `v2_gastos`, and `v2_jornadas`.
+2. Extract the exact required and optional fields used by the client app for these collections to build accurate `hasOnly` lists.
+
+## Phase 2: Rules Modification
+1. **Patch `v2_users`**:
+   - Update `allow create` to enforce `rol == 'VENDEDOR'` unless the creator `esAdmin()`.
+2. **Patch ID Spoofing**:
+   - In `v2_solicitudes`, append `&& request.resource.data.empleadoId == request.auth.uid`.
+   - In `v2_ventas`, append `&& request.resource.data.atendio == request.auth.uid` (or verify if there are valid admin override cases).
+3. **Apply Strict Schemas (`hasOnly`)**:
+   - Create helper functions for schemas if they are large (e.g., `ventaFields()`).
+   - Replace `hasAll` with `hasOnly` in `v2_ventas`.
+   - Replace `hasAll` with `hasOnly` in `v2_gastos`.
+   - Update `v2_turnos_caja` to use `hasOnly` for the `estado == 'abierto'` case.
+
+## Phase 3: Testing & Verification
+1. Run Firebase local emulator tests or deploy to a staging project.
+2. Verify normal POS checkout succeeds.
+3. Verify new user creation assigns `VENDEDOR` by default.
+4. Verify ID spoofing is rejected.
+5. Do not `git commit` until all rules are thoroughly tested and proven not to break the offline/online counter sync functionality (`SyncWorker`).
+
+
+# sync-worker
+# Plan Tecnico: Audit Background Work and Offline Sync
+
+Spec ID: `sync-worker`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- Archivos propietarios del flujo real antes de editar codigo.
+
+## Punto de Entrada Real
+
+- WorkManager y sus requests en `SyncScheduler.kt`.
+- Su worker asignado es `SyncWorker.kt`.
+- La orquestación y llamado inicia en `OfflineManager.kt`.
+- Todos han sido validados.
+
+## Archivos Probables
+
+- N/A (Solo revisión)
+
+## Estrategia
+
+1. Inspeccionar `SyncWorker` y `SyncScheduler`.
+2. Validar manejo de batería (Constraints).
+3. Validar reintentos (Exponential Backoff y counters de SQLite y de RunAttempt).
+4. Redactar reportes.
+5. Avisar al usuario.
+
+## Contratos a Revisar
+
+- Modelos: VentaOffline, StockAdjustmentEntity.
+- Interfaces: IStockAdjustmentQueue.
+- Koin: N/A.
+- Firestore/Room: N/A.
+- WorkManager/sync: Constraints, Retry Policies, Exponential Backoff.
+
+## Impacto Offline
+
+- Venta online: N/A
+- Venta offline: N/A
+- Reconexion: Validado. La reconexión dispara `SyncWorker` si hay request pendiente.
+- Deduccion de inventario: Validado.
+- Idempotencia/reintentos: Validado. Hay chequeo de `exists()` antes de procesar ventas en Firestore, evitando corrupciones por repetición.
+
+## Impacto UI
+
+- N/A
+
+## Plan de Pruebas
+
+- Unit: N/A
+- Instrumented: N/A
+- Compose UI: N/A
+- Maestro/manual: N/A
+- Gradle: N/A
+
+## Criterio para No Continuar
+
+- Modificar el comportamiento actual no es necesario, detener plan de implementación.
+
+
+# testing-offline
+# Plan Tecnico: Offline Tests for SalesViewModelV2 and InventoryDeductions
+
+Spec ID: `testing-offline`
+
+## Lectura Inicial Obligatoria
+
+- `AGENTS.md`
+- `openspec/constitution.md`
+- `SalesViewModelV2.kt`, `InventoryDeductions.kt`, `CartManager.kt`, `CheckoutUseCase.kt`
+
+## Punto de Entrada Real
+
+- ViewModel: `SalesViewModelV2` is the central hub for the sales UI.
+- Repositorio/data: `InventoryDeductions` calculates ingredient deductions used during offline fallback persistence in `CheckoutUseCase`.
+- Tests: `app/src/test/` for Unit tests and `app/src/androidTest/` for instrumented integration tests.
+
+## Archivos Probables
+
+- `app/src/test/java/com/bocatta/pos/data/repository/InventoryDeductionsTest.kt`
+- `app/src/test/java/com/bocatta/pos/presentation/viewmodel/SalesViewModelV2Test.kt`
+- `app/src/androidTest/java/com/bocatta/pos/OfflineCheckoutInstrumentedTest.kt`
+
+## Estrategia
+
+1. **Unit Testing `InventoryDeductions`**: Add tests to `InventoryDeductionsTest.kt` to explicitly cover `resolverDescuentoOpcion` interacting with `configSchema` from `SalesInventoryProductV2`.
+2. **Unit Testing `SalesViewModelV2`**: Create `SalesViewModelV2Test.kt`. Use `mockk` for its many dependencies. Test setting `isOnline = false` and ensure that offline methods gracefully handle state changes. Test cart management state (e.g. adding items off-network).
+3. **Instrumented Testing `OfflineCheckoutInstrumentedTest`**: Set up a real (in-memory) `OfflineDatabase`. Initialize `SalesViewModelV2` and call `agregarAlCarrito` -> `checkoutUseCase` (or equivalent) while offline. Verify that `OfflineDatabase` contains the correctly mapped records with deductions generated by `InventoryDeductions`.
+
+## Contratos a Revisar
+
+- Modelos: `SalesInventoryProductV2`, `ConfigOptionGroup`.
+- Interfaces: `IInventoryRepository`, `IProductRepository`, `CartManager`.
+- Koin: Test DI modules for instrumented tests.
+- Firestore/Room: Verification of Room `OfflineDatabase` records.
+
+## Impacto Offline
+
+- Venta online: N/A (Tests only)
+- Venta offline: N/A (Tests only)
+- Reconexion: N/A
+- Deduccion de inventario: Automated verification of correctness.
+- Idempotencia/reintentos: N/A
+
+## Impacto UI
+
+- Movil: N/A
+- Tablet: N/A
+- Estados de carga/error: N/A
+- Eventos consumibles: N/A
+- Accesibilidad: N/A
+
+## Plan de Pruebas
+
+- Unit: Run `./gradlew testDebugUnitTest` to verify `InventoryDeductionsTest` and `SalesViewModelV2Test`.
+- Instrumented: Run `./gradlew connectedDebugAndroidTest` for `OfflineCheckoutInstrumentedTest`.
+
+## Criterio para No Continuar
+
+- If MockK or necessary testing libraries are missing and cannot be easily introduced without risking DI structure.
+- If `OfflineDatabase` cannot be easily instantiated in-memory for testing due to complex unmockable dependencies.
+
+
+# ui-i18n
+# Plan de Implementación: Extracción de Strings
+
+## Fases del Trabajo
+
+1. **Desarrollo del Script (Dry-Run)**
+   - Escribir `extract_strings.py` en la carpeta de scratch del proyecto.
+   - Ejecutar el script en modo "Sólo lectura" para escanear `SalesScreen.kt` y `CarritoPanelV2.kt` primero como prueba de concepto.
+   
+2. **Revisión de Salida**
+   - Inspeccionar los strings identificados.
+   
+3. **Ejecución (Aplicación de Cambios)**
+   - Correr el script en modo de escritura (`--apply`).
+   - El script modificará los archivos `.kt` e inyectará los recursos en `strings.xml`.
+   
+4. **Verificación Local**
+   - Ejecutar `.\gradlew.bat compileDebugKotlin` o `lintDebug` para asegurar integridad.
+   
+5. **Commit**
+   - `git add .` y `git commit -m "Refactor: Extract hardcoded strings to strings.xml via automation"`
+

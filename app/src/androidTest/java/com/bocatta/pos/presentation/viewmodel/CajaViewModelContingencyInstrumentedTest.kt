@@ -14,6 +14,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.bocatta.pos.data.local.room.BocattaRoomDatabase
 
 @RunWith(AndroidJUnit4::class)
 class CajaViewModelContingencyInstrumentedTest {
@@ -22,12 +23,17 @@ class CajaViewModelContingencyInstrumentedTest {
         get() = OfflineDatabase.getInstance(
             InstrumentationRegistry.getInstrumentation().targetContext
         )
+        
+    private val roomDb: BocattaRoomDatabase
+        get() = BocattaRoomDatabase.getInstance(
+            InstrumentationRegistry.getInstrumentation().targetContext
+        )
 
     @Test
     fun abrirTurnoContingenciaLocal_adminPersisteTurnoYDesbloqueaCaja() = runBlocking {
         val suffix = System.nanoTime()
         val sucursal = "contingencia_vm_$suffix"
-        val vm = CajaViewModel(AuthorizationManager(), db)
+        val vm = CajaViewModel(AuthorizationManager(), db, roomDb.ventaPendienteDao())
         val deferred = CompletableDeferred<Boolean>()
 
         vm.abrirTurnoContingenciaLocal(
@@ -56,7 +62,7 @@ class CajaViewModelContingencyInstrumentedTest {
     fun abrirTurnoContingenciaLocal_vendedorQuedaBloqueado() {
         val suffix = System.nanoTime()
         val sucursal = "contingencia_vendedor_$suffix"
-        val vm = CajaViewModel(AuthorizationManager(), db)
+        val vm = CajaViewModel(AuthorizationManager(), db, roomDb.ventaPendienteDao())
         var callbackCalled = false
         var result = true
 

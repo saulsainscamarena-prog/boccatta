@@ -5,8 +5,8 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
-    id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
-    id("io.gitlab.arturbosch.detekt") version "1.23.6" apply false
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt) apply false
 }
 
 val mojibakeCharacters = setOf('\uFFFD', '\u00C3', '\u00C2', '\u00E2', '\u00F0')

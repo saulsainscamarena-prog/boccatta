@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.ksp)
     // id("org.jetbrains.kotlin.kapt")
-    id("io.gitlab.arturbosch.detekt") version "1.23.6"
+    alias(libs.plugins.detekt)
     id("jacoco")
 }
 
@@ -70,6 +70,13 @@ kotlin {
     jvmToolchain(17)
 }
 
+}
+
+composeCompiler {
+    if (project.hasProperty("enableComposeCompilerReports")) {
+        metricsDestination = layout.buildDirectory.dir("compose_metrics")
+        reportsDestination = layout.buildDirectory.dir("compose_metrics")
+    }
 }
 
 dependencies {

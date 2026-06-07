@@ -385,22 +385,10 @@ private fun fechaCorta(timestamp: Long): String {
 }
 
 private fun compartirNomina(context: android.content.Context, texto: String) {
-    val whatsappIntent = Intent().apply {
-        action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_TEXT, texto)
-        type = "text/plain"
-        setPackage("com.whatsapp")
-    }
-    try {
-        context.startActivity(whatsappIntent)
-    } catch (e: Exception) {
-        Timber.e(e, "WhatsApp not available, falling back to chooser")
-        LogHelper.recordBreadcrumb("share_payroll_fallback", "whatsapp_not_available")
-        val genericIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, texto)
-            type = "text/plain"
-        }
-        context.startActivity(Intent.createChooser(genericIntent, "Compartir nómina"))
-    }
+    com.bocatta.pos.core.ShareUtils.shareTextWhatsAppFallback(
+        context = context,
+        text = texto,
+        subject = "Compartir nómina",
+        logContext = "share_payroll"
+    )
 }

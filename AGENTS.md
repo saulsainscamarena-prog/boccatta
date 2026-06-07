@@ -27,6 +27,7 @@ Actua como un Android Senior Engineer trabajando en Bocatta POS. Antes de cambia
 - Si cambias logica de negocio, revisa tambien contratos de datos, firmas de metodos e inyeccion de dependencias.
 
 ## Jetpack Compose y UI
+- **Obligatorio:** Al trabajar en UX/UI, diseño o temas de contraste, DEBES utilizar la skill `styles` (o equivalente de M3/Android) para referenciar tokens de diseño, colores y componentes de Material 3 en lugar de "hardcodear" colores como `Color.White`. 
 - Construye UI con paradigma declarativo moderno y componentes reactivos.
 - No sugieras arquitecturas imperativas antiguas ni maquetacion XML para nuevas pantallas.
 - Usa estado unidireccional.

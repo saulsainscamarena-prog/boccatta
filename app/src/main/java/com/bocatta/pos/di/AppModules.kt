@@ -30,6 +30,9 @@ import com.bocatta.pos.domain.usecase.CheckoutUseCase
 import com.bocatta.pos.domain.usecase.impl.CatalogoOperativoUseCaseImpl
 import com.bocatta.pos.network.NetworkStateProvider
 import com.bocatta.pos.presentation.viewmodel.AdminViewModel
+import com.bocatta.pos.presentation.viewmodel.ConfigGlobalViewModel
+import com.bocatta.pos.presentation.viewmodel.SalarioViewModel
+import com.bocatta.pos.presentation.viewmodel.SolicitudViewModel
 import com.bocatta.pos.presentation.viewmodel.AperturaViewModelV2
 import com.bocatta.pos.presentation.viewmodel.AuditoriaViewModel
 import com.bocatta.pos.presentation.viewmodel.AuthViewModelV2
@@ -155,4 +158,7 @@ val appModule = module {
     viewModel { ThemeViewModel(get()) }
     viewModel { MesaViewModel() }
     viewModel { HeldOrderViewModel(androidApplication()) }
+    viewModel { ConfigGlobalViewModel() }
+    viewModel { SolicitudViewModel() }
+    viewModel { SalarioViewModel() }
 }

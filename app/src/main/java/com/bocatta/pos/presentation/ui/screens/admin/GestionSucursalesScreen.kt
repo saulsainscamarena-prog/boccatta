@@ -137,7 +137,7 @@ fun GestionSucursalesScreen(
                 title = {
                     Column {
                         Text("Gestión de Sucursales", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-                        Text("${vm.sucursales.size} sucursal(es) registradas", color = Color.White.copy(0.7f), fontSize = 11.sp)
+                        Text("${vm.sucursales.size} sucursal(es) registradas", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                     }
                 },
                 navigationIcon = {

@@ -62,24 +62,12 @@ fun ConfirmacionVentaDialog(
                         "share_ticket_whatsapp",
                         "codigo=${vmV2.ultimoCodigoTicket}, sucursal=$sucursalActual"
                     )
-                    val intent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        putExtra(Intent.EXTRA_TEXT, ticket)
-                        type = "text/plain"
-                        setPackage("com.whatsapp")
-                    }
-                    try { context.startActivity(intent) } catch (e: Exception) {
-                        LogHelper.recordBreadcrumb(
-                            "share_ticket_fallback",
-                            "codigo=${vmV2.ultimoCodigoTicket}, reason=${e.javaClass.simpleName}"
-                        )
-                        val genericIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, ticket)
-                            type = "text/plain"
-                        }
-                        context.startActivity(Intent.createChooser(genericIntent, "Enviar ticket"))
-                    }
+                    com.bocatta.pos.core.ShareUtils.shareTextWhatsAppFallback(
+                        context = context,
+                        text = ticket,
+                        subject = "Enviar ticket",
+                        logContext = "share_ticket"
+                    )
                     onDismiss()
                 },
                 shape = RoundedCornerShape(12.dp),

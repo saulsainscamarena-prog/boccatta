@@ -453,12 +453,12 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                     onClick = {
                         vm.cerrarTurno(session.nombreUsuario, session.esAdmin) { texto ->
                             mostrarCierre = false
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, texto)
-                                type = "text/plain"
-                            }
-                            context.startActivity(Intent.createChooser(intent, context.getString(R.string.cierre_enviar_chooser)))
+                            com.bocatta.pos.core.ShareUtils.shareTextWhatsAppFallback(
+                                context = context,
+                                text = texto,
+                                subject = context.getString(R.string.cierre_enviar_chooser),
+                                logContext = "share_corte"
+                            )
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),

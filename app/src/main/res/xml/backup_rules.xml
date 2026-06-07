@@ -8,4 +8,6 @@
     <exclude domain="database" path="offline_queue.db-shm"/>
     <exclude domain="sharedpref" path="bocatta_offline_tickets.xml"/>
     <exclude domain="sharedpref" path="bocatta_session.xml"/>
+    <exclude domain="file" path="logs"/>
+    <exclude domain="external" path="logs"/>
 </full-backup-content>

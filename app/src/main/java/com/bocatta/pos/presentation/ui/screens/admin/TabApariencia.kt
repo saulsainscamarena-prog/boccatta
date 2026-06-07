@@ -249,7 +249,7 @@ private fun ColorField(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(parsed ?: parseHexColor(fallback) ?: Color.Gray, CircleShape)
+                        .background(parsed ?: parseHexColor(fallback) ?: MaterialTheme.colorScheme.outline, CircleShape)
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -351,13 +351,13 @@ private fun ColorWheelPicker(
     ) {
         drawImage(wheel)
         drawCircle(
-            color = Color.White.copy(alpha = 0.92f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
             radius = 10.dp.toPx(),
             center = selectedOffset,
             style = Stroke(width = 3.dp.toPx())
         )
         drawCircle(
-            color = Color.Black.copy(alpha = 0.65f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
             radius = 13.dp.toPx(),
             center = selectedOffset,
             style = Stroke(width = 1.dp.toPx())
@@ -466,6 +466,6 @@ private fun ColorDot(hex: String) {
     Box(
         modifier = Modifier
             .size(10.dp)
-            .background(parseHexColor(hex) ?: Color.Gray, CircleShape)
+            .background(parseHexColor(hex) ?: MaterialTheme.colorScheme.outline, CircleShape)
     )
 }

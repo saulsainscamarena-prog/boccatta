@@ -51,12 +51,12 @@ fun ReportScreen(vmV2: ReportViewModelV2, sucursal: String, onBack: () -> Unit) 
                     IconButton(onClick = {
                         LogHelper.recordBreadcrumb("share_report_whatsapp", "sucursal=$sucursal")
                         val texto = vmV2.generarTextoCierreWhatsApp(sucursal)
-                        val intent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, texto)
-                            type = "text/plain"
-                        }
-                        context.startActivity(Intent.createChooser(intent, "Compartir reporte"))
+                        com.bocatta.pos.core.ShareUtils.shareTextWhatsAppFallback(
+                            context = context,
+                            text = texto,
+                            subject = "Compartir reporte",
+                            logContext = "share_report"
+                        )
                     }) {
                         Icon(
                             Icons.Default.Share,
