@@ -68,6 +68,29 @@ class InventoryRepositoryImpl(
         }
     }
 
+    override fun getStockAlertsFlow(branchId: String): Flow<Map<String, Double>> = callbackFlow {
+        // Consultar usando tanto 'sucursal' (esquema v1) como 'branchId' (esquema v2) unificado localmente
+        val subscription = inventoryCollection
+            .whereEqualTo("sucursal", branchId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val alerts = mutableMapOf<String, Double>()
+                snapshot?.documents?.forEach { doc ->
+                    val cant = doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: doc.getDouble("currentQty") ?: 0.0
+                    val id = doc.getString("insumoId") ?: doc.getString("productId") ?: com.bocatta.pos.core.constants.SucursalConfig.extraerInsumoIdDeDocId(doc.id)
+                    alerts[id] = cant
+                }
+                trySend(alerts)
+            }
+        awaitClose {
+            subscription.remove()
+            Timber.tag("INV_REPO").d("getStockAlertsFlow snapshot listener removed successfully.")
+        }
+    }
+
     override suspend fun getCurrentStock(branchId: String, productId: String): Double {
         return try {
             val docId = "${branchId}_$productId"

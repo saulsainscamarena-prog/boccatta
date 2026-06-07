@@ -94,7 +94,9 @@ class SalesViewModelV2(
 
    private val cartManager: CartManager,
 
-   private val checkoutUseCase: CheckoutUseCase
+   private val checkoutUseCase: CheckoutUseCase,
+
+   private val customerRepository: com.bocatta.pos.data.repository.CustomerRepository
 
 ) : BaseAndroidViewModel(application) {
 
@@ -146,6 +148,12 @@ class SalesViewModelV2(
 
 
 
+    private var menuJob: Job? = null
+
+    private var stockJob: Job? = null
+
+
+
     private var _modalidadOrden by mutableStateOf(ModalidadOrden.LOCAL)
 
     val modalidadOrden: ModalidadOrden get() = _modalidadOrden
@@ -176,7 +184,7 @@ class SalesViewModelV2(
 
       private set
 
-   var menuUltimaCarga by mutableStateOf(0L)
+   var menuUltimaCarga by mutableLongStateOf(0L)
 
       private set
 
@@ -190,11 +198,11 @@ class SalesViewModelV2(
 
    val clienteSeleccionado: ClienteV2? get() = _clienteSeleccionado
 
-   private var _descuentoLealtad by mutableStateOf(0.0)
+   private var _descuentoLealtad by mutableDoubleStateOf(0.0)
 
    val descuentoLealtad: Double get() = _descuentoLealtad
 
-   var ultimoTicketAsignado by mutableStateOf(0L)
+   var ultimoTicketAsignado by mutableLongStateOf(0L)
 
       private set
 
@@ -408,12 +416,6 @@ class SalesViewModelV2(
 
 
 
-    private var menuListener: ListenerRegistration? = null
-
-   private var stockListener: ListenerRegistration? = null
-
-
-
     val totalCarrito by derivedStateOf {
 
         CarritoCalculator.calcularSubtotal(_carrito)
@@ -471,75 +473,28 @@ class SalesViewModelV2(
 
 
     private fun escucharMenu() {
-
-       menuListener?.remove()
-
+       menuJob?.cancel()
        menuCargando = true
-
        menuError = null
-
-       menuListener = db.collection(FirestoreCollections.PRODUCTOS).addSnapshotListener { snap, error ->
-
-          if (error != null) {
-
-             menuCargando = false
-
-             menuError = "No se pudo cargar el menu. Revisa conexion o vuelve a intentar."
-
-             return@addSnapshotListener
-
-          }
-
-          if (snap != null) {
-
+       menuJob = viewModelScope.launch {
+          productRepo.getSalesProducts().collect { productsList ->
              _productos.clear()
-
-             snap.documents.forEach { doc ->
-
-                doc.toObject(SalesInventoryProductV2::class.java)?.let { prod ->
-
-                   val schema = (doc.get("configSchema") as? List<*>)
-
-                      ?.mapNotNull { rawGroup ->
-
-                         (rawGroup as? Map<*, *>)?.entries
-
-                            ?.mapNotNull { (key, value) -> (key as? String)?.let { it to value } }
-
-                            ?.toMap()
-
-                      }
-
-                      ?.map { mapToConfigGroup(it) } ?: emptyList()
-
-                   _productos.add(prod.copy(configSchema = schema, id = doc.id))
-
-                }
-
-             }
-
+             _productos.addAll(productsList)
              menuCargando = false
-
              menuError = null
-
              menuUltimaCarga = System.currentTimeMillis()
-
-             viewModelScope.launch {
-                 val result = withContext(Dispatchers.Default) {
-                     catalogoUseCase.clasificarYOrdenar(
-                         menuOriginal = _productos.toList(),
-                         ventasHistorial = ventasHistorial,
-                         sucursal = sucursalActual
-                     )
-                 }
-                 catalogoProcesado = result
+             
+             val result = withContext(Dispatchers.Default) {
+                 catalogoUseCase.clasificarYOrdenar(
+                     menuOriginal = _productos.toList(),
+                     ventasHistorial = ventasHistorial,
+                     sucursal = sucursalActual
+                 )
              }
+             catalogoProcesado = result
              sincronizarCatalogoOperativoLocal(_productos.toList())
-
           }
-
        }
-
     }
 
     private fun sincronizarCatalogoOperativoLocal(productos: List<SalesInventoryProductV2>) {
@@ -590,33 +545,13 @@ class SalesViewModelV2(
 
 
    private fun escucharStock() {
-
-      stockListener?.remove()
-
-      stockListener = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
-
-         .whereEqualTo("sucursal", sucursalActual)
-
-         .addSnapshotListener { snap, _ ->
-
-            if (snap != null) {
-
-               _alertasStock.clear()
-
-               snap.documents.forEach { doc ->
-
-                  val cant = doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0
-
-                  val id = doc.getString("insumoId") ?: SucursalConfig.extraerInsumoIdDeDocId(doc.id)
-
-                  _alertasStock[id] = cant
-
-               }
-
-            }
-
+      stockJob?.cancel()
+      stockJob = viewModelScope.launch {
+         inventoryRepo.getStockAlertsFlow(sucursalActual).collect { alerts ->
+            _alertasStock.clear()
+            _alertasStock.putAll(alerts)
          }
-
+      }
    }
 
 
@@ -627,9 +562,9 @@ class SalesViewModelV2(
 
       catalogSyncJob?.cancel()
 
-      menuListener?.remove()
+      menuJob?.cancel()
 
-      stockListener?.remove()
+      stockJob?.cancel()
 
    }
 
@@ -639,17 +574,11 @@ class SalesViewModelV2(
 
       viewModelScope.launch(safeHandler) {
 
-         val snap = db.collection(FirestoreCollections.CLIENTES)
-
-            .whereGreaterThanOrEqualTo("nombre", query)
-
-            .whereLessThanOrEqualTo("nombre", query + "\uf8ff")
-
-            .limit(5).get().await()
+         val results = customerRepository.buscarCliente(query)
 
          _clientesSugeridos.clear()
 
-         snap.documents.forEach { doc -> doc.toObject(ClienteV2::class.java)?.let { _clientesSugeridos.add(it.copy(idDocumento = doc.id)) } }
+         _clientesSugeridos.addAll(results)
 
       }
 
@@ -685,25 +614,19 @@ class SalesViewModelV2(
 
       viewModelScope.launch(safeHandler) {
 
-         val snap = db.collection(FirestoreCollections.CLIENTES).whereEqualTo("telefono", telefono).get().await()
+         val result = customerRepository.registrarClienteNuevo(nombre, telefono)
 
-         if (!snap.isEmpty) {
+         result.onSuccess { nuevo ->
 
-            mensajeError = "Este cliente ya esta registrado."
+            _clienteSeleccionado = nuevo
 
-            return@launch
+            _descuentoLealtad = 0.0
+
+         }.onFailure {
+
+            mensajeError = it.message ?: "Error al registrar cliente."
 
          }
-
-         val docRef = db.collection(FirestoreCollections.CLIENTES).document()
-
-         val nuevo = ClienteV2(idDocumento = docRef.id, nombre = nombre, telefono = telefono)
-
-         docRef.set(nuevo).await()
-
-         _clienteSeleccionado = nuevo
-
-         _descuentoLealtad = 0.0
 
       }
 

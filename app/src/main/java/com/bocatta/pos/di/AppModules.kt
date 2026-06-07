@@ -12,6 +12,7 @@ import com.bocatta.pos.data.repository.OperationalCatalogSyncRepository
 import com.bocatta.pos.data.repository.PromocionesRepository
 import com.bocatta.pos.data.repository.ReportRepository
 import com.bocatta.pos.data.repository.ThemeRepository
+import com.bocatta.pos.data.repository.CustomerRepository
 import com.bocatta.pos.data.repository.ProductRepositoryImpl
 import com.bocatta.pos.data.repository.InventoryRepositoryImpl
 import com.bocatta.pos.domain.repository.IInventoryRepository
@@ -85,6 +86,7 @@ val appModule = module {
     single { ReportRepository() }
     single { PromocionesRepository() }
     single { ThemeRepository() }
+    single { CustomerRepository() }
     single { ProductoRepository() }
     single { DataSeederV2(androidApplication(), get()) }       // recibe Context y ProductoRepository inyectado
     single { ConfiguracionRepository() }
@@ -132,7 +134,7 @@ val appModule = module {
 
     // VIEWMODELS
     viewModel { SessionViewModel(get(), get()) }
-    viewModel { SalesViewModelV2(get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { SalesViewModelV2(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CajaViewModel(get(), get(), get()) }
     viewModel { AdminViewModel(get(), get(), get(), get()) }
     viewModel { InventoryViewModel(get()) }

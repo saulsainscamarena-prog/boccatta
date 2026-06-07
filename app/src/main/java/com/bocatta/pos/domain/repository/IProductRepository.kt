@@ -1,6 +1,7 @@
 package com.bocatta.pos.domain.repository
 
 import com.bocatta.pos.domain.model.InventoryProductV2
+import com.bocatta.pos.domain.model.SalesInventoryProductV2
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -9,6 +10,12 @@ import kotlinx.coroutines.flow.Flow
  * Esto permite intercambiar la lógica de negocio (Food, Retail, Services) sin afectar la UI.
  */
 interface IProductRepository {
+
+    /**
+     * Obtiene un flujo reactivo con la lista completa de productos activos para la UI de Ventas.
+     * Ideal para observar cambios en tiempo real desde Firestore, convertido a SalesInventoryProductV2.
+     */
+    fun getSalesProducts(): Flow<List<SalesInventoryProductV2>>
 
     /**
      * Obtiene un flujo reactivo con la lista completa de productos activos.

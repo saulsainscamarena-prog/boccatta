@@ -22,6 +22,12 @@ interface IInventoryRepository {
     fun getStockItem(branchId: String, productId: String): Flow<InventoryItem?>
 
     /**
+     * Obtiene un mapa de stock en tiempo real para una sucursal.
+     * El mapa asocia el ID del insumo con su cantidad disponible en la unidad base.
+     */
+    fun getStockAlertsFlow(branchId: String): Flow<Map<String, Double>>
+
+    /**
      * Consulta el stock actual disponible para un producto en una sucursal.
      * @return Cantidad actual en la unidad base del producto.
      */
