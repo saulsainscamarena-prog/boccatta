@@ -31,8 +31,9 @@ Start with:
 2. Keep heavy calculations in ViewModels/use cases/domain utilities.
 3. Use immutable lists/maps for UI state and stable keys in lazy grids/lists.
 4. Use `derivedStateOf` only for cheap UI-derived values that reduce recomposition.
-5. Defer state reads to the smallest composable that needs them.
+5. Defer state reads to the smallest composable that needs them (use lambdas `() -> T`).
 6. Avoid passing entire large state objects to every product tile or cart row.
+7. Use `remember(keys)` to cache expensive calculations directly in the UI if they cannot live in the ViewModel.
 
 ## Guardrails
 
@@ -50,6 +51,6 @@ Run Compose/UI tests when touched, then compile:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.
