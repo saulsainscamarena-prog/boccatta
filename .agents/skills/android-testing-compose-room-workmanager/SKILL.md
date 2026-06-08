@@ -34,6 +34,8 @@ Existing test areas:
 4. For WorkManager, test input/output state and queue transitions.
 5. For Compose, test user-observable behavior instead of implementation details.
 6. Use fakes before network calls; do not require live Firestore for normal tests.
+7. Utilize ComposeTestRule to interact with UI elements and synchronize tests with Compose state automatically.
+8. Use the work-testing artifact to thoroughly test Worker and CoroutineWorker classes in isolation.
 
 ## Guardrails
 
@@ -49,6 +51,6 @@ Existing test areas:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

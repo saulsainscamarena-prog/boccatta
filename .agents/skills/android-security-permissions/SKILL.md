@@ -39,6 +39,8 @@ Start with:
 - Do not add new Firebase initialization paths without checking existing providers and DI.
 - Do not trust client-side role checks as the only protection for remote data.
 - Do not make activities/services exported unless required.
+- Do not make activities/services exported unless required; explicitly set android:exported="false" for internal components.
+- Request permissions in context rather than all at startup, explaining why they are needed.
 
 ## Verification
 
@@ -49,6 +51,6 @@ Inspect manifest and run:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

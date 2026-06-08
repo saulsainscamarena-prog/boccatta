@@ -34,6 +34,8 @@ Relevant files:
 4. Avoid leaking Firebase exceptions or credentials into logs.
 5. Do not let demo credentials affect release builds.
 6. Keep admin overrides narrow and time-bound when possible.
+7. Favor modern authentication such as Credential Manager to unify passkeys, passwords, and federated sign-in.
+8. Avoid hardware-specific identifiers for users; strictly use resettable identifiers to preserve privacy.
 
 ## Guardrails
 
@@ -49,6 +51,6 @@ Relevant files:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

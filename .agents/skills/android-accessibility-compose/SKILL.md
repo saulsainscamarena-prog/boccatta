@@ -34,6 +34,8 @@ High-impact screens:
 4. Preserve focus order in dialogs and forms.
 5. Keep contrast sufficient under Bocatta theme colors.
 6. Avoid adding explanatory UI text that clutters counter workflows.
+7. Ensure minimum touch targets of 48dp x 48dp for all interactive elements.
+8. Set the `Role` property on custom interactive components and avoid including the UI element type (e.g. "button") in content descriptions.
 
 ## Guardrails
 
@@ -49,6 +51,6 @@ High-impact screens:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

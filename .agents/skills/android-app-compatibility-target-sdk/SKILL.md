@@ -32,6 +32,8 @@ The project currently uses:
 3. Check manifest components, backup rules, permissions, background work, and notification/foreground-service behavior.
 4. Keep JDK alignment at 17 unless an explicit migration is requested and verified.
 5. Avoid SDK or AGP changes unless the task requires them.
+6. Use the App Compatibility Changes framework (via Developer Options) to test targeted behavior changes without immediately recompiling the app.
+7. Maintain backward compatibility and avoid using `maxSdkVersion` unless absolutely necessary, as it can cause app removal on newer Android versions.
 
 ## Guardrails
 
@@ -47,6 +49,6 @@ The project currently uses:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

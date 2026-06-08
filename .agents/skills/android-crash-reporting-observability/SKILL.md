@@ -34,6 +34,8 @@ Relevant files:
 4. Include enough context to debug sync/offline failures without leaking private data.
 5. Keep log cleanup compatible with offline troubleshooting.
 6. If adding Crashlytics or analytics events, verify dependencies and initialization first.
+7. Use the App Quality Insights tool window in Android Studio to view Firebase Crashlytics data directly within your IDE.
+8. Integrate Firebase Analytics to automatically collect crash breadcrumbs that provide a trail of user actions leading up to an event.
 
 ## Guardrails
 
@@ -48,6 +50,6 @@ Relevant files:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

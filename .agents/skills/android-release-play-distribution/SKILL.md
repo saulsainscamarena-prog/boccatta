@@ -34,6 +34,8 @@ Relevant files:
 4. Confirm Firestore rules/indexes are aligned with the release app behavior.
 5. Prefer App Bundle for Play distribution.
 6. Run a smoke test of checkout, offline save, sync, reports, and login before release.
+7. Utilize the R8 Configuration Analyzer in Android Studio to evaluate keep rules and optimization potential.
+8. Ensure mapping.txt is uploaded to the Play Console for proper deobfuscation of crash reports.
 
 ## Guardrails
 
@@ -49,6 +51,6 @@ Relevant files:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

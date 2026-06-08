@@ -34,6 +34,8 @@ Start with:
 4. Reuse Koin modules and local provider patterns before introducing new DI wiring.
 5. Update contracts and tests when changing repository or use case signatures.
 6. Keep changes small and local unless the current boundary is the actual cause.
+7. Expose UI state via read-only `StateFlow` and handle all events in the ViewModel to enforce Unidirectional Data Flow (UDF).
+8. Use `repeatOnLifecycle` for lifecycle-aware flow collection in the UI layer to prevent resource leaks.
 
 ## Guardrails
 
@@ -49,6 +51,6 @@ Start with:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

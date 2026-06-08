@@ -33,6 +33,8 @@ Start with:
 4. Make online/offline state visible where it affects operator decisions.
 5. Avoid blocking UI while probing network state.
 6. Recheck sync behavior after process restart.
+7. Use `ConnectivityManager.NetworkCallback` instead of deprecated `CONNECTIVITY_ACTION` broadcasts for modern, efficient network monitoring.
+8. Rely on arguments provided directly in the callback (e.g., `onAvailable`) rather than making synchronous state queries like `getNetworkCapabilities()` that may be out of sync.
 
 ## Guardrails
 
@@ -48,6 +50,6 @@ Start with:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

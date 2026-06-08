@@ -39,6 +39,8 @@ Relevant areas:
 - Do not use external public storage for offline sales or audit logs.
 - Do not hardcode absolute user paths.
 - Do not add `MANAGE_EXTERNAL_STORAGE` for ordinary exports.
+- Always access app-specific directories using Context methods like `Context.getFilesDir()` instead of hardcoding paths.
+- Use `FileProvider` to share files securely via content URIs rather than exposing raw file paths.
 
 ## Verification
 
@@ -49,6 +51,6 @@ Check manifest permissions and run:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

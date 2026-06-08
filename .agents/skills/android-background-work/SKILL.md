@@ -34,6 +34,8 @@ Relevant files usually include:
 4. Do not mark queued work complete until the remote Firestore operation and local state transition are both handled.
 5. Make retry/failure states explicit; avoid silent catch blocks.
 6. Check Android background restrictions before introducing services, alarms, or long-running work.
+7. Use `enqueueUniqueWork()` or `enqueueUniquePeriodicWork()` to avoid duplicating tasks like data syncs.
+8. For long-running workers on Android 14+ (API 34+), ensure you declare a foreground service type in the manifest when using `ForegroundInfo`.
 
 ## Guardrails
 
@@ -51,6 +53,6 @@ Run focused tests around sync and queues when changed:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

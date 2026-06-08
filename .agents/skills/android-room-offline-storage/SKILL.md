@@ -33,6 +33,8 @@ Start with:
 4. Make writes atomic when sale, folio, and stock state must move together.
 5. If schema changes, add a migration or prove the existing helper recreates safely for the target data.
 6. Validate offline-first behavior without assuming Firestore is reachable.
+7. Treat the Room database as the single source of truth; sync network changes directly to the database.
+8. Expose data from Room DAOs using observable streams (like Flow) to automatically update the UI.
 
 ## Guardrails
 
@@ -48,6 +50,6 @@ Start with:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

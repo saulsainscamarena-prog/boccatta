@@ -32,6 +32,8 @@ Common files:
 4. Use `collectAsStateWithLifecycle` for lifecycle-aware Flow collection.
 5. Use `LaunchedEffect(key)` for effects caused by state transitions.
 6. Close modals after successful operations and reset any success flags.
+7. Defer state reads to the lowest possible scope (e.g., using lambda-based modifiers) to minimize unnecessary recompositions.
+8. Ensure Composables are idempotent and do not write to state backward during composition to avoid infinite loops.
 
 ## Guardrails
 
@@ -47,6 +49,6 @@ Common files:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.

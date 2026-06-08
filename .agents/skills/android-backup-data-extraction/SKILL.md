@@ -38,6 +38,8 @@ Start with:
 - Do not enable backups for offline transaction queues without deduplication.
 - Do not include logs containing employee/customer/financial details.
 - Do not change backup policy as part of unrelated UI work.
+- Ensure that both `android:dataExtractionRules` (API 31+) and `android:fullBackupContent` (API 30 and below) are configured for complete coverage.
+- Exclude sensitive data via the Android Keystore system instead of relying solely on backup rules.
 
 ## Verification
 
@@ -48,6 +50,6 @@ Inspect XML and run:
 ```
 
 ## Web Research Directive
-**Last Verified Date:** 2026-06-07
+**Last Verified Date:** 2026-06-08
 
 If the `Last Verified Date` above is more than 30 days older than the current date, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers) to ensure that the APIs, configurations, and best practices are up-to-date with the latest stable releases. Do not rely solely on your pre-training data. If you perform this verification, you MUST update the `Last Verified Date` in this file to the current date to prevent redundant web searches in future executions.
