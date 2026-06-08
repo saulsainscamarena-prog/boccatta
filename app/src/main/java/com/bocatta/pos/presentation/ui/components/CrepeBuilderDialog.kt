@@ -202,7 +202,7 @@ fun CrepeBuilderDialog(
                             else MaterialTheme.colorScheme.tertiary,
                             letterSpacing = 1.sp
                         )
-                        Text(producto.nombre.uppercase(), fontWeight = FontWeight.ExtraBold,
+                        Text(producto.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.ExtraBold,
                             fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                     FilledTonalButton(

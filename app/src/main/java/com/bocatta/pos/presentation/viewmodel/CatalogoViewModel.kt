@@ -33,8 +33,8 @@ class CatalogoViewModel : ViewModel() {
     }
 
     fun opcionesPorNombre(tipo: TipoCatalogo, query: String): List<OpcionCatalogo> {
-        val q = query.lowercase()
-        return opcionesPorTipo(tipo).filter { it.nombre.lowercase().contains(q) }
+        val q = query.lowercase(java.util.Locale.getDefault())
+        return opcionesPorTipo(tipo).filter { it.nombre.lowercase(java.util.Locale.getDefault()).contains(q) }
     }
 
     fun guardar(opcion: OpcionCatalogo) {

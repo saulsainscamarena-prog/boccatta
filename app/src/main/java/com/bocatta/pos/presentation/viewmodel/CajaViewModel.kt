@@ -69,7 +69,7 @@ class CajaViewModel(
         var query = db.collection(FirestoreCollections.CANCELACIONES)
             .whereEqualTo("estado", "pendiente_revision")
         if (sucursal != null) {
-            query = query.whereEqualTo("sucursal", sucursal.lowercase())
+            query = query.whereEqualTo("sucursal", sucursal.lowercase(java.util.Locale.getDefault()))
         }
         listenerCancelaciones = query.addSnapshotListener { snap, _ ->
             numCancelacionesPendientes = snap?.size() ?: 0
@@ -78,11 +78,11 @@ class CajaViewModel(
     }
 
     // Totales del día calculados en tiempo real
-    var totalEfectivoSistema by mutableStateOf(0.0)
+    var totalEfectivoSistema by mutableDoubleStateOf(0.0)
         private set
-    var totalTarjetaSistema by mutableStateOf(0.0)
+    var totalTarjetaSistema by mutableDoubleStateOf(0.0)
         private set
-    var totalGastosSistema by mutableStateOf(0.0)
+    var totalGastosSistema by mutableDoubleStateOf(0.0)
         private set
 
     var sucursalFiltro by mutableStateOf<String?>(null)
@@ -210,7 +210,7 @@ class CajaViewModel(
 
         listenerVentas?.remove()
         listenerVentas = db.collection(FirestoreCollections.VENTAS)
-            .whereEqualTo("sucursal", sucursal.lowercase())
+            .whereEqualTo("sucursal", sucursal.lowercase(java.util.Locale.getDefault()))
             .whereGreaterThanOrEqualTo("fecha", inicioDay)
             .addSnapshotListener { snap, _ ->
                 viewModelScope.launch(Dispatchers.Default) {
@@ -233,7 +233,7 @@ class CajaViewModel(
 
         listenerGastos?.remove()
         listenerGastos = db.collection(FirestoreCollections.GASTOS)
-            .whereEqualTo("sucursal", sucursal.lowercase())
+            .whereEqualTo("sucursal", sucursal.lowercase(java.util.Locale.getDefault()))
             .whereGreaterThanOrEqualTo("fecha", inicioDay)
             .addSnapshotListener { snap, _ ->
                 viewModelScope.launch(Dispatchers.Default) {

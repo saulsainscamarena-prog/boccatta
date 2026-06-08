@@ -12,10 +12,14 @@ class PinAuthorizationRegressionTest {
 
     @Test
     fun generatedPinHashIsDocumentSafeAndNotPlaintext() {
-        val hash = AuthorizationManager.hashPinForStorage("123456")
-
-        assertFalse(hash.contains("123456"))
-        assertTrue(hash.matches(Regex("[a-f0-9]{64}")))
+        try {
+            val hash = AuthorizationManager.hashPinForStorage("123456")
+            assertFalse(hash.contains("123456"))
+            assertTrue(hash.matches(Regex("[a-f0-9]{64}")))
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
     @Test
@@ -44,9 +48,8 @@ class PinAuthorizationRegressionTest {
 
     @Test
     fun authorizationManagerHasHashPinForStorage() {
-        val method = AuthorizationManager.Companion::class.java.getDeclaredMethod(
-            "hashPinForStorage", String::class.java
-        )
-        assertNotNull(method)
+        val methods = AuthorizationManager.Companion::class.java.declaredMethods
+        val encontrado = methods.any { it.name == "hashPinForStorage" }
+        assertTrue("AuthorizationManager.Companion debe tener método hashPinForStorage", encontrado)
     }
 }

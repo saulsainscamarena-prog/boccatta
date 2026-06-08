@@ -112,7 +112,7 @@ fun AdminScreen(
                         )
                         Text(
                             if (seccionActiva == "dashboard") stringResource(R.string.admin_panel_general)
-                            else stringResource(R.string.admin_panel_seccion, seccionActiva!!.uppercase()),
+                            else stringResource(R.string.admin_panel_seccion, seccionActiva!!.uppercase(java.util.Locale.getDefault())),
                             color = MaterialTheme.colorScheme.onPrimary.copy(0.7f),
                             fontSize = 10.sp
                         )
@@ -578,7 +578,7 @@ private fun TabDashboard(
                             Text(stringResource(R.string.admin_atendio, v.atendio), style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline)
                         }
-                        BocattaBadge(v.sucursal.uppercase(), MaterialTheme.colorScheme.primary)
+                        BocattaBadge(v.sucursal.uppercase(java.util.Locale.getDefault()), MaterialTheme.colorScheme.primary)
                     }
                 }
             }

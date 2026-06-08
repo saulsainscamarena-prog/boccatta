@@ -21,7 +21,7 @@ class AuditoriaViewModel : BaseViewModel() {
         private set
     var usuarios = mutableStateListOf<Usuario>()
         private set
-    var totalGastosHoy by mutableStateOf(0.0)
+    var totalGastosHoy by mutableDoubleStateOf(0.0)
         private set
     var historialVentasV2 = mutableStateListOf<VentaV2>()
         private set

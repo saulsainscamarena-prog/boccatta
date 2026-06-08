@@ -86,7 +86,7 @@ private fun ComprasCard(compra: RegistroCompraV2) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(compra.insumoId, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("$${String.format("%.2f", compra.precioTotal)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+                Text("$${String.format(java.util.Locale.getDefault(), "%.2f", compra.precioTotal)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
             }
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -96,7 +96,7 @@ private fun ComprasCard(compra: RegistroCompraV2) {
                 }
                 Column {
                     Text("Precio Unit.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$${String.format("%.2f", compra.precioUnitarioCompra)}", fontWeight = FontWeight.Medium)
+                    Text("$${String.format(java.util.Locale.getDefault(), "%.2f", compra.precioUnitarioCompra)}", fontWeight = FontWeight.Medium)
                 }
                 Column {
                     Text("Fecha", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

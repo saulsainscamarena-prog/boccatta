@@ -106,7 +106,7 @@ private fun ConfigGroupSection(
     onSelectionChanged: (List<String>) -> Unit
 ) {
     Text(
-        group.title.uppercase(),
+        group.title.uppercase(java.util.Locale.getDefault()),
         fontWeight = FontWeight.Black,
         fontSize = 14.sp,
         color = accentColor,

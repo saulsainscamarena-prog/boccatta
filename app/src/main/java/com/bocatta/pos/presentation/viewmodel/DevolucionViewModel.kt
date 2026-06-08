@@ -53,7 +53,7 @@ class DevolucionViewModel : BaseViewModel() {
                 
                 // 1. Obtener los productos de la venta para saber qué stock restaurar
                 val ventaDoc = db.collection(FirestoreCollections.VENTAS).document(solicitud.ventaId).get().await()
-                val sucursal = ventaDoc.getString("sucursal")?.lowercase() ?: "atlixco"
+                val sucursal = ventaDoc.getString("sucursal")?.lowercase(java.util.Locale.getDefault()) ?: "atlixco"
                 @Suppress("UNCHECKED_CAST")
                 val itemsVendidos = (ventaDoc.get("productos") as? List<Map<String, Any>>)?.map { data ->
                     ItemVendidoV2(
@@ -133,7 +133,7 @@ class DevolucionViewModel : BaseViewModel() {
             val inicioDia = System.currentTimeMillis() - 86_400_000L // últimas 24h
             try {
                 val snap = db.collection(FirestoreCollections.VENTAS)
-                    .whereEqualTo("sucursal", sucursal.lowercase())
+                    .whereEqualTo("sucursal", sucursal.lowercase(java.util.Locale.getDefault()))
                     .whereGreaterThanOrEqualTo("fecha", inicioDia)
                     .get().await()
                 

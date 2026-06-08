@@ -51,7 +51,7 @@ fun ConfirmacionVentaDialog(
                 Text("Codigo de ticket:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(vmV2.ultimoCodigoTicket, fontWeight = FontWeight.Black, fontSize = 28.sp, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
-                Text("en ${sucursalActual.uppercase()}", textAlign = TextAlign.Center)
+                Text("en ${sucursalActual.uppercase(java.util.Locale.getDefault())}", textAlign = TextAlign.Center)
             }
         },
         confirmButton = {
@@ -125,7 +125,7 @@ fun BuscarClienteDialog(
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Surface(color = MaterialTheme.colorScheme.primary.copy(0.1f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text(c.nombre.firstOrNull()?.uppercase() ?: "?", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                        Text(c.nombre.firstOrNull()?.uppercase(java.util.Locale.getDefault()) ?: "?", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                                 Spacer(Modifier.width(12.dp))
@@ -227,7 +227,7 @@ fun PagoSheetV2(
 ) {
     var pagaCon by remember { mutableStateOf("") }
     var propinaCustom by remember { mutableStateOf("") }
-    var propinaPorcentaje by remember { mutableStateOf(0) }
+    var propinaPorcentaje by remember { mutableIntStateOf(0) }
     var notaOrden by remember { mutableStateOf("") }
     var mostrarSplitDialog by remember { mutableStateOf(false) }
     var mostrarOpcionesOrden by remember { mutableStateOf(false) }
@@ -705,7 +705,7 @@ fun DialogMerma(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            productoSeleccionado?.nombre?.uppercase() ?: "SELECCIONAR PRODUCTO",
+                            productoSeleccionado?.nombre?.uppercase(java.util.Locale.getDefault()) ?: "SELECCIONAR PRODUCTO",
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -716,7 +716,7 @@ fun DialogMerma(
                     ) {
                         productos.forEach { prod ->
                             DropdownMenuItem(
-                                text = { Text(prod.nombre.uppercase(), fontWeight = FontWeight.Bold) },
+                                text = { Text(prod.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Bold) },
                                 onClick = {
                                     productoSeleccionado = prod
                                     expandidoMenu = false

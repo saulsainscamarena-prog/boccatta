@@ -37,7 +37,7 @@ fun DialogPesoProducto(
     onDismiss: () -> Unit,
     onConfirmar: (gramos: Double) -> Unit
 ) {
-    val precioKg = producto.precioVenta[sucursal.lowercase()] ?: 0.0
+    val precioKg = producto.precioVenta[sucursal.lowercase(java.util.Locale.getDefault())] ?: 0.0
     var gramosTexto by remember { mutableStateOf("") }
     val gramos = gramosTexto.toDoubleOrNull() ?: 0.0
     val precioEstimado = if (gramos > 0) precioKg * (gramos / 1000.0) else 0.0
@@ -59,7 +59,7 @@ fun DialogPesoProducto(
                     fontSize = 18.sp
                 )
                 Text(
-                    "Precio: $${String.format("%.2f", precioKg)} / kg",
+                    "Precio: $${String.format(java.util.Locale.getDefault(), "%.2f", precioKg)} / kg",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -121,7 +121,7 @@ fun DialogPesoProducto(
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 ) {
-                                    append("$${String.format("%.2f", precioEstimado)}")
+                                    append("$${String.format(java.util.Locale.getDefault(), "%.2f", precioEstimado)}")
                                 }
                             }
                         }

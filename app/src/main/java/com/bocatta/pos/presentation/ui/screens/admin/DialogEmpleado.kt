@@ -54,15 +54,15 @@ fun DialogEmpleado(
     var pinNuevo by remember { mutableStateOf<String?>(null) }
 
     // Salario state
-    var salarioBase by remember { mutableStateOf(0.0) }
+    var salarioBase by remember { mutableDoubleStateOf(0.0) }
     var tipoPago by remember { mutableStateOf(TipoPago.DIARIO) }
     var formaPago by remember { mutableStateOf(FormaPago.EFECTIVO) }
     var banco by remember { mutableStateOf("") }
     var clabe by remember { mutableStateOf("") }
     var cuenta by remember { mutableStateOf("") }
-    var deduccionIsr by remember { mutableStateOf(0.0) }
-    var deduccionImss by remember { mutableStateOf(0.0) }
-    var deduccionPrestamo by remember { mutableStateOf(0.0) }
+    var deduccionIsr by remember { mutableDoubleStateOf(0.0) }
+    var deduccionImss by remember { mutableDoubleStateOf(0.0) }
+    var deduccionPrestamo by remember { mutableDoubleStateOf(0.0) }
 
     // Cargar permisos y sueldos al iniciar
     LaunchedEffect(empleado.id) {

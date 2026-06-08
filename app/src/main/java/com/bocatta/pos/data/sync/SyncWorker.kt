@@ -431,7 +431,7 @@ class SyncWorker(
 
         val items = JSONArray(venta.carritoJson)
 
-        val sucursalId = venta.sucursal.lowercase()
+        val sucursalId = venta.sucursal.lowercase(java.util.Locale.getDefault())
 
 
 

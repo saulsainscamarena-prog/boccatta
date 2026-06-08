@@ -30,7 +30,7 @@ fun TabCatalogos(vm: CatalogoViewModel) {
     val opciones by vm.opciones.collectAsStateWithLifecycle()
 
     val filtered = if (searchQuery.isBlank()) opciones
-    else opciones.filter { it.nombre.lowercase().contains(searchQuery.lowercase()) }
+    else opciones.filter { it.nombre.lowercase(java.util.Locale.getDefault()).contains(searchQuery.lowercase(java.util.Locale.getDefault())) }
 
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing, 
         floatingActionButton = {

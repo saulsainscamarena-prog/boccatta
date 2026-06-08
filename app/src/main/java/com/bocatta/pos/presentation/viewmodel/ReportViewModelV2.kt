@@ -22,21 +22,21 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
     private var mermaListener: ListenerRegistration? = null
     private var stockAlertListener: ListenerRegistration? = null
 
-    var ventasBrutas by mutableStateOf(0.0)
+    var ventasBrutas by mutableDoubleStateOf(0.0)
         private set
-    var totalGastos by mutableStateOf(0.0)
+    var totalGastos by mutableDoubleStateOf(0.0)
         private set
-    var totalMermas by mutableStateOf(0.0)
+    var totalMermas by mutableDoubleStateOf(0.0)
         private set
-    var costoProduccionTeorico by mutableStateOf(0.0)
+    var costoProduccionTeorico by mutableDoubleStateOf(0.0)
         private set
-    var utilidadNeta by mutableStateOf(0.0)
+    var utilidadNeta by mutableDoubleStateOf(0.0)
         private set
-    var ventasEfectivo by mutableStateOf(0.0)
+    var ventasEfectivo by mutableDoubleStateOf(0.0)
         private set
-    var ventasTarjeta by mutableStateOf(0.0)
+    var ventasTarjeta by mutableDoubleStateOf(0.0)
         private set
-    var ticketPromedio by mutableStateOf(0.0)
+    var ticketPromedio by mutableDoubleStateOf(0.0)
         private set
     var mejorVendedor by mutableStateOf("N/A")
         private set
@@ -59,7 +59,7 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
         mermaListener?.remove()
         stockAlertListener?.remove()
         
-        val sucursalId = sucursal.lowercase().trim()
+        val sucursalId = sucursal.lowercase(java.util.Locale.getDefault()).trim()
         val hoy = java.util.Calendar.getInstance().apply { 
             set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0); set(java.util.Calendar.SECOND, 0) 
             set(java.util.Calendar.MILLISECOND, 0)
@@ -196,7 +196,7 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
                     snap.documents.forEach { doc ->
                         val stock = doc.getDouble("cantidadEnBase") ?: doc.getDouble("cantidadDisponible") ?: 0.0
                         if (stock < 10.0) { // Umbral crÑtico genÑrico V2
-                            val nombre = (doc.getString("insumoId") ?: doc.id.removePrefix("${sucursalId}_")).replace("_", " ").uppercase()
+                            val nombre = (doc.getString("insumoId") ?: doc.id.removePrefix("${sucursalId}_")).replace("_", " ").uppercase(java.util.Locale.getDefault())
                             insumosPorResurtir[nombre] = stock
                         }
                     }
@@ -223,7 +223,7 @@ class ReportViewModelV2(private val repository: ReportRepository = ReportReposit
         val sb = StringBuilder()
         sb.append("\uD83D\uDCC8 *BOCATTA - REPORTE DE CIERRE V2* \uD83D\uDCC8\n")
         sb.append("\uD83D\uDCC5 Fecha: ${sdf.format(java.util.Date())}\n")
-        sb.append("\uD83D\uDD0D Sucursal: ${sucursal.uppercase()}\n")
+        sb.append("\uD83D\uDD0D Sucursal: ${sucursal.uppercase(java.util.Locale.getDefault())}\n")
         sb.append("\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n")
         sb.append("\uD83D\uDCC5 Ventas Brutas: $${"%.2f".format(ventasBrutas)}\n")
         sb.append("\uD83D\uDCCB Gastos Hoy: $${"%.2f".format(totalGastos)}\n")

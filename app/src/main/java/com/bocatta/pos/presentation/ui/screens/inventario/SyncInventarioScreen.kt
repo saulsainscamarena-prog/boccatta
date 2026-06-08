@@ -130,7 +130,7 @@ fun SyncInventarioScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(insumo.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
+                            Text(insumo.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
                             StatusBadgePremium(
                                 text = "${stock.toInt()} UNIDADES",
                                 color = if (stock > 10) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary

@@ -69,7 +69,7 @@ fun AperturaInventarioScreen(
                 insumosFallback
             }
 
-            val sucursalId = session.sucursalActual.lowercase()
+            val sucursalId = session.sucursalActual.lowercase(java.util.Locale.getDefault())
             itemsConteo.clear()
             finalConfig.forEach { (id, nombre) ->
                 try {
@@ -103,7 +103,7 @@ fun AperturaInventarioScreen(
                 title = { 
                     Column {
                         Text("CARGA DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("AUDITORIA DE STOCK INICIAL - ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("AUDITORIA DE STOCK INICIAL - ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -182,7 +182,7 @@ fun AperturaInventarioScreen(
                             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Column {
-                                        Text(item.nombre.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
+                                        Text(item.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
                                         Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
                                     }
                                     

@@ -184,7 +184,7 @@ class SalarioViewModel(
         return buildString {
             append("💼 *BOCATTA - REPORTE DE NÓMINA* 💼\n")
             append("📅 Periodo: ${sdf.format(Date(inicio))} - ${sdf.format(Date(fin))}\n")
-            append("🏪 Sucursal: ${sucursal.uppercase()}\n")
+            append("🏪 Sucursal: ${sucursal.uppercase(java.util.Locale.getDefault())}\n")
             append("────────────────────\n")
             append("👥 Empleados: ${usuarios.size}\n")
             append("✅ Pagados: ${pagados.size}\n")

@@ -15,20 +15,20 @@ object PricingEngine {
 
     fun calcularPrecioCrepa(precioBase: Double, config: ConfigResult, preciosExtra: Map<String, Double> = emptyMap()): Double {
         val base = BigDecimal.valueOf(precioBase)
-        val toppings = (config["toppings"] ?: emptyList()).map { it.lowercase() }
+        val toppings = (config["toppings"] ?: emptyList()).map { it.lowercase(java.util.Locale.getDefault()) }
         val bases = (config["base"] ?: emptyList())
-            .map { it.lowercase() }
+            .map { it.lowercase(java.util.Locale.getDefault()) }
             .filter { it !in BASES_IGNORADAS }
 
         val premiumToppings = toppings.filter { t ->
-            preciosExtra.keys.any { k -> k.lowercase() == t } || TOPPINGS_PREMIUM.any { t.contains(it) }
+            preciosExtra.keys.any { k -> k.lowercase(java.util.Locale.getDefault()) == t } || TOPPINGS_PREMIUM.any { t.contains(it) }
         }
         val normalToppingsCount = toppings.size - premiumToppings.size
         val normalIngredientsCount = bases.size + normalToppingsCount
 
         val extraPorCantidad = if (normalIngredientsCount >= INGREDIENTES_NORMALES_UMBRAL) PRECIO_EXTRA_TRES_MAS else BigDecimal.ZERO
         val extraPremium = premiumToppings.fold(BigDecimal.ZERO) { acc, t ->
-            val v = preciosExtra.entries.find { it.key.lowercase() == t }?.value ?: PRECIO_TOPPING_PREMIUM_DEFAULT
+            val v = preciosExtra.entries.find { it.key.lowercase(java.util.Locale.getDefault()) == t }?.value ?: PRECIO_TOPPING_PREMIUM_DEFAULT
             acc + BigDecimal.valueOf(v)
         }
 
@@ -38,13 +38,13 @@ object PricingEngine {
     fun calcularPrecioFrappe(precioBase: Double, config: ConfigResult): Double {
         val base = BigDecimal.valueOf(precioBase)
         val tieneBase = (config["base"]?.firstOrNull())
-            ?.let { it.lowercase() !in listOf("sin base", "") } == true
+            ?.let { it.lowercase(java.util.Locale.getDefault()) !in listOf("sin base", "") } == true
         val total = if (tieneBase) base + PRECIO_EXTRA_BASE_FRAPPE else base
         return total.setScale(2, RoundingMode.HALF_UP).toDouble()
     }
 
     fun calcularPrecioProducto(precioBase: Double, categoria: String, config: ConfigResult, preciosExtra: Map<String, Double> = emptyMap()): Double {
-        val cat = categoria.lowercase()
+        val cat = categoria.lowercase(java.util.Locale.getDefault())
         return when {
             cat.contains("crepa") || cat == "combos" -> calcularPrecioCrepa(precioBase, config, preciosExtra)
             cat.contains("frape") || cat.contains("frappe") -> calcularPrecioFrappe(precioBase, config)
@@ -52,7 +52,7 @@ object PricingEngine {
                 val base = BigDecimal.valueOf(precioBase)
                 val extras = config.entries.fold(BigDecimal.ZERO) { acc, (_, values) ->
                     acc + values.fold(BigDecimal.ZERO) { inner, v ->
-                        val extra = preciosExtra.entries.find { it.key.lowercase() == v.lowercase() }?.value ?: 0.0
+                        val extra = preciosExtra.entries.find { it.key.lowercase(java.util.Locale.getDefault()) == v.lowercase(java.util.Locale.getDefault()) }?.value ?: 0.0
                         inner + BigDecimal.valueOf(extra)
                     }
                 }
@@ -74,11 +74,11 @@ object PricingEngine {
         costoToppingExtra: Double = 10.0,
         @Suppress("UNUSED_PARAMETER") preciosExtra: Map<String, Double> = emptyMap()
     ): Double {
-        val cat = categoria.lowercase()
+        val cat = categoria.lowercase(java.util.Locale.getDefault())
         return when {
             cat.contains("crepa") || cat == "combos" -> {
                 val basesCount = base?.split(",")
-                    ?.map { it.trim().lowercase() }
+                    ?.map { it.trim().lowercase(java.util.Locale.getDefault()) }
                     ?.count { it.isNotBlank() && it != "sin base" }
                     ?: 0
                 val normales = toppings.count { !esPremiumTopping(it) }
@@ -90,7 +90,7 @@ object PricingEngine {
                     .setScale(2, RoundingMode.HALF_UP).toDouble()
             }
             cat.contains("frape") || cat.contains("frappe") -> {
-                val tieneBase = base?.let { it.lowercase() !in listOf("sin base", "") } == true
+                val tieneBase = base?.let { it.lowercase(java.util.Locale.getDefault()) !in listOf("sin base", "") } == true
                 val total = if (tieneBase) precioBase + PRECIO_EXTRA_BASE_FRAPPE.toDouble() else precioBase
                 BigDecimal.valueOf(total).setScale(2, RoundingMode.HALF_UP).toDouble()
             }
@@ -107,7 +107,7 @@ object PricingEngine {
 
     /** Determina si un topping es premium (oreo, nuez, bombón). */
     fun esPremiumTopping(nombre: String): Boolean {
-        val t = nombre.lowercase()
+        val t = nombre.lowercase(java.util.Locale.getDefault())
         return TOPPINGS_PREMIUM.any { t.contains(it) }
     }
 }

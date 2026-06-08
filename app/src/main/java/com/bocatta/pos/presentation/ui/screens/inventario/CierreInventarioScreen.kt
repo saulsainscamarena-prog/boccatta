@@ -56,7 +56,7 @@ fun CierreInventarioScreen(
     LaunchedEffect(Unit) {
         cargando = true
         try {
-            val sucursalId = session.sucursalActual.lowercase()
+            val sucursalId = session.sucursalActual.lowercase(java.util.Locale.getDefault())
             itemsConteo.clear()
             insumosFiltros.forEach { (id, nombre) ->
                 val stockRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalId}_$id").get().await()
@@ -80,7 +80,7 @@ fun CierreInventarioScreen(
                 title = {
                     Column {
                         Text("CIERRE DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("RECUENTO FÍSICO FINAL · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("RECUENTO FÍSICO FINAL · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
@@ -106,7 +106,7 @@ fun CierreInventarioScreen(
                                 cargando = true
                                 try {
                                     val batch = db.batch()
-                                    val sucursalId = session.sucursalActual.lowercase()
+                                    val sucursalId = session.sucursalActual.lowercase(java.util.Locale.getDefault())
                                     itemsConteo.forEach { item ->
                                         val fisico = item.conteoFisico.toDoubleOrNull() ?: return@forEach
                                         val dif = item.stockSistema - fisico
@@ -173,7 +173,7 @@ fun CierreInventarioScreen(
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Column {
-                                    Text(item.nombre.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
+                                    Text(item.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
                                     Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
                                 }
                                 

@@ -265,6 +265,9 @@ class FakeProductRepository : IProductRepository {
     override suspend fun getProductType(id: String): String? = products[id]?.type
 
     override suspend fun getProductBaseUnit(productId: String): String? = products[productId]?.baseUnit
+
+    override fun getSalesProducts(): Flow<List<SalesInventoryProductV2>> =
+        MutableStateFlow<List<SalesInventoryProductV2>>(emptyList()).asStateFlow()
 }
 
 class FakeInventoryRepository : IInventoryRepository {
@@ -335,4 +338,6 @@ class FakeInventoryRepository : IInventoryRepository {
         movements.add(insumoId to (cantidadComprada * contenidoEquivalente))
         return true
     }
+
+    override fun getStockAlertsFlow(branchId: String): Flow<Map<String, Double>> = kotlinx.coroutines.flow.flowOf(emptyMap())
 }

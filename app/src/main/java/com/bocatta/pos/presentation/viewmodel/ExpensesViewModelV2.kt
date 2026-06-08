@@ -41,7 +41,7 @@ class ExpensesViewModelV2 : BaseViewModel() {
 
         expensesListener?.remove()
         expensesListener = db.collection(FirestoreCollections.GASTOS)
-            .whereEqualTo("sucursal", sucursal.lowercase())
+            .whereEqualTo("sucursal", sucursal.lowercase(java.util.Locale.getDefault()))
             .addSnapshotListener { snap, _ ->
                 if (snap != null) {
                     gastos.clear()
@@ -88,7 +88,7 @@ class ExpensesViewModelV2 : BaseViewModel() {
                     monto = monto,
                     categoria = categoria,
                     fecha = System.currentTimeMillis(),
-                    sucursal = sucursal.lowercase(),
+                    sucursal = sucursal.lowercase(java.util.Locale.getDefault()),
                     usuarioId = usuarioId
                 )
 

@@ -32,16 +32,16 @@ fun AdminPinDialog(
                 onClick = { onConfirm(pin) },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
             ) {
-                Text("VALIDAR PIN", fontWeight = FontWeight.Bold)
+                Text(androidx.compose.ui.res.stringResource(com.bocatta.pos.R.string.admin_pin_validar), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("CANCELAR", color = Color.White.copy(0.6f))
+                Text(androidx.compose.ui.res.stringResource(com.bocatta.pos.R.string.admin_pin_cancelar), color = Color.White.copy(0.6f))
             }
         },
         title = {
-            Text(titulo.uppercase(), fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Text(titulo.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, fontSize = 18.sp)
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -50,7 +50,7 @@ fun AdminPinDialog(
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) pin = it },
-                    label = { Text("PIN DE 4 DÍGITOS") },
+                    label = { Text(androidx.compose.ui.res.stringResource(com.bocatta.pos.R.string.admin_pin_label)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     modifier = Modifier.width(200.dp),

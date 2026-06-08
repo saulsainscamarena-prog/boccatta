@@ -126,7 +126,7 @@ class EmployeeViewModelV2(
                         "userId" to id,
                         "displayName" to nombre,
                         "role" to rol.name,
-                        "branchId" to sucursal.lowercase(),
+                        "branchId" to sucursal.lowercase(java.util.Locale.getDefault()),
                         "active" to true,
                         "updatedAt" to System.currentTimeMillis()
                     )
@@ -166,7 +166,7 @@ class EmployeeViewModelV2(
                                 "userId" to empleado.id,
                                 "displayName" to empleado.nombre,
                                 "role" to empleado.rol,
-                                "branchId" to empleado.sucursalAsignada.lowercase(),
+                                "branchId" to empleado.sucursalAsignada.lowercase(java.util.Locale.getDefault()),
                                 "active" to true,
                                 "updatedAt" to System.currentTimeMillis()
                             )

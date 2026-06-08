@@ -53,7 +53,7 @@ class SolicitudViewModel(
         viewModelScope.launch {
             try {
                 if (repository.responder(id, estado.name, respondidoPor)) {
-                    mensajeExito = "Solicitud ${estado.name.lowercase()}"
+                    mensajeExito = "Solicitud ${estado.name.lowercase(java.util.Locale.getDefault())}"
                 }
             } catch (e: Exception) { mensajeError = "Error: ${e.message}" }
         }

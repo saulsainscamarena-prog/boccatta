@@ -67,7 +67,7 @@ fun GastosScreen(
                 title = {
                     Column {
                         Text("GASTOS Y OPERACIÓN", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
-                        Text("REGISTRO DE SALIDAS · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("REGISTRO DE SALIDAS · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = {
@@ -114,7 +114,7 @@ fun GastosScreen(
                                             contenidoPorUnidad = primera?.contenidoSugerido?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: ""
                                         }
                                     },
-                                    label = { Text(insumo.nombre.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black) },
+                                    label = { Text(insumo.nombre.uppercase(java.util.Locale.getDefault()), fontSize = 11.sp, fontWeight = FontWeight.Black) },
                                     shape = RoundedCornerShape(20.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -381,8 +381,8 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(gasto.descripcion.uppercase(), fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1, color = Color.White)
-                StatusBadgePremium(gasto.categoria.uppercase(), color)
+                Text(gasto.descripcion.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1, color = Color.White)
+                StatusBadgePremium(gasto.categoria.uppercase(java.util.Locale.getDefault()), color)
             }
             Text("-$${"%.2f".format(gasto.monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp)
             IconButton(onClick = onEliminar) {

@@ -200,7 +200,7 @@ private fun ComboCard(
             Spacer(Modifier.height(8.dp))
 
             val preciosStr = combo.precioVenta.entries.joinToString(" · ") { (suc, p) ->
-                "${suc.replaceFirstChar { it.uppercase() }}: $${"%.0f".format(p)}"
+                "${suc.replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }}: $${"%.0f".format(p)}"
             }
             if (preciosStr.isNotBlank()) {
                 Text(preciosStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -313,7 +313,7 @@ private fun DialogoCombo(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    suc.replaceFirstChar { it.uppercase() },
+                                    suc.replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) },
                                     modifier = Modifier.width(80.dp)
                                 )
                                 OutlinedTextField(

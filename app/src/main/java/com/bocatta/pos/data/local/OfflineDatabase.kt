@@ -436,7 +436,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val db = writableDatabase
         db.beginTransaction()
         try {
-            val sucursalId = ventaBase.sucursal.lowercase()
+            val sucursalId = ventaBase.sucursal.lowercase(java.util.Locale.getDefault())
             val ultimoPersistido = obtenerUltimoTicket(db, sucursalId)
             val ticket = maxOf(ultimoPersistido, legacyUltimoTicket) + 1L
             val ventaConfirmada = ventaBase.copy(
@@ -669,7 +669,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     fun obtenerTurnoContingenciaAbierto(sucursal: String): TurnoContingenciaLocal? {
-        val sucursalId = sucursal.lowercase()
+        val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
         return readableDatabase.query(
             TABLE_TURNOS_CONTINGENCIA,
             null,
@@ -724,7 +724,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             TABLE_VENTAS,
             null,
             "sucursal = ? AND fecha >= ?",
-            arrayOf(sucursal.lowercase(), desde.toString()),
+            arrayOf(sucursal.lowercase(java.util.Locale.getDefault()), desde.toString()),
             null,
             null,
             "fecha ASC"

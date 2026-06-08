@@ -23,7 +23,7 @@ class DashboardBodegaViewModel : BaseViewModel() {
         private set
     var totalInsumos by mutableIntStateOf(0)
         private set
-    var promedioStock by mutableStateOf(0.0)
+    var promedioStock by mutableDoubleStateOf(0.0)
         private set
     var cantidadCriticos by mutableIntStateOf(0)
         private set

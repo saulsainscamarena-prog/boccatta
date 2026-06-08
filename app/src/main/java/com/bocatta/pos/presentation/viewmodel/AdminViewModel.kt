@@ -145,7 +145,7 @@ class AdminViewModel(
 
         private set
 
-    var totalGastosHoy by mutableStateOf(0.0)
+    var totalGastosHoy by mutableDoubleStateOf(0.0)
 
         private set
 

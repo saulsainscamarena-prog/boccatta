@@ -62,7 +62,7 @@ class SyncInventarioViewModel : ViewModel() {
     fun syncToBranch(insumoId: String, sucursalId: String, cantidad: Double) {
         viewModelScope.launch {
             try {
-                val sucursalNormalizada = sucursalId.lowercase().trim()
+                val sucursalNormalizada = sucursalId.lowercase(java.util.Locale.getDefault()).trim()
                 val batch = db.batch()
                 val branchRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
                     .document("${sucursalNormalizada}_$insumoId")

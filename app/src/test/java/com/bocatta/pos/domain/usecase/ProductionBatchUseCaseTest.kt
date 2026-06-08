@@ -130,5 +130,7 @@ class ProductionBatchUseCaseTest {
             costoTotal: Double,
             userId: String
         ): Boolean = true
+
+        override fun getStockAlertsFlow(branchId: String): Flow<Map<String, Double>> = flowOf(emptyMap())
     }
 }

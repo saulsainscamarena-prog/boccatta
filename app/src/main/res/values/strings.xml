@@ -259,4 +259,7 @@
     <string name="admin_btn_abrir_reportes">ABRIR REPORTES DE INVENTARIO</string>
     <string name="admin_inicializando">Inicializando catalogo y configuracion inicial…</string>
     <string name="admin_diagnostico_subject">Diagnostico Bocatta POS</string>
+    <string name="admin_pin_validar">VALIDAR PIN</string>
+    <string name="admin_pin_cancelar">CANCELAR</string>
+    <string name="admin_pin_label">PIN DE 4 DÍGITOS</string>
 </resources>

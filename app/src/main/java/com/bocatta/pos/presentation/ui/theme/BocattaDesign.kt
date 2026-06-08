@@ -9,7 +9,7 @@ object BocattaDesign {
      * Devuelve el color corporativo asociado a cada categoria de menu.
      */
     fun getColorPorCategoria(categoria: String?): Color {
-        return when (categoria?.lowercase()) {
+        return when (categoria?.lowercase(java.util.Locale.getDefault())) {
             "crepas", "crepa" -> Color(0xFFFF2D55)
             "snacks", "snack" -> Color(0xFFFF5E3A)
             "postres", "postre" -> Color(0xFFBF5AF2)

@@ -186,7 +186,7 @@ class AuthorizationManager(
                 "nombreEmpleado" to empleadoNombre,
                 "accion" to accion,
                 "responsable" to responsable,
-                "sucursal" to sucursal.lowercase(),
+                "sucursal" to sucursal.lowercase(java.util.Locale.getDefault()),
                 "detalles" to detalles,
                 "fecha" to System.currentTimeMillis(),
                 "autorizoConPin" to (autorizoConPin ?: "")

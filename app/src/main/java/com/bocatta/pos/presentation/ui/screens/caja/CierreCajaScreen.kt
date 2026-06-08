@@ -72,7 +72,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 title = {
                     Column {
                         Text(stringResource(R.string.cierre_titulo), fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.cierre_subtitulo, session.sucursalActual.uppercase()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(stringResource(R.string.cierre_subtitulo, session.sucursalActual.uppercase(java.util.Locale.getDefault())), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = {
@@ -123,7 +123,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                             Text(stringResource(R.string.cierre_cargando_turno), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             Text(
-                                stringResource(R.string.cierre_validando, session.sucursalActual.uppercase()),
+                                stringResource(R.string.cierre_validando, session.sucursalActual.uppercase(java.util.Locale.getDefault())),
                                 color = MaterialTheme.colorScheme.onSurface.copy(0.5f),
                                 textAlign = TextAlign.Center
                             )

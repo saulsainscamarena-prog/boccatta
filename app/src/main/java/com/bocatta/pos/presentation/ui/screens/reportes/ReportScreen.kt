@@ -45,7 +45,7 @@ fun ReportScreen(vmV2: ReportViewModelV2, sucursal: String, onBack: () -> Unit) 
         topBar = {
             BocattaTopBar(
                 title = "Métricas",
-                subtitle = sucursal.uppercase(),
+                subtitle = sucursal.uppercase(java.util.Locale.getDefault()),
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = {
@@ -300,7 +300,7 @@ private fun TabProductos(vmV2: ReportViewModelV2) {
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    prod.nombre.first().uppercase(),
+                                    prod.nombre.first().uppercase(java.util.Locale.getDefault()),
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp

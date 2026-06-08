@@ -60,7 +60,7 @@ fun InventoryScreen(
                     title = {
                         Column {
                             Text("GESTIÓN DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 2.sp, color = Color.White)
-                            Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         }
                     },
                     navigationIcon = {
@@ -124,7 +124,7 @@ fun InventoryScreen(
                             val insumo = vm.maestroInsumos[id]
                             val stockMinimo = insumo?.stockMinimo ?: 10.0
                             InventoryCardPremium(
-                                nombre = insumo?.nombre ?: id.replace("_", " ").uppercase(),
+                                nombre = insumo?.nombre ?: id.replace("_", " ").uppercase(java.util.Locale.getDefault()),
                                 cantidad = cant,
                                 unidad = insumo?.unidadBase ?: if(id.contains("masa") || id.contains("helado")) "unidades/lt" else "unidades",
                                 stockMinimo = stockMinimo
@@ -175,7 +175,7 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, stock
             Spacer(Modifier.width(20.dp))
             Column(Modifier.weight(1f)) {
                 Text(nombre, fontWeight = FontWeight.Black, fontSize = 14.sp, color = Color.White, letterSpacing = 1.sp)
-                Text("${"%.1f".format(cantidad)} $unidad".uppercase(), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) colorEstado else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
+                Text("${"%.1f".format(cantidad)} $unidad".uppercase(java.util.Locale.getDefault()), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) colorEstado else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
                 Text("Minimo: ${"%.1f".format(stockMinimo)} $unidad", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.45f))
             }
             if (bajoStock) {

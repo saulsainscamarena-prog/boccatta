@@ -88,7 +88,7 @@ fun AjustesAlmacenScreen(
                                 color = Color.White
                             )
                             Text(
-                                "COMPRAS RÁPIDAS Y CONTROL DE MERMAS · ${session.sucursalActual.uppercase()}",
+                                "COMPRAS RÁPIDAS Y CONTROL DE MERMAS · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold,
@@ -208,7 +208,7 @@ fun AjustesAlmacenScreen(
                                                     color = Color.White
                                                 )
                                                 Text(
-                                                    "${"%.2f".format(stockActual)} ${insumo.unidadBase}".uppercase(),
+                                                    "${"%.2f".format(stockActual)} ${insumo.unidadBase}".uppercase(java.util.Locale.getDefault()),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = if (bajoStock) colorEstado else Color.White.copy(0.6f),
                                                     fontWeight = FontWeight.Bold

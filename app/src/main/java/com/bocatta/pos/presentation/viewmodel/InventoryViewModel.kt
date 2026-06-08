@@ -36,7 +36,7 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
     private var sucursalActiva: String? = null
 
     fun configurarSucursal(sucursal: String) {
-        sucursalActiva = sucursal.lowercase()
+        sucursalActiva = sucursal.lowercase(java.util.Locale.getDefault())
         escucharInventario()
         escucharMaestro()
     }
@@ -154,9 +154,9 @@ class InventoryViewModel(private val repo: InventoryRepository = InventoryReposi
         viewModelScope.launch {
             cargando = true
             try {
-                dataSeeder.cargarStockEmergencia(sucursal.lowercase())
+                dataSeeder.cargarStockEmergencia(sucursal.lowercase(java.util.Locale.getDefault()))
                     .onSuccess { 
-                        mensajeExito = "✅ Stock de emergencia cargado para ${sucursal.uppercase()}"
+                        mensajeExito = "✅ Stock de emergencia cargado para ${sucursal.uppercase(java.util.Locale.getDefault())}"
                         configurarSucursal(sucursal)
                     }
                     .onFailure { e -> mensajeError = "Error: ${e.message}" }

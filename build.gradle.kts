@@ -24,7 +24,7 @@ val mojibakeCheckedExtensions = setOf(
     "toml",
     "yml",
     "yaml",
-    "ps1",
+    "ps1"
 )
 val mojibakeCheckedFileNames = setOf(".editorconfig", ".gitattributes")
 val mojibakeExcludedDirectories = setOf(
@@ -35,7 +35,7 @@ val mojibakeExcludedDirectories = setOf(
     "bocatta-windows-port",
     "dead_code_quarantine",
     "testsprite_tests",
-    "audit-avd",
+    "audit-avd"
 )
 val mojibakeExcludedFiles = setOf("build_info.txt")
 
@@ -68,7 +68,7 @@ tasks.register("checkMojibake") {
                 buildString {
                     appendLine("Mojibake sospechoso detectado:")
                     findings.forEach { appendLine(it) }
-                },
+                }
             )
         }
     }

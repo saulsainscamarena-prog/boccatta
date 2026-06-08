@@ -268,7 +268,7 @@ private fun ColorField(
                 OutlinedTextField(
                     value = value,
                     onValueChange = { text ->
-                        val cleaned = text.trim().uppercase()
+                        val cleaned = text.trim().uppercase(java.util.Locale.getDefault())
                         onValueChange(if (cleaned.startsWith("#")) cleaned else "#$cleaned")
                     },
                     modifier = Modifier.weight(1f),
@@ -318,6 +318,9 @@ private fun ColorWheelPicker(
         selectedWheelOffset(selectedHex, sizePx.toFloat())
     }
 
+    val surfaceColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+
     Canvas(
         modifier = modifier
             .size(wheelSize)
@@ -351,13 +354,13 @@ private fun ColorWheelPicker(
     ) {
         drawImage(wheel)
         drawCircle(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            color = surfaceColor,
             radius = 10.dp.toPx(),
             center = selectedOffset,
             style = Stroke(width = 3.dp.toPx())
         )
         drawCircle(
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+            color = onSurfaceColor,
             radius = 13.dp.toPx(),
             center = selectedOffset,
             style = Stroke(width = 1.dp.toPx())

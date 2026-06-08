@@ -21,7 +21,7 @@ object SucursalConfig {
      * Ej: "atlixco" -> "ATL", "metepec" -> "MT", cualquier otra -> "BC"
      */
     fun prefijoPorSucursal(sucursalId: String): String =
-        SUCURSALES[sucursalId.lowercase()]?.prefijo ?: "BC"
+        SUCURSALES[sucursalId.lowercase(java.util.Locale.getDefault())]?.prefijo ?: "BC"
 
     /**
      * Extrae el ID del insumo desde un ID de documento de inventario por sucursal.
@@ -42,7 +42,7 @@ object SucursalConfig {
      * Ej: ("atlixco", "crema_batida") -> "atlixco_crema_batida"
      */
     fun buildDocId(sucursalId: String, insumoId: String): String =
-        "${sucursalId.lowercase()}${SEPARATOR}${insumoId}"
+        "${sucursalId.lowercase(java.util.Locale.getDefault())}${SEPARATOR}${insumoId}"
 }
 
 data class SucursalInfo(

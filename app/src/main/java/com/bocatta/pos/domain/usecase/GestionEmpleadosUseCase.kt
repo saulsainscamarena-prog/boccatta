@@ -57,7 +57,7 @@ class GestionEmpleadosUseCase {
                 "userId" to empId,
                 "displayName" to empleado.nombre,
                 "role" to empleado.rol,
-                "branchId" to empleado.sucursalAsignada.lowercase(),
+                "branchId" to empleado.sucursalAsignada.lowercase(java.util.Locale.getDefault()),
                 "active" to true,
                 "updatedAt" to System.currentTimeMillis()
             ))

@@ -103,7 +103,7 @@ fun BocattaMetricCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                titulo.uppercase(),
+                titulo.uppercase(java.util.Locale.getDefault()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(0.55f),
                 fontWeight = FontWeight.Bold,
@@ -171,9 +171,9 @@ fun BocattaButton(
 fun BocattaEmptyState(
     icono: ImageVector,
     titulo: String,
+    modifier: Modifier = Modifier,
     descripcion: String? = null,
-    accion: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier
+    accion: (@Composable () -> Unit)? = null
 ) {
     Column(
         modifier = modifier.padding(32.dp),
@@ -249,7 +249,7 @@ fun BocattaBadge(
         modifier = modifier
     ) {
         Text(
-            texto.uppercase(),
+            texto.uppercase(java.util.Locale.getDefault()),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
@@ -327,7 +327,7 @@ fun BocattaFilaResumen(
  * Elimina los dos when-expressions idénticos que existían antes.
  */
 fun normalizarCategoria(categoria: String): String {
-    return when (categoria.lowercase().trim()) {
+    return when (categoria.lowercase(java.util.Locale.getDefault()).trim()) {
         "crepas_dulces" -> "Crepas Dulces"
         "crepas_saladas" -> "Crepas Saladas"
         "crepa", "crepas" -> "Crepas"
@@ -336,7 +336,7 @@ fun normalizarCategoria(categoria: String): String {
         "combo", "combos", "paquetes" -> "Combos"
         "bebida", "bebidas", "frappes", "frappe" -> "Bebidas"
         "servicio", "servicios" -> "Servicios"
-        else -> categoria.trim().replaceFirstChar { it.uppercase() }
+        else -> categoria.trim().replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }
     }
 }
 
@@ -344,9 +344,9 @@ fun normalizarCategoria(categoria: String): String {
 fun BocattaCartItemRow(
     item: ItemCarritoV2,
     onEliminar: () -> Unit,
+    modifier: Modifier = Modifier,
     onEditar: (() -> Unit)? = null,
-    onToggleParaLlevar: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onToggleParaLlevar: (() -> Unit)? = null
 ) {
     val rowClick = onEditar ?: {}
     Surface(
@@ -362,7 +362,7 @@ fun BocattaCartItemRow(
         ) {
             Column(modifier = Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
                 Text(
-                    item.nombre.uppercase(),
+                    item.nombre.uppercase(java.util.Locale.getDefault()),
                     fontWeight = FontWeight.Black,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -370,7 +370,7 @@ fun BocattaCartItemRow(
                 )
                 if (item.nota.isNotBlank()) {
                     Text(
-                        item.nota.uppercase(),
+                        item.nota.uppercase(java.util.Locale.getDefault()),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
                         fontSize = 10.sp,
@@ -421,9 +421,9 @@ fun BocattaCartItemRow(
 fun BocattaSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
     placeholder: String = "Buscar...",
     debounceMs: Long = 300L,
-    modifier: Modifier = Modifier,
     onSearch: ((String) -> Unit)? = null
 ) {
     var localQuery by remember(query) { mutableStateOf(query) }
@@ -442,7 +442,7 @@ fun BocattaSearchBar(
             }
         },
         placeholder = {
-            Text(placeholder.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+            Text(placeholder.uppercase(java.util.Locale.getDefault()), fontSize = 12.sp, fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface.copy(0.3f), letterSpacing = 1.sp)
         },
         modifier = modifier.fillMaxWidth().height(56.dp),

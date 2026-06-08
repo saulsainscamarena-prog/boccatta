@@ -145,7 +145,7 @@ private fun NominaMetricCard(label: String, monto: Double, icon: androidx.compos
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(8.dp))
             Column {
-                Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label.uppercase(java.util.Locale.getDefault()), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("$${"%.2f".format(monto)}", fontWeight = FontWeight.Black, fontSize = 16.sp)
             }
         }
@@ -159,7 +159,7 @@ private fun NominaCountCard(label: String, count: Int, icon: androidx.compose.ui
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
             Spacer(Modifier.width(8.dp))
             Column {
-                Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label.uppercase(java.util.Locale.getDefault()), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(count.toString(), fontWeight = FontWeight.Black, fontSize = 16.sp)
             }
         }
@@ -180,7 +180,7 @@ private fun SueldoEmpleadoCard(
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Text(rol, color = MaterialTheme.colorScheme.outline, fontSize = 12.sp)
                 }
                 AssistChip(
@@ -283,7 +283,7 @@ private fun NominaMiniValue(label: String, value: Double, modifier: Modifier = M
         shape = RoundedCornerShape(10.dp)
     ) {
         Column(Modifier.padding(10.dp)) {
-            Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label.uppercase(java.util.Locale.getDefault()), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("$${"%.2f".format(value)}", fontSize = 13.sp, fontWeight = FontWeight.Black)
         }
     }
@@ -305,7 +305,7 @@ private fun DialogConfigSalario(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(empleadoNombre.uppercase(), fontWeight = FontWeight.Bold) },
+        title = { Text(empleadoNombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Tipo de pago:", style = MaterialTheme.typography.labelSmall)

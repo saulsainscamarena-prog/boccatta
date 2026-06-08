@@ -94,7 +94,7 @@ class GestionSucursalesViewModel(
             return
         }
 
-        val sucursalId = nombre.lowercase()
+        val sucursalId = nombre.lowercase(java.util.Locale.getDefault())
             .trim()
             .replace(" ", "_")
             .replace(Regex("[^a-z0-9_]"), "")

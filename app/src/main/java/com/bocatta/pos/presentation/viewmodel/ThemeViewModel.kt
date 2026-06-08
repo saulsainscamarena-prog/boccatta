@@ -70,6 +70,6 @@ class ThemeViewModel(
     private fun normalizeHex(input: String): String? {
         val clean = input.trim().removePrefix("#")
         if (!Regex("^[0-9a-fA-F]{6}$").matches(clean)) return null
-        return "#${clean.uppercase()}"
+        return "#${clean.uppercase(java.util.Locale.getDefault())}"
     }
 }

@@ -255,7 +255,7 @@ class FirebaseSalesRepositoryV2(
                 monto = monto,
                 categoria = "Alimentos Empleado",
                 fecha = System.currentTimeMillis(),
-                sucursal = sucursal.lowercase(),
+                sucursal = sucursal.lowercase(java.util.Locale.getDefault()),
                 usuarioId = usuarioId
             )
             db.collection(FirestoreCollections.GASTOS).document(id).set(

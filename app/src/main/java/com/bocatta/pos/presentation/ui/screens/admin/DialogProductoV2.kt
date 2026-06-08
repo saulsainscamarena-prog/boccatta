@@ -137,7 +137,7 @@ fun DialogProducto(
                         SeccionConfiguracion(titulo = "PRECIOS POR SUCURSAL", ayuda = "Define el precio de venta para cada sucursal.") {
                             preciosMap.keys.toList().forEach { suc ->
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(suc.replaceFirstChar { it.uppercase() }, modifier = Modifier.width(70.dp))
+                                    Text(suc.replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }, modifier = Modifier.width(70.dp))
                                     OutlinedTextField(value = preciosMap[suc] ?: "0", onValueChange = { preciosMap[suc] = it }, label = { Text("Precio \$") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                                 }
                             }
@@ -322,7 +322,7 @@ fun DialogProducto(
                             BuscadorSelector(
                                 label = "consumibles", items = vm.insumosMaestros,
                                 selectedItems = insumosSeleccionados.map { ItemSeleccionable(id = it.id, nombre = it.nombre, data = it, cantidad = consumibles.find { c -> c.consumibleId == it.id }?.cantidad ?: 1.0, unidad = consumibles.find { c -> c.consumibleId == it.id }?.unidad ?: "pz") },
-                                filterPredicate = { ins, q -> ins.nombre.lowercase().contains(q.lowercase()) },
+                                filterPredicate = { ins, q -> ins.nombre.lowercase(java.util.Locale.getDefault()).contains(q.lowercase(java.util.Locale.getDefault())) },
                                 itemLabel = { it.nombre },
                                 onAddItem = { insumo -> if (consumibles.none { it.consumibleId == insumo.id }) consumibles = consumibles + ConsumibleRequerido(consumibleId = insumo.id, cantidad = 1.0, unidad = "pz") },
                                 onRemoveItem = { insumo -> consumibles = consumibles.filter { it.consumibleId != insumo.id } }
@@ -351,7 +351,7 @@ fun DialogProducto(
                                     BuscadorSelector(
                                         label = "ingredientes", items = vm.insumosMaestros,
                                         selectedItems = insumosIngredientes.map { ItemSeleccionable(id = it.id, nombre = it.nombre, data = it, cantidad = ingredientes.find { ing -> ing.insumoId == it.id }?.cantidad ?: 0.0, unidad = it.unidadBase) },
-                                        filterPredicate = { ins, q -> ins.nombre.lowercase().contains(q.lowercase()) },
+                                        filterPredicate = { ins, q -> ins.nombre.lowercase(java.util.Locale.getDefault()).contains(q.lowercase(java.util.Locale.getDefault())) },
                                         itemLabel = { it.nombre },
                                         onAddItem = { ins -> if (ingredientes.none { it.insumoId == ins.id }) ingredientes.add(IngredienteReceta(insumoId = ins.id, nombreInsumo = ins.nombre, unidad = ins.unidadBase)) },
                                         onRemoveItem = { ins -> ingredientes.removeAll { it.insumoId == ins.id } }
@@ -380,9 +380,9 @@ fun DialogProducto(
                         Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("$emoji $nombre", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                Text("${categoria.uppercase()} ${if (subcategoria.isNotBlank()) "> ${subcategoria.uppercase()}" else ""} · $tipoProducto", color = MaterialTheme.colorScheme.outline)
+                                Text("${categoria.uppercase(java.util.Locale.getDefault())} ${if (subcategoria.isNotBlank()) "> ${subcategoria.uppercase(java.util.Locale.getDefault())}" else ""} · $tipoProducto", color = MaterialTheme.colorScheme.outline)
                                 HorizontalDivider()
-                                preciosMap.forEach { (suc, v) -> Text("${suc.replaceFirstChar { it.uppercase() }}: \$${v}", fontSize = 14.sp) }
+                                preciosMap.forEach { (suc, v) -> Text("${suc.replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }}: \$${v}", fontSize = 14.sp) }
                                 if (esCombo) Text("Combo ($comboMode) · ${productosCombo.size} productos", color = MaterialTheme.colorScheme.primary)
                                 if (configSchema.isNotEmpty()) Text("⚙️ ${configSchema.size} grupo(s) de configuración", fontSize = 13.sp, color = MaterialTheme.colorScheme.tertiary)
                                 if (consumibles.isNotEmpty()) Text("📦 ${consumibles.size} consumible(s)", fontSize = 13.sp)

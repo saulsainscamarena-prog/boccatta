@@ -101,7 +101,7 @@ fun DashboardBodegaScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text(insumo.id.replace("_", " ").replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Bold)
+                                        Text(insumo.id.replace("_", " ").replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }, fontWeight = FontWeight.Bold)
                                         Text("${insumo.diasRestantes} dias restantes", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Text("${insumo.cantidadGlobal.toInt()}u", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.error)
@@ -130,7 +130,7 @@ fun DashboardBodegaScreen(
                     ) {
                         Column(Modifier.padding(12.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text(insumo.id.replace("_", " ").replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Medium)
+                                Text(insumo.id.replace("_", " ").replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }, fontWeight = FontWeight.Medium)
                                 Text("${insumo.cantidadGlobal.toInt()}u", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                             if (insumoExpandido == insumo.id) {

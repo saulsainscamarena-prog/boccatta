@@ -199,7 +199,7 @@ fun SucursalCardPremium(nombre: String, seleccionada: Boolean, onClick: () -> Un
                 }
             }
             Spacer(Modifier.width(20.dp))
-            Text(nombre.uppercase(), fontWeight = FontWeight.Black, fontSize = 24.sp,
+            Text(nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, fontSize = 24.sp,
                 color = if (seleccionada) Color.White else Color.White.copy(0.4f), letterSpacing = 1.sp)
             Spacer(Modifier.weight(1f))
             if (seleccionada) Icon(Icons.Default.RadioButtonChecked, "Seleccionado",
@@ -304,7 +304,7 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
                         val actualSucursal = item.cuotaActualSucursal
                         val cantidad = transferencias[id] ?: 0
                         val nombre = nombresAmigables[id]
-                            ?: id.replace("_", " ").replaceFirstChar { it.uppercase() }
+                            ?: id.replace("_", " ").replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) }
 
                         Card(shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
@@ -319,7 +319,7 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
                                 Surface(color = MaterialTheme.colorScheme.primary.copy(0.1f),
                                     shape = CircleShape, modifier = Modifier.size(40.dp)) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text(nombre.first().uppercase(),
+                                        Text(nombre.first().uppercase(java.util.Locale.getDefault()),
                                             fontWeight = FontWeight.Black,
                                             color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
                                     }

@@ -15,7 +15,7 @@ data class BusinessFeatures(
 
 object BusinessLogicProvider {
     fun getFeaturesForType(type: String): BusinessFeatures {
-        return when (type.uppercase()) {
+        return when (type.uppercase(java.util.Locale.getDefault())) {
             "RESTAURANT", "FOOD_TRUCK", "CAFE" -> BusinessFeatures(
                 usaRecetas = true,
                 usaKDS = true,

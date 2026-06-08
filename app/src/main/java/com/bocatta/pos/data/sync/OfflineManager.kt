@@ -44,7 +44,7 @@ object OfflineManager {
         forcedVentaId: String? = null
     ): ResultadoVenta {
         val ventaId = forcedVentaId ?: "offline_${System.currentTimeMillis()}"
-        val sucursalId = sucursal.lowercase()
+        val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
         val db = OfflineDatabase.getInstance(context)
         val inventoryRepo = InventoryRepository(db)
 
@@ -135,7 +135,7 @@ object OfflineManager {
             ventaId = ventaId,
             motivo = motivo,
             usuarioId = usuarioId,
-            sucursal = sucursal.lowercase(),
+            sucursal = sucursal.lowercase(java.util.Locale.getDefault()),
             fecha = System.currentTimeMillis(),
             requiereAprobacion = requiereAprobacion,
             dataJson = dataJson,

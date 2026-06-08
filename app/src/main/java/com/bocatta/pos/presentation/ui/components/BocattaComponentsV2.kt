@@ -26,7 +26,7 @@ fun ProductCardV2(
     stockAlerta: Double,
     onClick: () -> Unit
 ) {
-    val precio = producto.precioVenta[sucursal.lowercase()] ?: 0.0
+    val precio = producto.precioVenta[sucursal.lowercase(java.util.Locale.getDefault())] ?: 0.0
     ProductCardPremium(
         nombre = producto.nombre,
         precio = precio,
@@ -95,7 +95,7 @@ fun ProductCardPremium(
                 }
 
                 Text(
-                    text = nombre.uppercase(),
+                    text = nombre.uppercase(java.util.Locale.getDefault()),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
@@ -250,7 +250,7 @@ fun BocattaMetricCardPremium(
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                titulo.uppercase(),
+                titulo.uppercase(java.util.Locale.getDefault()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(0.4f),
                 fontWeight = FontWeight.Bold,
@@ -265,7 +265,7 @@ fun BocattaMetricCardPremium(
             )
             subtitulo?.let {
                 Text(
-                    it.uppercase(),
+                    it.uppercase(java.util.Locale.getDefault()),
                     style = MaterialTheme.typography.labelSmall,
                     color = color.copy(0.6f),
                     modifier = Modifier.padding(top = 4.dp),
@@ -294,13 +294,13 @@ fun GastoCard(
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text(categoria.uppercase(), fontWeight = FontWeight.Black, color = color, fontSize = 14.sp, letterSpacing = 1.sp)
+                    Text(categoria.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = color, fontSize = 14.sp, letterSpacing = 1.sp)
                     Text(fecha, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(0.4f), fontWeight = FontWeight.Bold)
                 }
                 Text("${"$"}${"%.2f".format(monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp)
             }
 
-            Text(descripcion.uppercase(), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(0.7f), lineHeight = 16.sp)
+            Text(descripcion.uppercase(java.util.Locale.getDefault()), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(0.7f), lineHeight = 16.sp)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(6.dp).background(color, CircleShape))

@@ -59,7 +59,7 @@ class DataSeederV2(
      */
     suspend fun inicializarSucursal(sucursalId: String): Result<Unit> {
         return try {
-            val branchId = sucursalId.trim().lowercase().replace(" ", "_")
+            val branchId = sucursalId.trim().lowercase(java.util.Locale.getDefault()).replace(" ", "_")
             Timber.tag("SEEDER").i("Inicializando sucursal: $branchId")
             val insumos = db.collection(FirestoreCollections.INSUMOS).get().await()
             if (insumos.isEmpty) {
@@ -69,7 +69,7 @@ class DataSeederV2(
             if (!sucursalRef.get().await().exists()) {
                 sucursalRef.set(mapOf(
                     "id" to branchId,
-                    "nombre" to branchId.replaceFirstChar { it.uppercase() },
+                    "nombre" to branchId.replaceFirstChar { it.uppercase(java.util.Locale.getDefault()) },
                     "activa" to true,
                     "creadaEn" to System.currentTimeMillis()
                 ), SetOptions.merge()).await()
@@ -182,7 +182,7 @@ class DataSeederV2(
                 for (i in 0 until productosArray.length()) {
                     val prodObj = productosArray.getJSONObject(i)
                     val nombre = prodObj.optString("nombre", "")
-                    val id = prodObj.optString("id", nombre.lowercase().replace(" ", "_"))
+                    val id = prodObj.optString("id", nombre.lowercase(java.util.Locale.getDefault()).replace(" ", "_"))
                     val cat = prodObj.optString("categoria", "GENERAL")
                     val precio = prodObj.optDouble("precio", 0.0)
                     val reqStock = prodObj.optBoolean("requiresStock", false)
@@ -194,7 +194,7 @@ class DataSeederV2(
                         businessType = businessType,
                         nombre = nombre,
                         categoria = cat,
-                        precioVenta = mapOf(sucursalId.lowercase() to precio),
+                        precioVenta = mapOf(sucursalId.lowercase(java.util.Locale.getDefault()) to precio),
                         requiresStock = reqStock,
                         hasVariants = hasVar,
                         activo = true
@@ -395,7 +395,7 @@ class DataSeederV2(
      */
     suspend fun resetearInventarioSucursal(sucursal: String): Result<Unit> {
         return try {
-            val sucursalId = sucursal.lowercase()
+            val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
             val insumosIds = db.collection(FirestoreCollections.INSUMOS).get().await()
                 .documents.map { it.id }
             val chunks = insumosIds.chunked(400)
@@ -428,7 +428,7 @@ class DataSeederV2(
      */
     suspend fun cargarStockEmergencia(sucursal: String): Result<Unit> {
         return try {
-            val sucursalId = sucursal.lowercase()
+            val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
             val criticalItems = listOf("masa_crepa", "carlota_unidad", "tiramisu_unidad", "fresas_crema_unidad", "duraznos_crema_unidad")
             val batch = db.batch()
             

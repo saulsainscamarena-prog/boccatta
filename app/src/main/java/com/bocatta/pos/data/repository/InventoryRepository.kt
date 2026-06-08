@@ -66,7 +66,7 @@ class InventoryRepository(
                 SetOptions.merge()
             )
 
-            val sucursalLower = sucursal.trim().lowercase()
+            val sucursalLower = sucursal.trim().lowercase(java.util.Locale.getDefault())
             if (sucursalLower.isNotBlank() && sucursalLower != "global") {
                 batch.set(
                     firestore.collection(FirestoreCollections.INVENTARIO_SUCURSAL).document("${sucursalLower}_$insumoId"),
@@ -245,7 +245,7 @@ class InventoryRepository(
         sucursal: String
     ): Boolean {
         return try {
-            val sucursalId = sucursal.lowercase()
+            val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
             val produccionId = firestore.collection(FirestoreCollections.MOVIMIENTOS_INVENTARIO).document().id
             firestore.runTransaction { transaction ->
                 val now = System.currentTimeMillis()
@@ -320,7 +320,7 @@ class InventoryRepository(
         sucursal: String
     ): Boolean {
         return try {
-            val sucursalId = sucursal.lowercase()
+            val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
             val batch = firestore.batch()
             val cierreId = firestore.collection(FirestoreCollections.INVENTORY_CLOSURES).document().id
             batch.set(
@@ -367,7 +367,7 @@ class InventoryRepository(
         sucursal: String
     ): Boolean {
         return try {
-            val sucursalId = sucursal.lowercase()
+            val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
             val batch = firestore.batch()
             val aperturaId = firestore.collection(FirestoreCollections.INVENTORY_OPENINGS).document().id
             batch.set(
@@ -418,7 +418,7 @@ class InventoryRepository(
         sucursal: String
     ): Boolean {
         return try {
-            val sucursalId = sucursal.lowercase()
+            val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
             val batch = firestore.batch()
             val mermaId = firestore.collection(FirestoreCollections.MERMA_LOGS).document().id
             batch.set(
@@ -460,13 +460,13 @@ class InventoryRepository(
             mapOf(
                 "id" to ref.id,
                 "tipo" to tipo,
-                "type" to tipo.uppercase(),
+                "type" to tipo.uppercase(java.util.Locale.getDefault()),
                 "insumoId" to insumoId,
                 "productId" to insumoId,
                 "cantidadEnBase" to cantidad,
                 "quantity" to cantidad,
-                "sucursal" to sucursal.lowercase(),
-                "branchId" to sucursal.lowercase(),
+                "sucursal" to sucursal.lowercase(java.util.Locale.getDefault()),
+                "branchId" to sucursal.lowercase(java.util.Locale.getDefault()),
                 "usuarioId" to usuarioId,
                 "userId" to usuarioId,
                 "referenciaId" to referenciaId,
@@ -492,13 +492,13 @@ class InventoryRepository(
             mapOf(
                 "id" to ref.id,
                 "tipo" to tipo,
-                "type" to tipo.uppercase(),
+                "type" to tipo.uppercase(java.util.Locale.getDefault()),
                 "insumoId" to insumoId,
                 "productId" to insumoId,
                 "cantidadEnBase" to cantidad,
                 "quantity" to cantidad,
-                "sucursal" to sucursal.lowercase(),
-                "branchId" to sucursal.lowercase(),
+                "sucursal" to sucursal.lowercase(java.util.Locale.getDefault()),
+                "branchId" to sucursal.lowercase(java.util.Locale.getDefault()),
                 "usuarioId" to usuarioId,
                 "userId" to usuarioId,
                 "referenciaId" to referenciaId,

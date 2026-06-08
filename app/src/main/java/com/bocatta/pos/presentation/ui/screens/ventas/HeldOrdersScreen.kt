@@ -114,7 +114,7 @@ private fun HeldOrderCard(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        order.sucursal.uppercase(),
+                        order.sucursal.uppercase(java.util.Locale.getDefault()),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,

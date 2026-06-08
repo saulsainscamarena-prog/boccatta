@@ -33,7 +33,7 @@ class AperturaViewModelV2 : BaseViewModel() {
     var hayPopotes by mutableStateOf(false)
     var hayBaseFresas by mutableStateOf(false)
     var fondoCaja by mutableStateOf("0.0")
-    var tandasMasaEnBodega by mutableStateOf(0.0)
+    var tandasMasaEnBodega by mutableDoubleStateOf(0.0)
     var tandasATomar by mutableStateOf("0")
     
     var globalStock = mutableStateMapOf<String, Int>()

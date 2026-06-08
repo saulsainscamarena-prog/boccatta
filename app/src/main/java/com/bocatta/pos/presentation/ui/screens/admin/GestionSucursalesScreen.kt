@@ -338,7 +338,7 @@ private fun DialogNuevaSucursal(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                     singleLine = true,
                     supportingText = {
-                        val id = remember(nombre) { nombre.lowercase().trim().replace(" ", "_").replace(Regex("[^a-z0-9_]") , "") }
+                        val id = remember(nombre) { nombre.lowercase(java.util.Locale.getDefault()).trim().replace(" ", "_").replace(Regex("[^a-z0-9_]") , "") }
                         if (nombre.isNotBlank()) Text("ID: $id", style = MaterialTheme.typography.labelSmall)
                     }
                 )

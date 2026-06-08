@@ -74,7 +74,7 @@ object DynamicFormEngine {
         )
     )
 
-    fun getSchema(giro: String): GiroSchema = schemas[giro.uppercase()] ?: schemas["FOOD"] ?: error("No FOOD schema available in DynamicFormEngine")
+    fun getSchema(giro: String): GiroSchema = schemas[giro.uppercase(java.util.Locale.getDefault())] ?: schemas["FOOD"] ?: error("No FOOD schema available in DynamicFormEngine")
 
     fun getSupportedGiros(): List<GiroSchema> = schemas.values.toList()
 

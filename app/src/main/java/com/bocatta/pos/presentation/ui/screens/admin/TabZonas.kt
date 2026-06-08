@@ -96,7 +96,7 @@ private fun DialogZona(zonaInicial: Zona?, onSave: (Zona) -> Unit, onDismiss: ()
     var nombre by remember { mutableStateOf(zonaInicial?.nombre ?: "") }
     AlertDialog(onDismissRequest = onDismiss, title = { Text("${if (zonaInicial != null) "Editar" else "Nueva"} zona", fontWeight = FontWeight.Bold) },
         text = { OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, placeholder = { Text("Ej: Terraza, Bar") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) },
-        confirmButton = { Button(onClick = { onSave(Zona(id = zonaInicial?.id ?: "", nombre = nombre.uppercase())); onDismiss() }, enabled = nombre.isNotBlank()) { Text("Guardar") } },
+        confirmButton = { Button(onClick = { onSave(Zona(id = zonaInicial?.id ?: "", nombre = nombre.uppercase(java.util.Locale.getDefault()))); onDismiss() }, enabled = nombre.isNotBlank()) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }, shape = RoundedCornerShape(20.dp))
 }
 

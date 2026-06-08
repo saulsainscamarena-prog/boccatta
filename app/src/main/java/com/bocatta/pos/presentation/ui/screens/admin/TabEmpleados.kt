@@ -36,7 +36,7 @@ fun TabEmpleados(vm: AdminViewModel) {
     }
 
     val empleados = vm.empleadosOperativos.filter {
-        searchQuery.isBlank() || it.nombre.lowercase().contains(searchQuery.lowercase())
+        searchQuery.isBlank() || it.nombre.lowercase(java.util.Locale.getDefault()).contains(searchQuery.lowercase(java.util.Locale.getDefault()))
     }.sortedBy { it.nombre }
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -96,9 +96,9 @@ fun TabEmpleados(vm: AdminViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(empleado.nombre.uppercase(), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(empleado.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(
-                                    "Rol: ${empleado.rol} · Sucursal: ${empleado.sucursalAsignada.uppercase()}",
+                                    "Rol: ${empleado.rol} · Sucursal: ${empleado.sucursalAsignada.uppercase(java.util.Locale.getDefault())}",
                                     color = MaterialTheme.colorScheme.outline,
                                     fontSize = 12.sp
                                 )

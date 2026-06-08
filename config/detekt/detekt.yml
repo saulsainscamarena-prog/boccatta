@@ -20,6 +20,22 @@ style:
     ignoreNumbers: ['-1', '0', '1', '2', '10', '100', '1000']
   WildcardImport:
     active: true
+    excludeImports: [
+      'java.util.*',
+      'androidx.compose.runtime.*',
+      'androidx.compose.ui.*',
+      'androidx.compose.foundation.*',
+      'androidx.compose.foundation.layout.*',
+      'androidx.compose.foundation.lazy.*',
+      'androidx.compose.foundation.shape.*',
+      'androidx.compose.material3.*',
+      'androidx.compose.material.icons.filled.*',
+      'org.junit.Assert.*',
+      'com.bocatta.pos.domain.model.*',
+      'com.bocatta.pos.presentation.ui.theme.*',
+      'com.bocatta.pos.presentation.viewmodel.*',
+      'androidx.work.*'
+    ]
 
 comments:
   UndocumentedPublicClass:

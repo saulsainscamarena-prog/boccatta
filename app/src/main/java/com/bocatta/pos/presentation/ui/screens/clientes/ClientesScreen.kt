@@ -133,7 +133,7 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
     ElevatedCard(shape = RoundedCornerShape(20.dp), colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).background(if (esVIP) MaterialTheme.colorScheme.primary.copy(0.1f) else MaterialTheme.colorScheme.primary.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(cliente.nombre.take(1).uppercase(), color = if (esVIP) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text(cliente.nombre.take(1).uppercase(java.util.Locale.getDefault()), color = if (esVIP) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 20.sp)
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

@@ -24,7 +24,7 @@ class GenerarTicketWhatsAppUseCase {
         sb.append("*BOCATTA - TICKET DIGITAL*\n")
         sb.append("Ticket: #$codigoTicket\n")
         sb.append("Fecha: ${sdf.format(java.util.Date())}\n")
-        sb.append("Sucursal: ${sucursal.uppercase()}\n")
+        sb.append("Sucursal: ${sucursal.uppercase(java.util.Locale.getDefault())}\n")
         if (modoOperacion.isNotBlank()) {
             sb.append("Modo: ${modoOperacion.trim()}\n")
         }

@@ -71,7 +71,7 @@ class InventoryAdjustmentViewModelV2 : BaseViewModel() {
                     comentario = comentario,
                     fecha = System.currentTimeMillis(),
                     usuarioId = usuarioId,
-                    sucursal = sucursal.lowercase()
+                    sucursal = sucursal.lowercase(java.util.Locale.getDefault())
                 )
 
                 // 1. Guardar log de merma
@@ -79,7 +79,7 @@ class InventoryAdjustmentViewModelV2 : BaseViewModel() {
 
                 // 2. Descontar de Stock de Sucursal V2
                 val stockRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
-                    .document("${sucursal.lowercase()}_$insumoId")
+                    .document("${sucursal.lowercase(java.util.Locale.getDefault())}_$insumoId")
                 batch.set(
                     stockRef,
                     mapOf("cantidadEnBase" to FieldValue.increment(-cantidad), "ultimaActualizacion" to System.currentTimeMillis()),
