@@ -48,3 +48,6 @@ At minimum:
 ```
 
 For release/profile work, also verify the relevant managed-device or benchmark setup if present.
+
+## Web Research Directive
+Before executing any actions based on this skill, you MUST use the `search_web` tool to search the official documentation at **docs.gradle.org** or **developer.android.com** (Google for Developers). Ensure that the APIs, Gradle configurations, and best practices you are about to apply are completely up-to-date with the latest stable releases. Do not rely solely on your pre-training data.
