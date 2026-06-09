@@ -5,6 +5,7 @@ import com.bocatta.pos.data.local.OfflineDatabase
 import com.bocatta.pos.data.local.VentaOffline
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
+import com.bocatta.pos.domain.model.SalesInventoryProductV2
 import com.bocatta.pos.domain.repository.ResultadoVenta
 import com.bocatta.pos.data.repository.InventoryRepository
 import com.bocatta.pos.core.TicketUtils
@@ -15,6 +16,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.*
@@ -55,21 +57,22 @@ class OfflineManagerTest {
 
     private fun createDummyItem(): ItemCarritoV2 {
         // Minimal dummy implementation – only fields used in OfflineManager
-        val producto = mockk<com.bocatta.pos.domain.model.ProductoV2>(relaxed = true)
-        every { producto.id } returns "prod-1"
-        every { producto.recetaId } returns null
-        every { producto.categoria } returns "cat"
+        val producto = SalesInventoryProductV2(
+            id = "prod-1",
+            recetaId = null,
+            categoria = "cat"
+        )
         return ItemCarritoV2(
             nombre = "Item",
             cantidad = 1,
-            precioFinal = 10.0,
+            precioFinal = java.math.BigDecimal("10.0"),
             producto = producto,
             esSeparado = false,
-            base = false,
+            base = null,
             aderezos = emptyList(),
             toppings = emptyList(),
             paraLlevar = false,
-            cantidadGramos = 0.0,
+            cantidadGramos = null,
             componentesCombo = emptyList()
         )
     }

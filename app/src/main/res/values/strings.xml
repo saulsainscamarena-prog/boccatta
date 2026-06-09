@@ -129,6 +129,14 @@
     <string name="cierre_fallidas_error">Error en sincronización offline. Haz clic abajo para reintentar.</string>
     <string name="cierre_btn_reintentar">Reintentar Sync</string>
     <string name="cierre_btn_cerrar">Cerrar</string>
+    <string name="cierre_conteo_denominaciones">Conteo por denominación</string>
+    <string name="cierre_total_contado">Total contado:</string>
+    <string name="cierre_registrar_retiro">Registrar Retiro</string>
+    <string name="cierre_registrar_retiro_titulo">Registrar Retiro Parcial</string>
+    <string name="cierre_monto">Monto</string>
+    <string name="cierre_motivo">Motivo</string>
+    <string name="cierre_pin">PIN de autorización</string>
+    <string name="cierre_registrar">Registrar</string>
     <string name="admin_menu_precios">MENÚ Y PRECIOS</string>
     <string name="admin_recetas_prod">RECETAS Y PRODUCCIÓN</string>
     <string name="admin_almacen_inventario">ALMACÉN E INVENTARIO</string>

@@ -9,10 +9,13 @@ import com.bocatta.pos.data.local.room.entity.VentaPendienteEntity
 import com.bocatta.pos.data.repository.StockAllocationRepository
 import com.bocatta.pos.domain.model.Rol
 import com.bocatta.pos.domain.model.Usuario
+import com.bocatta.pos.domain.model.RetiroParcialV2
 import com.bocatta.pos.domain.model.TurnoCajaV2
 import com.bocatta.pos.domain.usecase.AccionSensible
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.core.constants.FirestoreCollections
+import com.bocatta.pos.domain.CuadreCajaManager
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
@@ -35,12 +38,15 @@ class CajaViewModel(
     private val allocationRepo = StockAllocationRepository()
 
     private var listenerTurno: ListenerRegistration? = null
+    private var listenerRetiros: ListenerRegistration? = null
     private var listenerVentas: ListenerRegistration? = null
     private var listenerGastos: ListenerRegistration? = null
     private var listenerCancelaciones: ListenerRegistration? = null
     private var listenerParametros: ListenerRegistration? = null
 
     var turnoActivo by mutableStateOf<TurnoCajaV2?>(null)
+    var denominacionesInput = mutableStateMapOf<String, String>()
+    var retiroList = mutableStateListOf<com.bocatta.pos.domain.model.RetiroParcialV2>()
         private set
     var cargandoTurno by mutableStateOf(false)
         private set
@@ -91,22 +97,48 @@ class CajaViewModel(
     var toleranciaEfectivo by mutableStateOf(10.0)
     var toleranciaTarjeta by mutableStateOf(5.0)
 
-    // Inputs del empleado al contar
-    var efectivoContado by mutableStateOf("")
-    var tarjetaContada by mutableStateOf("")
+        // Inputs del empleado al contar
+        var efectivoContado by mutableStateOf("")
+        var tarjetaContada by mutableStateOf("")
+
+        // 2.4 actualizarDenominaciones - actualiza mapa de denominaciones y total contado
+        fun actualizarDenominaciones(map: Map<String, Int>) {
+            // actualizar el snapshotStateMap con los nuevos valores
+            map.forEach { (denom, qty) ->
+                denominacionesInput[denom] = qty.toString()
+            }
+            // calcular total en efectivo
+            val total = denominacionesInput.entries.sumOf { (denom, qtyStr) ->
+                val denomVal = denom.toIntOrNull() ?: 0
+                val qtyVal = qtyStr.toIntOrNull() ?: 0
+                denomVal * qtyVal
+            }
+            efectivoContado = total.toString()
+        }
+
+
+    val resultadoCuadreActual: CuadreCajaManager.ResultadoCuadre?
+        get() {
+            val turno = turnoActivo ?: return null
+            val efContado = efectivoContado.toDoubleOrNull() ?: 0.0
+            return CuadreCajaManager.calcularCuadre(
+                ventasTotal = java.math.BigDecimal.valueOf(totalEfectivoSistema),
+                gastosTotal = java.math.BigDecimal.valueOf(totalGastosSistema),
+                fondoInicial = java.math.BigDecimal.valueOf(turno.fondoInicial),
+                efectivoEnCaja = java.math.BigDecimal.valueOf(efContado),
+                toleranciaEfectivo = java.math.BigDecimal.valueOf(toleranciaEfectivo),
+                toleranciaTarjeta = java.math.BigDecimal.valueOf(toleranciaTarjeta)
+            )
+        }
 
     val diferenciaCaja: Double
-        get() {
-            val turno = turnoActivo ?: return 0.0
-            val efectivoEsperado = turno.fondoInicial + totalEfectivoSistema - totalGastosSistema
-            return (efectivoContado.toDoubleOrNull() ?: 0.0) - efectivoEsperado
-        }
+        get() = resultadoCuadreActual?.diferencia?.toDouble() ?: 0.0
 
     val diferenciaTarjeta: Double
         get() = (tarjetaContada.toDoubleOrNull() ?: 0.0) - totalTarjetaSistema
 
     val cadraCaja: Boolean
-        get() = kotlin.math.abs(diferenciaCaja) <= toleranciaEfectivo && kotlin.math.abs(diferenciaTarjeta) <= toleranciaTarjeta
+        get() = resultadoCuadreActual?.esCorrecto ?: true
 
     init {
         escucharTurnoActivo()
@@ -167,6 +199,7 @@ class CajaViewModel(
                     turnoActivo = doc.toObject(TurnoCajaV2::class.java)?.copy(id = doc.id)
                     modoContingenciaLocal = false
                     cargandoTurno = false
+                    escucharRetiros()
                 } else {
                     viewModelScope.launch {
                         turnoActivo = buscarTurnoAbiertoLegacy(sucursal) ?: cargarTurnoContingenciaLocal(sucursal)
@@ -200,6 +233,20 @@ class CajaViewModel(
         turnoActivo = turno
         modoContingenciaLocal = true
         return turno
+    }
+
+    private fun escucharRetiros() {
+        val turno = turnoActivo ?: return
+        listenerRetiros?.remove()
+        listenerRetiros = db.collection(FirestoreCollections.TURNOS_CAJA)
+            .document(turno.id)
+            .collection(FirestoreCollections.RETIROS)
+            .addSnapshotListener { snap, _ ->
+                retiroList.clear()
+                snap?.documents?.forEach { doc ->
+                    doc.toObject(com.bocatta.pos.domain.model.RetiroParcialV2::class.java)?.let { retiroList.add(it) }
+                }
+            }
     }
 
     private fun escucharTotalesDia() {
@@ -445,7 +492,8 @@ class CajaViewModel(
                 mensajeError = "No puedes cerrar: Hay cancelaciones pendientes de revision por el administrador."
                 return
             }
-            if (!cadraCaja) {
+            val resultadoCuadre = resultadoCuadreActual
+            if (resultadoCuadre == null || !resultadoCuadre.esCorrecto) {
                 mensajeError = "La caja no cuadra. Contacta a un administrador para autorizar el cierre."
                 return
             }
@@ -454,18 +502,33 @@ class CajaViewModel(
         viewModelScope.launch {
             cargando = true
             try {
-                val efectivoEsperado = turno.fondoInicial + totalEfectivoSistema - totalGastosSistema
+                val efContado = efectivoContado.toDoubleOrNull() ?: 0.0
+                val tarContada = tarjetaContada.toDoubleOrNull() ?: 0.0
+                val resultadoCuadre = CuadreCajaManager.calcularCuadre(
+                    ventasTotal = java.math.BigDecimal.valueOf(totalEfectivoSistema),
+                    gastosTotal = java.math.BigDecimal.valueOf(totalGastosSistema),
+                    fondoInicial = java.math.BigDecimal.valueOf(turno.fondoInicial),
+                    efectivoEnCaja = java.math.BigDecimal.valueOf(efContado),
+                    toleranciaEfectivo = java.math.BigDecimal.valueOf(toleranciaEfectivo),
+                    toleranciaTarjeta = java.math.BigDecimal.valueOf(toleranciaTarjeta)
+                )
+                val denomMap = denominacionesInput
+                    .filter { (_, v) -> (v.toIntOrNull() ?: 0) > 0 }
+                    .mapValues { (_, v) -> v.toIntOrNull() ?: 0 }
                 val updates = mapOf(
                     "fechaCierre" to System.currentTimeMillis(),
                     "totalVentasEfectivo" to totalEfectivoSistema,
                     "totalVentasTarjeta" to totalTarjetaSistema,
                     "totalGastosTurno" to totalGastosSistema,
-                    "efectivoContado" to (efectivoContado.toDoubleOrNull() ?: 0.0),
-                    "tarjetaContada" to (tarjetaContada.toDoubleOrNull() ?: 0.0),
-                    "diferenciaEfectivo" to diferenciaCaja,
-                    "diferenciaTarjeta" to diferenciaTarjeta,
+                    "efectivoContado" to efContado,
+                    "tarjetaContada" to tarContada,
+                    "denominacionesContadas" to denomMap,
+                    "cajaId" to turno.cajaId,
+                    "diferenciaEfectivo" to resultadoCuadre.diferencia.toDouble(),
+                    "diferenciaTarjeta" to resultadoCuadre.diferencia.toDouble(),
                     "estado" to "cerrado"
                 )
+
 
                 // ATOMIC UPDATE
                 db.collection(FirestoreCollections.TURNOS_CAJA).document(turno.id).update(updates).await()
@@ -496,6 +559,7 @@ class CajaViewModel(
                     )
                 }
 
+                val efectivoEsperado = turno.fondoInicial + totalEfectivoSistema - totalGastosSistema
                 val texto = generarTextoCierre(turno, efectivoEsperado)
                 mensajeExito = "Turno cerrado"
                 efectivoContado = ""
@@ -623,6 +687,81 @@ _Bocatta POS_
         }
     }
 
+    fun registrarRetiroParcial(
+        pin: String,
+        monto: Double,
+        motivo: String,
+        usuarioNombre: String,
+        onResult: ((Boolean) -> Unit)? = null
+    ) {
+        val turno = turnoActivo ?: run {
+            mensajeError = "No hay turno activo"
+            onResult?.invoke(false)
+            return
+        }
+        if (monto <= 0) {
+            mensajeError = "El monto debe ser mayor a 0"
+            onResult?.invoke(false)
+            return
+        }
+        if (motivo.isBlank()) {
+            mensajeError = "Debe especificar un motivo"
+            onResult?.invoke(false)
+            return
+        }
+        viewModelScope.launch {
+            cargando = true
+            try {
+                authManager.validarConPinYAuditar(
+                    pin = pin,
+                    accion = AccionSensible.GASTAR_CAJA,
+                    usuarioResponsable = usuarioNombre,
+                    sucursal = turno.sucursal,
+                    detalles = "Retiro parcial: $$monto - $motivo"
+                ) { pinOk ->
+                    if (!pinOk) {
+                        mensajeError = "PIN incorrecto o autorización denegada"
+                        onResult?.invoke(false)
+                        cargando = false
+                        return@validarConPinYAuditar
+                    }
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            val retiroRef = db.collection(FirestoreCollections.TURNOS_CAJA)
+                                .document(turno.id)
+                                .collection(FirestoreCollections.RETIROS)
+                                .document()
+                            val retiro = RetiroParcialV2(
+                                id = retiroRef.id,
+                                turnoId = turno.id,
+                                monto = monto,
+                                motivo = motivo,
+                                usuarioNombre = usuarioNombre,
+                                fecha = System.currentTimeMillis()
+                            )
+                            db.runTransaction { tx ->
+                                tx.set(retiroRef, retiro)
+                                val turnoRef = db.collection(FirestoreCollections.TURNOS_CAJA).document(turno.id)
+                                tx.update(turnoRef, "totalGastosTurno", FieldValue.increment(monto))
+                            }.await()
+                            totalGastosSistema += monto
+                            mensajeExito = "Retiro registrado: $$monto"
+                            onResult?.invoke(true)
+                        } catch (e: Exception) {
+                            mensajeError = "Error al registrar retiro: ${e.message}"
+                            onResult?.invoke(false)
+                        }
+                        cargando = false
+                    }
+                }
+            } catch (e: Exception) {
+                mensajeError = "Error: ${e.message}"
+                onResult?.invoke(false)
+                cargando = false
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         listenerTurno?.remove()
@@ -630,5 +769,6 @@ _Bocatta POS_
         listenerGastos?.remove()
         listenerCancelaciones?.remove()
         listenerParametros?.remove()
+        listenerRetiros?.remove()
     }
 }

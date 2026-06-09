@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import com.bocatta.pos.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -170,6 +171,15 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 )
                             )
 
+                            // Denomination input grid
+                            DenominationInputGrid(
+                                denominacionesInput = vm.denominacionesInput,
+                                onDenominationChange = { denom, qty ->
+                                    vm.actualizarDenominaciones(mapOf(denom to (qty.toIntOrNull() ?: 0)))
+                                },
+                                efectivoContado = vm.efectivoContado
+                            )
+
                             OutlinedTextField(
                                 value = vm.tarjetaContada,
                                 onValueChange = { vm.tarjetaContada = it },
@@ -187,6 +197,83 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                     unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(0.4f)
                                 )
                             )
+
+                            // Registrar Retiro button
+                            var mostrarDialogoRetiro by remember { mutableStateOf(false) }
+                            var pinRetiro by remember { mutableStateOf("") }
+                            Button(
+                                onClick = { mostrarDialogoRetiro = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.cierre_registrar_retiro))
+                            }
+
+                            // Retiro dialog
+                            if (mostrarDialogoRetiro) {
+                                var montoRetiro by remember { mutableStateOf("") }
+                                var motivoRetiro by remember { mutableStateOf("") }
+                                AlertDialog(
+                                    onDismissRequest = { mostrarDialogoRetiro = false },
+                                    title = { Text(stringResource(R.string.cierre_registrar_retiro_titulo), fontWeight = FontWeight.Bold) },
+                                    text = {
+                                        Column {
+                                            OutlinedTextField(
+                                                value = montoRetiro,
+                                                onValueChange = { if (it.all { c -> c.isDigit() || c == '.' } || it.isEmpty()) montoRetiro = it },
+                                                label = { Text(stringResource(R.string.cierre_monto)) },
+                                                singleLine = true,
+                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            OutlinedTextField(
+                                                value = motivoRetiro,
+                                                onValueChange = { motivoRetiro = it },
+                                                label = { Text(stringResource(R.string.cierre_motivo)) },
+                                                singleLine = true
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            OutlinedTextField(
+                                                value = pinRetiro,
+                                                onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) pinRetiro = it },
+                                                label = { Text(stringResource(R.string.cierre_pin)) },
+                                                singleLine = true,
+                                                visualTransformation = PasswordVisualTransformation(),
+                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                                            )
+                                        }
+                                    },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                val monto = montoRetiro.toDoubleOrNull() ?: 0.0
+                                                if (monto > 0 && motivoRetiro.isNotBlank() && pinRetiro.isNotBlank()) {
+                                                    vm.registrarRetiroParcial(
+                                                        pin = pinRetiro,
+                                                        monto = monto,
+                                                        motivo = motivoRetiro,
+                                                        usuarioNombre = "Cajero"
+                                                    ) { success ->
+                                                        if (success) {
+                                                            mostrarDialogoRetiro = false
+                                                            montoRetiro = ""
+                                                            motivoRetiro = ""
+                                                            pinRetiro = ""
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            enabled = montoRetiro.toDoubleOrNull() ?: 0.0 > 0 && motivoRetiro.isNotBlank() && pinRetiro.isNotBlank()
+                                        ) { Text(stringResource(R.string.cierre_registrar)) }
+                                    },
+                                    dismissButton = { TextButton(onClick = { mostrarDialogoRetiro = false }) { Text(stringResource(R.string.cierre_cancelar)) } }
+                                )
+                            }
+
                         }
                     }
 
@@ -557,6 +644,90 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                 }
             },
             shape = RoundedCornerShape(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun DenominationInputGrid(
+    denominacionesInput: Map<String, String>,
+    onDenominationChange: (String, String) -> Unit,
+    efectivoContado: String
+) {
+    val denominaciones = listOf("1000", "500", "200", "100", "50", "20", "10", "5", "2", "1")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = stringResource(com.bocatta.pos.R.string.cierre_conteo_denominaciones),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        var rowIndex = 0
+        while (rowIndex < denominaciones.size) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val first = denominaciones[rowIndex]
+                DenominationInput(
+                    denomination = first,
+                    value = denominacionesInput[first] ?: "",
+                    onValueChange = { onDenominationChange(first, it) },
+                    modifier = Modifier.weight(1f)
+                )
+                if (rowIndex + 1 < denominaciones.size) {
+                    val second = denominaciones[rowIndex + 1]
+                    DenominationInput(
+                        denomination = second,
+                        value = denominacionesInput[second] ?: "",
+                        onValueChange = { onDenominationChange(second, it) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            rowIndex += 2
+        }
+        Text(
+            text = "${stringResource(com.bocatta.pos.R.string.cierre_total_contado)} $$efectivoContado",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun DenominationInput(
+    denomination: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = modifier.padding(vertical = 2.dp)
+    ) {
+        Text(
+            text = "$$denomination",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = { newVal ->
+                if (newVal.all { it.isDigit() } || newVal.isEmpty()) {
+                    onValueChange(newVal)
+                }
+            },
+            modifier = Modifier.width(70.dp),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            textStyle = MaterialTheme.typography.bodyMedium
         )
     }
 }

@@ -179,7 +179,20 @@ data class TurnoCajaV2(
     val tarjetaContada: Double = 0.0,
     val diferenciaEfectivo: Double = 0.0,
     val diferenciaTarjeta: Double = 0.0,
-    val estado: String = "abierto"
+    val estado: String = "abierto",
+    val cajaId: String = "1",
+    val denominacionesContadas: Map<String, Int> = emptyMap()
+)
+
+// Added for caja-retiros-arqueo change
+data class RetiroParcialV2(
+    val id: String = "",
+    val turnoId: String = "",
+    val monto: Double = 0.0,
+    val motivo: String = "",
+    val usuarioId: String = "",
+    val usuarioNombre: String = "",
+    val fecha: Long = 0L
 )
 
 enum class Rol { ADMIN, VENDEDOR, DUEÑO }

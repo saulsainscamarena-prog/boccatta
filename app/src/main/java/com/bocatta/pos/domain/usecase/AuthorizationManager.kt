@@ -18,7 +18,8 @@ enum class AccionSensible {
     TRANSFERIR_MESA,
     CAMBIAR_MESA,
     CERRAR_CAJA,
-    AJUSTAR_INVENTARIO
+    AJUSTAR_INVENTARIO,
+    GASTAR_CAJA
 }
 
 interface PinRateLimitStore {
@@ -207,6 +208,7 @@ class AuthorizationManager(
             AccionSensible.CAMBIAR_MESA -> permiso.puedeGestionarMesas
             AccionSensible.CERRAR_CAJA -> permiso.puedeCerrarTurnoAjeno
             AccionSensible.AJUSTAR_INVENTARIO -> permiso.puedeGestionarEmpleados
+            AccionSensible.GASTAR_CAJA -> permiso.puedeCerrarTurnoAjeno
         }
     }
 

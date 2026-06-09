@@ -20,6 +20,7 @@ object FirestoreCollections {
     const val INSUMOS = "v2_supplies"
     const val SUCURSAL_CONFIG = "v2_sucursal_config"
     const val SUPPLIERS = "v2_suppliers"
+    const val RETIROS = "retiros"
     const val EMPLEADOS = "v2_employees"
     const val AUDITORIA_EMPLEADOS = "v2_auditoria_empleados"
     const val APERTURAS = "v2_aperturas"
