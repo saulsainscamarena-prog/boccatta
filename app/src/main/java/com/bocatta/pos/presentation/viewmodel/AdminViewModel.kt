@@ -811,7 +811,7 @@ doc.toObject(VentaV2::class.java)?.let { historialVentasV2.add(it.copy(id = doc.
 
             db.collection(FirestoreCollections.USUARIOS).document(usuario.uid)
 
-                .update(mapOf("nombre" to usuario.nombre, "rol" to usuario.rol?.name))
+                .update(mapOf("nombre" to usuario.nombre, "rol" to usuario.rol.name))
 
                 .await()
 

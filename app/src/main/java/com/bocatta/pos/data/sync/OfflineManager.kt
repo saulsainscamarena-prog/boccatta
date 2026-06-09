@@ -27,7 +27,8 @@ object OfflineManager {
     }
 
 
-    fun guardarVentaOffline(
+    @androidx.room.Transaction
+    suspend fun guardarVentaOffline(
         context: Context,
         carrito: List<ItemCarritoV2>,
         sucursal: String,

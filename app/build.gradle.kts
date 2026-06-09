@@ -9,15 +9,22 @@ plugins {
     alias(libs.plugins.ksp)
     // id("org.jetbrains.kotlin.kapt")
     alias(libs.plugins.detekt)
+    alias(libs.plugins.dropshots)
     id("jacoco")
 }
 
 android {
     namespace = "com.bocatta.pos"
-    compileSdk = 36
+    compileSdk = 37
 
     val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
+
+    detekt {
+        buildUponDefaultConfig = true
+        allRules = false
+        config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    }
     if (localPropertiesFile.exists()) {
         val stream = localPropertiesFile.inputStream()
         localProperties.load(stream)
@@ -30,7 +37,7 @@ android {
     defaultConfig {
         applicationId = "com.bocatta.pos"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -73,10 +80,8 @@ kotlin {
 }
 
 composeCompiler {
-    if (project.hasProperty("enableComposeCompilerReports")) {
-        metricsDestination = layout.buildDirectory.dir("compose_metrics")
-        reportsDestination = layout.buildDirectory.dir("compose_metrics")
-    }
+    metricsDestination = layout.buildDirectory.dir("compose_metrics")
+    reportsDestination = layout.buildDirectory.dir("compose_metrics")
 }
 
 dependencies {
@@ -98,6 +103,11 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.compose.material.icons.extended)
+    androidTestImplementation(libs.androidx.uiautomator)
+    androidTestImplementation(libs.mockk)
+    androidTestImplementation(libs.koin.test.junit4)
+    testImplementation(libs.mockk)
+    testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 

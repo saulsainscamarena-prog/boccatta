@@ -1,28 +1,32 @@
 [versions]
 agp = "9.2.1"
-coreKtx = "1.18.0"
+coreKtx = "1.19.0"
 junit = "4.13.2"
-junitVersion = "1.1.5"
-espressoCore = "3.5.1"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
 kotlinxCoroutinesTest = "1.11.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.21"
-composeBom = "2026.05.00"
+composeBom = "2026.05.01"
 googleServices = "4.4.4"
-firebaseBom = "34.13.0"
+firebaseBom = "34.14.0"
 room = "2.8.4"
 workManager = "2.11.2"
-ksp = "2.3.7"
+ksp = "2.3.9"
 serialization = "1.11.0"
 navigation = "2.9.8"
-koin = "4.2.0"
+koin = "4.2.1"
 timber = "5.0.1"
-firebaseCrashlyticsPlugin = "3.0.1"
+firebaseCrashlyticsPlugin = "3.0.7"
 kotlinxCollectionsImmutable = "0.3.8"
-detekt = "1.23.6"
-ktlint = "11.6.1"
-
+detekt = "1.23.8"
+ktlint = "14.2.0"
+uiautomator = "2.3.0"
+dropshots = "0.6.0"
+robolectric = "4.16.1"
+mockk = "1.14.11"
+benmanes = "0.54.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -61,14 +65,18 @@ koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin"
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
-
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+koin-test-junit4 = { group = "io.insert-koin", name = "koin-test-junit4", version.ref = "koin" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+benmanes-versions = { id = "com.github.ben-manes.versions", version.ref = "benmanes" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
-
+dropshots = { id = "com.dropbox.dropshots", version.ref = "dropshots" }

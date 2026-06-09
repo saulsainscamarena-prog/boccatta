@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.dropshots) apply false
+    alias(libs.plugins.benmanes.versions)
 }
 
 val mojibakeCharacters = setOf('\uFFFD', '\u00C3', '\u00C2', '\u00E2', '\u00F0')

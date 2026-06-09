@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -200,7 +201,7 @@ fun AdminScreen(
                                 DashboardCardPremium(
                                     title = vm.businessFeatures.labelCatalogo,
                                     subtitle = stringResource(R.string.admin_card_sub_productos, vm.productos.size),
-                                    icon = Icons.Default.MenuBook,
+                                    icon = Icons.AutoMirrored.Filled.MenuBook,
                                     color = MaterialTheme.colorScheme.primary,
                                     onClick = { seccionActiva = "menu" }
                                 )
@@ -210,7 +211,7 @@ fun AdminScreen(
                                     DashboardCardPremium(
                                         title = stringResource(R.string.admin_card_recetas),
                                         subtitle = stringResource(R.string.admin_card_sub_config),
-                                        icon = Icons.Default.ReceiptLong,
+                                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
                                         color = MaterialTheme.colorScheme.secondary,
                                         onClick = { seccionActiva = "recetas" }
                                     )

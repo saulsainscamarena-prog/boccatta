@@ -69,3 +69,19 @@ Esta constitution es la fuente de reglas no negociables para Specs, planes, tare
 - Dominio/repositorios/logica critica: unit tests relevantes, normalmente `.\gradlew.bat testDebugUnitTest`.
 - Room/SQLite/offline persistente: tests instrumentados o prueba manual documentada si el entorno no permite emulador.
 - UI de mostrador: prueba manual en movil/tablet o Compose UI test cuando exista harness.
+
+## Governance Gates
+
+1. **Soft Gate (3+ abiertos)**: Si hay 3 o más cambios SDD abiertos (sin archive.md), el `proposal.md` de cualquier cambio nuevo **DEBE** incluir una justificación obligatoria de por qué se ignora el gate. Esto se verifica ANTES de crear el cambio.
+
+2. **Fases obligatorias**:
+   - Proposal sin spec → **BLOQUEADO** (no se puede avanzar a design)
+   - Spec sin design → **BLOQUEADO** (no se puede avanzar a tasks)
+   - Design sin tasks → **BLOQUEADO** (no se puede avanzar a apply)
+   - Tasks sin apply completado → **BLOQUEADO** (no se puede crear `verification.md`)
+
+3. **Auto-archive (14 días)**: Cambios sin actividad (sin commits ni ediciones de artefactos) por 14 días consecutivos → se archiva automáticamente con estado "suspended" y un `archive.md` explicando el motivo.
+
+4. **Gate offline**: Cualquier cambio que toque ventas, inventario o sync **DEBE** incluir verificación offline en `verification.md`. Sin esa verificación, el `verification.md` no es válido.
+
+5. **Beta Gate**: Los 6 flujos críticos (checkout, offline sync, inventario, caja, reportos, ventas) deben tener spec + design + verification completos y pasar todas las verificaciones antes de considerar el proyecto Beta.

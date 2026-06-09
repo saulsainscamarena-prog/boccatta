@@ -47,7 +47,7 @@ abstract class BocattaRoomDatabase : RoomDatabase() {
                     BocattaRoomDatabase::class.java,
                     "bocatta_room.db"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(false)
                     .build()
                 INSTANCE = instance
                 instance
