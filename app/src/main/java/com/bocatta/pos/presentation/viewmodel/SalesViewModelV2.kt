@@ -26,46 +26,31 @@ import kotlinx.coroutines.tasks.await
 
 import kotlinx.coroutines.withContext
 
+import com.bocatta.pos.domain.MembresiaManager
+import com.bocatta.pos.domain.MembresiaDiscountCalculator
+import com.bocatta.pos.data.repository.MembresiaRepository
+import com.bocatta.pos.domain.usecase.CheckoutUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
-
 import kotlinx.coroutines.flow.StateFlow
-
 import kotlinx.coroutines.flow.asStateFlow
-
 import kotlinx.coroutines.flow.update
-
 import java.math.BigDecimal
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
-
 import com.bocatta.pos.domain.repository.IInventoryRepository
-
 import com.bocatta.pos.domain.repository.IProductRepository
-
 import com.bocatta.pos.domain.repository.SalesRepository
-
 import com.bocatta.pos.data.sync.OfflineManager
-
 import com.bocatta.pos.data.repository.InventoryDeductions
-
 import com.bocatta.pos.data.repository.OperationalCatalogSyncRepository
-
 import com.bocatta.pos.data.repository.PromocionesRepository
-
 import com.bocatta.pos.data.local.OfflineDatabase
-
 import timber.log.Timber
-
 import com.google.firebase.firestore.ListenerRegistration
-
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
-
 import com.bocatta.pos.domain.engine.PricingEngine
-
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
 import com.bocatta.pos.domain.usecase.CartManager
-import com.bocatta.pos.domain.usecase.CheckoutUseCase
-
 import com.bocatta.pos.domain.util.CarritoCalculator
 
 import com.bocatta.pos.domain.usecase.GenerarTicketWhatsAppUseCase
@@ -214,13 +199,19 @@ class SalesViewModelV2(
 
       private set
 
-   private var _mensajeFeedback by mutableStateOf<String?>(null)
+    private var _mensajeFeedback by mutableStateOf<String?>(null)
 
-   var mensajeFeedback: String?
+    var mensajeFeedback: String?
 
-      get() = _mensajeFeedback
+       get() = _mensajeFeedback
 
-      set(value) { _mensajeFeedback = value }
+       set(value) { _mensajeFeedback = value }
+
+    // Loyalty message showing eligibility or progress
+    private var _lealtadMensaje by mutableStateOf<String?>(null)
+    var lealtadMensaje: String?
+        get() = _lealtadMensaje
+        private set(value) { _lealtadMensaje = value }
 
     private var _metodoPagoSeleccionado by mutableStateOf(MetodoPago.EFECTIVO)
 
@@ -586,17 +577,20 @@ class SalesViewModelV2(
 
 
 
-   fun seleccionarCliente(cliente: ClienteV2) {
-
-      _clienteSeleccionado = cliente
-
-      _descuentoLealtad = if (cliente.visitasCicloActual == FirestoreCollections.MEMBRESIA_CICLO_VISITAS) {
-
-         cliente.comprasCicloActual.average()
-
-      } else 0.0
-
-   }
+    fun seleccionarCliente(cliente: ClienteV2) {
+        _clienteSeleccionado = cliente
+        // Check loyalty eligibility
+        val estado = MembresiaManager.verificarEstadoMembresia(cliente.visitasCicloActual)
+        if (estado.esElegiblePremio) {
+            val promedio = MembresiaDiscountCalculator.calcularPromedio(cliente.comprasCicloActual)
+            val descuento = MembresiaDiscountCalculator.calcularPorcentajeDescuento(promedio)
+            _descuentoLealtad = descuento
+            lealtadMensaje = "¡Beneficio de lealtad aplicado!"
+        } else {
+            _descuentoLealtad = 0.0
+            lealtadMensaje = "${estado.nivel} · ${estado.visitasRestantesParaPremio} visitas para beneficio"
+        }
+    }
 
 
 
@@ -822,15 +816,33 @@ class SalesViewModelV2(
                     ultimoTicketTexto = res.ticketText ?: ""
                     mostrarConfirmacionVenta = true
                     _lastCompletedHeldOrderId = _activeHeldOrderId
-                    limpiarEstadoPostVenta()
-
-                    mensajeFeedback = if (!res.online) {
-                        "Venta guardada localmente (modo offline)"
-                    } else {
+                    mensajeFeedback = if (res.online) {
                         "Venta finalizada: ticket #${res.codigoTicket}"
+                    } else {
+                        "Venta guardada localmente (modo offline)"
                     }
                     _uiState.update { it.copy(showSuccess = true, isLoading = false) }
                     LogHelper.recordBreadcrumb("sale_finish_success", "ticket=${res.codigoTicket}")
+
+                    // Post-sale loyalty visit increment
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val cliente = _clienteSeleccionado
+                        if (cliente != null) {
+                            val premioAplicado = _descuentoLealtad > 0
+                            val subtotal = _carrito.sumOf { it.precioFinal.toDouble() * it.cantidad }
+                            val totalSinPropina = (subtotal - _descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
+                            val totalVenta = if (_esConsumoEmpleado) 0.0 else totalSinPropina + propina.coerceAtLeast(0.0)
+                            MembresiaRepository().incrementarVisita(
+                                clienteId = cliente.idDocumento,
+                                montoCompra = totalVenta,
+                                premioAplicado = premioAplicado
+                            )
+                            if (premioAplicado) {
+                                _descuentoLealtad = 0.0
+                                lealtadMensaje = null
+                            }
+                        }
+                    }
                 } else {
                     mensajeError = res.error
                     _uiState.update { it.copy(error = res.error, isLoading = false) }

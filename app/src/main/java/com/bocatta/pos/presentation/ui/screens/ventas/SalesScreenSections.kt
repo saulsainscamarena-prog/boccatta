@@ -443,7 +443,8 @@ internal fun SalesCartSection(
     onBuscarCliente: () -> Unit,
     onEliminarCliente: () -> Unit,
     onValidarPin: (String, (Boolean) -> Unit) -> Unit,
-    onDismissMobileCart: () -> Unit
+    onDismissMobileCart: () -> Unit,
+    lealtadMensaje: String? = null
 ) {
     if (isTablet) {
         VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(0.3f))
@@ -467,7 +468,8 @@ internal fun SalesCartSection(
             onApartar = onApartar,
             onBuscarCliente = onBuscarCliente,
             onEliminarCliente = onEliminarCliente,
-            onValidarPin = onValidarPin
+            onValidarPin = onValidarPin,
+            lealtadMensaje = lealtadMensaje
         )
     } else if (showMobileCart) {
         ModalBottomSheet(
@@ -494,7 +496,8 @@ internal fun SalesCartSection(
                 onApartar = onApartar,
                 onBuscarCliente = onBuscarCliente,
                 onEliminarCliente = onEliminarCliente,
-                onValidarPin = onValidarPin
+                onValidarPin = onValidarPin,
+                lealtadMensaje = lealtadMensaje
             )
             Spacer(Modifier.height(32.dp))
         }
@@ -522,7 +525,8 @@ private fun SalesCartPanel(
     onApartar: () -> Unit,
     onBuscarCliente: () -> Unit,
     onEliminarCliente: () -> Unit,
-    onValidarPin: (String, (Boolean) -> Unit) -> Unit
+    onValidarPin: (String, (Boolean) -> Unit) -> Unit,
+    lealtadMensaje: String? = null
 ) {
     CarritoPanelV2(
         carrito = carrito,
@@ -544,7 +548,8 @@ private fun SalesCartPanel(
         onEliminarCliente = onEliminarCliente,
         esAdmin = esAdmin,
         onValidarPin = onValidarPin,
-        mesaId = mesaId
+        mesaId = mesaId,
+        lealtadMensaje = lealtadMensaje
     )
 }
 

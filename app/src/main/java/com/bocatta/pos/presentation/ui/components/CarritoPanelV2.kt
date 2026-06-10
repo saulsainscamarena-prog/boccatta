@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Receipt
@@ -54,7 +55,8 @@ fun CarritoPanelV2(
     onEliminarCliente: (() -> Unit)? = null,
     esAdmin: Boolean = true,
     onValidarPin: ((String, (Boolean) -> Unit) -> Unit)? = null,
-    mesaId: String? = null
+    mesaId: String? = null,
+    lealtadMensaje: String? = null
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -177,6 +179,31 @@ fun CarritoPanelV2(
                                 contentDescription = "Desasociar cliente",
                                 tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f),
                                 modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+                lealtadMensaje?.let { mensaje ->
+                    Spacer(Modifier.height(8.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = mensaje,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
                     }

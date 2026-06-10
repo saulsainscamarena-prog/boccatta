@@ -568,7 +568,8 @@ fun SalesScreen(
                                 onBuscarCliente = { mostrarBuscarCliente = true },
                                 onEliminarCliente = { vmV2.eliminarCliente() },
                                 onValidarPin = { pin, cb -> session.validarPinAdmin(pin, cb) },
-                                onDismissMobileCart = {}
+                                onDismissMobileCart = {},
+                                lealtadMensaje = vmV2.lealtadMensaje
                             )
                         }
                     }
@@ -612,7 +613,8 @@ fun SalesScreen(
                         onBuscarCliente = { mostrarBuscarCliente = true },
                         onEliminarCliente = { vmV2.eliminarCliente() },
                         onValidarPin = { pin, cb -> session.validarPinAdmin(pin, cb) },
-                        onDismissMobileCart = { mostrarCarritoMobile = false }
+                        onDismissMobileCart = { mostrarCarritoMobile = false },
+                        lealtadMensaje = vmV2.lealtadMensaje
                     )
                 }
             }

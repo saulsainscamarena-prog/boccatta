@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bocatta.pos.domain.MembresiaManager
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.presentation.viewmodel.ClienteViewModel
 import com.bocatta.pos.presentation.ui.theme.*
@@ -137,7 +138,27 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(cliente.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(cliente.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(Modifier.width(8.dp))
+                    val estadoMembresia = MembresiaManager.verificarEstadoMembresia(cliente.visitasCicloActual)
+                    val badgeColor = when (estadoMembresia.nivel) {
+                        "PLATINO" -> MaterialTheme.colorScheme.tertiary
+                        "ORO" -> Color(0xFFFFA000)
+                        else -> Color(0xFF9E9E9E)
+                    }
+                    Surface(
+                        color = badgeColor,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = estadoMembresia.nivel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
                 Text(cliente.telefono, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
 
@@ -150,7 +171,16 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                         Box(Modifier.height(4.dp).weight(1f).background(colorStep, CircleShape))
                     }
                 }
-                if (esVIP) Text("REGALO LISTO", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
+                if (esVIP) {
+                    Text("REGALO LISTO", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
+                } else if (cliente.visitasCicloActual > 0) {
+                    Text(
+                        text = "Visita ${cliente.visitasCicloActual % 5 + 1} de 5",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
             }
             Row {
                 IconButton(onClick = onEditar) { Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary) }
