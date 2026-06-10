@@ -16,7 +16,7 @@ Chained PRs recommended: No
 
 - [x] 1.1 Create `MembresiaDiscountCalculator` object in `domain/` with `calcularPorcentajeDescuento(promedio)` and `calcularPromedio(compras)`
 - [x] 1.2 Create `MembresiaDiscountCalculatorTest` with parameterised tests for each bracket (<100, 100-299, 300-499, 500+) and edge cases (empty list, zero, exact boundaries)
-- [ ] 1.3 Verify MembresiaManagerTest still passes (pre-existing 4 tests)
+- [x] 1.3 Verify MembresiaManagerTest still passes (pre-existing 4 tests) ✓
 
 ## Phase 2: MembresiaRepository
 
