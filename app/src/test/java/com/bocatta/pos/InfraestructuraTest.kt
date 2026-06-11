@@ -1,7 +1,7 @@
 package com.bocatta.pos
 
 import com.bocatta.pos.core.constants.SucursalConfig
-import com.bocatta.pos.core.TicketUtils
+import com.bocatta.pos.core.model.TicketUtils
 import com.bocatta.pos.domain.model.ItemVendidoV2
 import org.junit.Test
 import org.junit.Assert.*
@@ -124,3 +124,4 @@ class ItemVendidoV2Test {
         assertNull(item.recetaId)
     }
 }
+

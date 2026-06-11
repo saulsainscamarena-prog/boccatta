@@ -1,0 +1,10 @@
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun com.bocatta.pos.navigation.AppNavGraph(
+  unstable navController: NavHostController
+  authVm: AuthViewModelV2
+  sessionVm: SessionViewModel
+  cajaVm: CajaViewModel
+  inventoryVm: InventoryViewModel
+  salesVmV2: SalesViewModelV2
+  heldOrderVm: HeldOrderViewModel
+  mesaVm: MesaViewModel
+)

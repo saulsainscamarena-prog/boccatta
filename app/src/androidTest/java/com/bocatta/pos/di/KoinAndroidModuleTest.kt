@@ -2,8 +2,8 @@ package com.bocatta.pos.di
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.bocatta.pos.presentation.viewmodel.HeldOrderViewModel
-import com.bocatta.pos.presentation.viewmodel.MesaViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.HeldOrderViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.MesaViewModel
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,6 +1,8 @@
-package com.bocatta.pos.presentation.viewmodel
+﻿package com.bocatta.pos.presentation.viewmodel
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.ViewModel
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
@@ -62,7 +64,7 @@ class MenuViewModel : BaseViewModel() {
                     .document(producto.id)
                     .set(producto)
                     .await()
-                mensajeExito = "Producto agregado ✓"
+                mensajeExito = "Producto agregado âœ“"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -76,7 +78,7 @@ class MenuViewModel : BaseViewModel() {
                     .document(producto.id)
                     .set(producto)
                     .await()
-                mensajeExito = "Producto actualizado ✓"
+                mensajeExito = "Producto actualizado âœ“"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -90,7 +92,7 @@ class MenuViewModel : BaseViewModel() {
                     .document(producto.id)
                     .delete()
                     .await()
-                mensajeExito = "Producto eliminado ✓"
+                mensajeExito = "Producto eliminado âœ“"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -104,7 +106,7 @@ class MenuViewModel : BaseViewModel() {
                     .document(receta.id)
                     .set(receta)
                     .await()
-                mensajeExito = "Receta guardada ✓"
+                mensajeExito = "Receta guardada âœ“"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -118,7 +120,7 @@ class MenuViewModel : BaseViewModel() {
                     .document(recetaId)
                     .delete()
                     .await()
-                mensajeExito = "Receta eliminada ✓"
+                mensajeExito = "Receta eliminada âœ“"
             } catch (e: Exception) {
                 mensajeError = "Error: ${e.message}"
             }
@@ -131,3 +133,6 @@ class MenuViewModel : BaseViewModel() {
         listenerRecetas?.remove()
     }
 }
+
+
+

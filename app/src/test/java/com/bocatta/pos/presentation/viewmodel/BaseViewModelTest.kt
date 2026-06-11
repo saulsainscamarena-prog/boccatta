@@ -1,14 +1,24 @@
 package com.bocatta.pos.presentation.viewmodel
 
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.Dispatchers
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.test.StandardTestDispatcher
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.test.resetMain
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.test.runTest
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.test.setMain
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import org.junit.After
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import org.junit.Before
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import org.junit.Test
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import org.junit.Assert.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,3 +99,4 @@ class BaseViewModelTest {
         assertTrue(vm.cargando)
     }
 }
+

@@ -1,0 +1,19 @@
+restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun com.bocatta.pos.core.ui.components.BuscadorSelector(
+  stable label: String
+  unstable items: List<T>
+  unstable selectedItems: List<ItemSeleccionable<T>>
+  unused stable filterPredicate: Function2<T, String, Boolean>
+  stable itemLabel: Function1<T, String>
+  stable onCreateNew: Function1<String, Unit>? = @static null
+  stable onAddItem: Function1<T, Unit>
+  stable onRemoveItem: Function1<T, Unit>
+  stable onUpdateCantidad: Function2<T, Double, Unit>? = @static null
+)
+restartable skippable scheme("[androidx.compose.ui.UiComposable, [androidx.compose.ui.UiComposable]]") fun com.bocatta.pos.core.ui.components.SeccionConfiguracion(
+  stable titulo: String
+  stable icono: ImageVector? = @dynamic <expression>
+  stable ayuda: String? = @static ""
+  stable ejemplos: String? = @static ""
+  stable contraejemplos: String? = @static ""
+  stable content: Function2<Composer, Int, Unit>
+)

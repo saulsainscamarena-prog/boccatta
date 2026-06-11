@@ -1,0 +1,261 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 264241152 bytes. Error detail: G1 virtual space
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Unscaled Compressed Oops mode in which the Java heap is
+#     placed in the first 4GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 4GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_windows.cpp:3690), pid=7480, tid=25740
+#
+# JRE version:  (17.0.18+8) (build )
+# Java VM: OpenJDK 64-Bit Server VM (17.0.18+8-LTS, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -Djava.awt.headless=true -Djava.library.path=C:\Program Files\Android\Android Studio\jbr\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin;C:\Program Files\ImageMagick-6.9.13-Q16-HDRI;C:\Program Files\ImageMagick-7.1.2-Q16-HDRI;C:\Windows\System32\HWAudioDriver;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Users\Administrator\AppData\Local\Microsoft\WindowsApps;C:\Program Files\dotnet\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Warp\bin;C:\Program Files\Git\cmd;C:\Program Files\GitHub CLI\;C:\Users\ia\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Users\ia\.local\bin;C:\Users\ia\AppData\Local\Microsoft\WindowsApps;C:\Users\ia\AppData\Local\Python\bin;C:\Users\ia\AppData\Local\Programs\Microsoft VS Code\bin;C:\ffmpeg\ffmpeg-2026-03-15-git-6ba0b59d8b-essentials_build\bin;C:\Users\ia\AppData\Roaming\npm;C:\Users\ia\AppData\Local\Programs\Antigravity\bin;C:\Users\ia\.deno\bin;C:\Users\ia\AppData\Local\Programs\Ollama;C:\Users\ia\AppData\AndroidCLI;C:\Users\ia\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;;.;C:\Users\ia\AndroidStudioProjects\bocatta\app\src\testDebug\jniLibs;C:\Users\ia\AndroidStudioProjects\bocatta\app\src\test\jniLibs -Dorg.gradle.internal.worker.tmpdir=C:\Users\ia\AndroidStudioProjects\bocatta\app\build\tmp\testDebugUnitTest\work --add-opens=java.base/java.io=ALL-UNNAMED -javaagent:C:\Users\ia\AndroidStudioProjects\bocatta\app\build\tmp\.cache\expanded\zip_27729b840c216bdc69a9315e04b27ab1\jacocoagent.jar=destfile=build/jacoco/testDebugUnitTest.exec,append=true,inclnolocationclasses=false,dumponexit=true,output=file,jmx=false -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=MX -Duser.language=es -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 12'
+
+Host: 12th Gen Intel(R) Core(TM) i5-12450H, 12 cores, 15G,  Windows 11 , 64 bit Build 26100 (10.0.26100.8328)
+Time: Tue May 19 14:21:02 2026 Hora estándar central (México) elapsed time: 2.052897 seconds (0d 0h 0m 2s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000001b91a070ed0):  JavaThread "Unknown thread" [_thread_in_vm, id=25740, stack(0x00000006e4c00000,0x00000006e4d00000)]
+
+Stack: [0x00000006e4c00000,0x00000006e4d00000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x68c879]  (no source info available)
+V  [jvm.dll+0x845979]  (no source info available)
+V  [jvm.dll+0x8476e8]  (no source info available)
+V  [jvm.dll+0x847d73]  (no source info available)
+V  [jvm.dll+0x24cf6f]  (no source info available)
+V  [jvm.dll+0x68bc79]  (no source info available)
+V  [jvm.dll+0x68023a]  (no source info available)
+V  [jvm.dll+0x3101a0]  (no source info available)
+V  [jvm.dll+0x310042]  (no source info available)
+V  [jvm.dll+0x317599]  (no source info available)
+V  [jvm.dll+0x369999]  (no source info available)
+V  [jvm.dll+0x369bcd]  (no source info available)
+V  [jvm.dll+0x2e69aa]  (no source info available)
+V  [jvm.dll+0x2e78b8]  (no source info available)
+V  [jvm.dll+0x81871e]  (no source info available)
+V  [jvm.dll+0x377601]  (no source info available)
+V  [jvm.dll+0x7f6d65]  (no source info available)
+V  [jvm.dll+0x3fd47b]  (no source info available)
+V  [jvm.dll+0x3ff0b1]  (no source info available)
+C  [jli.dll+0x52f0]  (no source info available)
+C  [ucrtbase.dll+0x37b0]  (no source info available)
+C  [KERNEL32.DLL+0x2e957]  (no source info available)
+C  [ntdll.dll+0x427c]  (no source info available)
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ff9cb6e6058, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x000001b91a0a1dc0 GCTaskThread "GC Thread#0" [stack: 0x00000006e4d00000,0x00000006e4e00000] [id=7028]
+  0x000001b91a0a6d20 ConcurrentGCThread "G1 Main Marker" [stack: 0x00000006e4e00000,0x00000006e4f00000] [id=29164]
+  0x000001b91a0a7740 ConcurrentGCThread "G1 Conc#0" [stack: 0x00000006e4f00000,0x00000006e5000000] [id=27252]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff9cae974e7]
+
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x000001b91a05ce40] Heap_lock - owner thread: 0x000001b91a070ed0
+
+Heap address: 0x00000000e0000000, size: 512 MB, Compressed Oops mode: 32-bit
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 1.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+<Empty>
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x00000000e0000000, 0x0000000100000000)
+  region size 1024K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff9cb288929]
+
+GC Heap History (0 events):
+No events
+
+Dll operation events (1 events):
+Event: 0.018 Loaded shared library C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\java.dll
+
+Deoptimization events (0 events):
+No events
+
+Classes loaded (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Memory protections (0 events):
+No events
+
+Nmethod flushes (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+0x00007ff7eea60000 - 0x00007ff7eea6e000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\java.exe
+0x00007ffacc140000 - 0x00007ffacc3a7000 	C:\Windows\SYSTEM32\ntdll.dll
+0x00007ffaca110000 - 0x00007ffaca1d9000 	C:\Windows\System32\KERNEL32.DLL
+0x00007ffac9ac0000 - 0x00007ffac9eb7000 	C:\Windows\System32\KERNELBASE.dll
+0x00007ffac9760000 - 0x00007ffac98ab000 	C:\Windows\System32\ucrtbase.dll
+0x00007ffab77e0000 - 0x00007ffab77fe000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\VCRUNTIME140.dll
+0x00007ffab7480000 - 0x00007ffab7498000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\jli.dll
+0x00007ffaca780000 - 0x00007ffaca946000 	C:\Windows\System32\USER32.dll
+0x00007ffac9a90000 - 0x00007ffac9ab7000 	C:\Windows\System32\win32u.dll
+0x00007ffacbc30000 - 0x00007ffacbc5b000 	C:\Windows\System32\GDI32.dll
+0x00007ffaa7930000 - 0x00007ffaa7bc2000 	C:\Windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.8457_none_3e0b2faee331e92d\COMCTL32.dll
+0x00007ffac9960000 - 0x00007ffac9a8c000 	C:\Windows\System32\gdi32full.dll
+0x00007ffaca200000 - 0x00007ffaca2a9000 	C:\Windows\System32\msvcrt.dll
+0x00007ffac98b0000 - 0x00007ffac9953000 	C:\Windows\System32\msvcp_win.dll
+0x00007ffac9fd0000 - 0x00007ffaca002000 	C:\Windows\System32\IMM32.DLL
+0x00007ffac1dd0000 - 0x00007ffac1ddc000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\vcruntime140_1.dll
+0x00007ffa3dfe0000 - 0x00007ffa3e069000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\msvcp140.dll
+0x00007ff9caba0000 - 0x00007ff9cb81a000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\server\jvm.dll
+0x00007ffaca9e0000 - 0x00007ffacaa96000 	C:\Windows\System32\ADVAPI32.dll
+0x00007ffacab80000 - 0x00007ffacac27000 	C:\Windows\System32\sechost.dll
+0x00007ffaca330000 - 0x00007ffaca448000 	C:\Windows\System32\RPCRT4.dll
+0x00007ffaca950000 - 0x00007ffaca9d0000 	C:\Windows\System32\WS2_32.dll
+0x00007ffabf740000 - 0x00007ffabf776000 	C:\Windows\SYSTEM32\WINMM.dll
+0x00007ffac89d0000 - 0x00007ffac8a2e000 	C:\Windows\SYSTEM32\POWRPROF.dll
+0x00007ffab8c70000 - 0x00007ffab8c7b000 	C:\Windows\SYSTEM32\VERSION.dll
+0x00007ffac89b0000 - 0x00007ffac89c4000 	C:\Windows\SYSTEM32\UMPDC.dll
+0x00007ffac7900000 - 0x00007ffac791b000 	C:\Windows\SYSTEM32\kernel.appcore.dll
+0x00007ffab7380000 - 0x00007ffab738a000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\jimage.dll
+0x00007ffac69c0000 - 0x00007ffac6c02000 	C:\Windows\SYSTEM32\DBGHELP.DLL
+0x00007ffacb3e0000 - 0x00007ffacb763000 	C:\Windows\System32\combase.dll
+0x00007ffacaaa0000 - 0x00007ffacab79000 	C:\Windows\System32\OLEAUT32.dll
+0x00007ffaaf060000 - 0x00007ffaaf09b000 	C:\Windows\SYSTEM32\dbgcore.DLL
+0x00007ffac8e40000 - 0x00007ffac8ee8000 	C:\Windows\System32\bcryptPrimitives.dll
+0x00007ffac28f0000 - 0x00007ffac28ff000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\instrument.dll
+0x00007ffaa0d80000 - 0x00007ffaa0da6000 	C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\java.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin;C:\Windows\SYSTEM32;C:\Windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.8457_none_3e0b2faee331e92d;C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin\server
+
+VM Arguments:
+jvm_args: -Djava.awt.headless=true -Djava.library.path=C:\Program Files\Android\Android Studio\jbr\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin;C:\Program Files\ImageMagick-6.9.13-Q16-HDRI;C:\Program Files\ImageMagick-7.1.2-Q16-HDRI;C:\Windows\System32\HWAudioDriver;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Users\Administrator\AppData\Local\Microsoft\WindowsApps;C:\Program Files\dotnet\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Warp\bin;C:\Program Files\Git\cmd;C:\Program Files\GitHub CLI\;C:\Users\ia\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Users\ia\.local\bin;C:\Users\ia\AppData\Local\Microsoft\WindowsApps;C:\Users\ia\AppData\Local\Python\bin;C:\Users\ia\AppData\Local\Programs\Microsoft VS Code\bin;C:\ffmpeg\ffmpeg-2026-03-15-git-6ba0b59d8b-essentials_build\bin;C:\Users\ia\AppData\Roaming\npm;C:\Users\ia\AppData\Local\Programs\Antigravity\bin;C:\Users\ia\.deno\bin;C:\Users\ia\AppData\Local\Programs\Ollama;C:\Users\ia\AppData\AndroidCLI;C:\Users\ia\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;;.;C:\Users\ia\AndroidStudioProjects\bocatta\app\src\testDebug\jniLibs;C:\Users\ia\AndroidStudioProjects\bocatta\app\src\test\jniLibs -Dorg.gradle.internal.worker.tmpdir=C:\Users\ia\AndroidStudioProjects\bocatta\app\build\tmp\testDebugUnitTest\work --add-opens=java.base/java.io=ALL-UNNAMED -javaagent:C:\Users\ia\AndroidStudioProjects\bocatta\app\build\tmp\.cache\expanded\zip_27729b840c216bdc69a9315e04b27ab1\jacocoagent.jar=destfile=build/jacoco/testDebugUnitTest.exec,append=true,inclnolocationclasses=false,dumponexit=true,output=file,jmx=false -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=MX -Duser.language=es -Duser.variant -ea 
+java_command: worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 12'
+java_class_path (initial): C:\\Users\\ia\\.gradle\\caches\\9.4.1\\workerMain\\gradle-worker.jar;C:\\Users\\ia\\AndroidStudioProjects\\bocatta\\app\\build\\intermediates\\built_in_kotlinc\\debugUnitTest\\compileDebugUnitTestKotlin\\classes;C:\\Users\\ia\\AndroidStudioProjects\\bocatta\\app\\build\\intermediates\\java_res\\debugUnitTest\\processDebugUnitTestJavaRes\\out;C:\\Users\\ia\\AndroidStudioProjects\\bocatta\\app\\build\\intermediates\\runtime_app_classes_jar\\debug\\bundleDebugClassesToRuntimeJar\\classes.jar;C:\\Users\\ia\\.gradle\\caches\\modules-2\\files-2.1\\junit\\junit\\4.13.2\\8ac9e16d933b6fb43bc7f576336b8f4d7eb5ba12\\junit-4.13.2.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\5f0b68f1370c7d0efd7c79e271b41fc3\\transformed\\firebase-auth-24.1.0-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\e30346e8c045f1db430080c1e013df53\\transformed\\recaptcha-18.6.1-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\4db1db375951ae98f738393d644b992e\\transformed\\firebase-firestore-26.3.0-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\90dcda8bf143555d9ce600196dba4877\\transformed\\firebase-analytics-23.2.0-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\f05f8e4a80abd3ff9591e57ba3810698\\transformed\\play-services-measurement-api-23.2.0-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\274b532473365240b2152147205f6f9f\\transformed\\firebase-auth-interop-20.0.0-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\079b3a1cccee102e6b807927b104eecf\\transformed\\firebase-installations-19.1.0-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\9.4.1\\transforms\\d152a2fe09ee669b95b36512e1672632\\transformed\\firebase-common-22.0.1-runtime.jar;C:\\Users\\ia\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-coroutines-play-services\\1.9.0\\9d715295c29dddf8c381565c513fb2d9923f9f41\\kotlinx-coroutines-play-services-1.9.0.jar;C:\\Users\\ia\\.gradle\\caches\\modules-2\\files-2
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}
+     uint ConcGCThreads                            = 3                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 10                                        {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 1048576                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 264241152                                 {product} {ergonomic}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 536870912                                 {product} {command line}
+   size_t MinHeapDeltaBytes                        = 1048576                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 8388608                                   {product} {ergonomic}
+    uintx NonNMethodCodeHeapSize                   = 5839372                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122909434                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122909434                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 536870912                              {manageable} {ergonomic}
+     bool UseCompressedClassPointers               = true                           {product lp64_product} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\
+PATH=C:/Users/ia/.gemini/antigravity/bin;C:\Users\ia\AppData\Roaming\Antigravity\bin;C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot\bin;C:\Program Files\ImageMagick-6.9.13-Q16-HDRI;C:\Program Files\ImageMagick-7.1.2-Q16-HDRI;C:\Windows\System32\HWAudioDriver;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Users\Administrator\AppData\Local\Microsoft\WindowsApps;C:\Program Files\dotnet\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Warp\bin;C:\Program Files\Git\cmd;C:\Program Files\GitHub CLI\;C:\Users\ia\AppData\Local\agy\bin;C:\Users\ia\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Users\ia\.local\bin;C:\Users\ia\AppData\Local\Microsoft\WindowsApps;C:\Users\ia\AppData\Local\Python\bin;C:\Users\ia\AppData\Local\Programs\Microsoft VS Code\bin;C:\ffmpeg\ffmpeg-2026-03-15-git-6ba0b59d8b-essentials_build\bin;C:\Users\ia\AppData\Roaming\npm;C:\Users\ia\.deno\bin;C:\Users\ia\AppData\Local\Programs\Ollama;C:\Users\ia\AppData\AndroidCLI;C:\Users\ia\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc
+USERNAME=ia
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 154 Stepping 3, GenuineIntel
+TMP=C:\Users\ia\AppData\Local\Temp
+TEMP=C:\Users\ia\AppData\Local\Temp
+
+
+
+Periodic native trim disabled
+
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 26100 (10.0.26100.8328)
+OS uptime: 6 days 21:11 hours
+Hyper-V role detected
+
+CPU: total 12 (initial active 12) (6 cores per cpu, 2 threads per core) family 6 model 154 stepping 3 microcode 0x426, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, sha, fma, vzeroupper, clflush, clflushopt, clwb, hv
+Processor Information for processor 0
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 1
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 2
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 3
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 4
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 5
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 6
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 7
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 8
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 9
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 10
+  Max Mhz: 2000, Current Mhz: 2000, Mhz Limit: 2000
+Processor Information for processor 11
+  Max Mhz: 2000, Current Mhz: 1466, Mhz Limit: 2000
+
+Memory: 4k page, system-wide physical 16108M (1304M free)
+TotalPageFile size 24300M (AvailPageFile size 168M)
+current process WorkingSet (physical memory assigned to process): 13M, peak: 13M
+current process commit charge ("private bytes"): 64M, peak: 316M
+
+vm_info: OpenJDK 64-Bit Server VM (17.0.18+8-LTS) for windows-amd64 JRE (17.0.18+8-LTS), built on Jan 15 2026 18:50:45 by "MicrosoftCorporation" with MS VC++ 17.14 (VS2022)
+
+END.

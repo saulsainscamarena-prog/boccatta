@@ -1,5 +1,6 @@
 package com.bocatta.pos.di
 
+import com.bocatta.pos.feature.ventas.di.SalesDependencies
 import com.bocatta.pos.data.local.OfflineDatabase
 import com.bocatta.pos.data.local.room.BocattaRoomDatabase
 import com.bocatta.pos.data.repository.AuthRepository
@@ -26,40 +27,40 @@ import com.bocatta.pos.domain.usecase.SalesFlowUseCase
 import com.bocatta.pos.domain.usecase.AuthorizationManager
 import com.bocatta.pos.domain.usecase.CatalogoOperativoUseCase
 import com.bocatta.pos.domain.usecase.GestionEmpleadosUseCase
-import com.bocatta.pos.domain.usecase.CartManager
+import com.bocatta.pos.feature.ventas.usecase.CartManager
 import com.bocatta.pos.domain.usecase.CheckoutUseCase
 import com.bocatta.pos.domain.usecase.impl.CatalogoOperativoUseCaseImpl
 import com.bocatta.pos.network.NetworkStateProvider
-import com.bocatta.pos.presentation.viewmodel.AdminViewModel
-import com.bocatta.pos.presentation.viewmodel.ConfigGlobalViewModel
-import com.bocatta.pos.presentation.viewmodel.SalarioViewModel
-import com.bocatta.pos.presentation.viewmodel.SolicitudViewModel
-import com.bocatta.pos.presentation.viewmodel.AperturaViewModelV2
+import com.bocatta.pos.feature.admin.viewmodel.AdminViewModel
+import com.bocatta.pos.feature.admin.viewmodel.ConfigGlobalViewModel
+import com.bocatta.pos.feature.admin.viewmodel.SalarioViewModel
+import com.bocatta.pos.feature.admin.viewmodel.SolicitudViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.AperturaViewModelV2
 import com.bocatta.pos.presentation.viewmodel.AuditoriaViewModel
-import com.bocatta.pos.presentation.viewmodel.AuthViewModelV2
-import com.bocatta.pos.presentation.viewmodel.CajaViewModel
-import com.bocatta.pos.presentation.viewmodel.ClienteViewModel
-import com.bocatta.pos.presentation.viewmodel.ComprasViewModel
-import com.bocatta.pos.presentation.viewmodel.ConfigNegocioViewModel
-import com.bocatta.pos.presentation.viewmodel.ConfigViewModel
-import com.bocatta.pos.presentation.viewmodel.DashboardBodegaViewModel
-import com.bocatta.pos.presentation.viewmodel.DevolucionViewModel
-import com.bocatta.pos.presentation.viewmodel.EmployeeViewModelV2
-import com.bocatta.pos.presentation.viewmodel.ExpensesViewModelV2
-import com.bocatta.pos.presentation.viewmodel.GestionSucursalesViewModel
-import com.bocatta.pos.presentation.viewmodel.HeldOrderViewModel
-import com.bocatta.pos.presentation.viewmodel.HorarioViewModel
-import com.bocatta.pos.presentation.viewmodel.InventarioAdminViewModel
-import com.bocatta.pos.presentation.viewmodel.InventoryAdjustmentViewModelV2
-import com.bocatta.pos.presentation.viewmodel.InventoryViewModel
-import com.bocatta.pos.presentation.viewmodel.MesaViewModel
+import com.bocatta.pos.feature.auth.viewmodel.AuthViewModelV2
+import com.bocatta.pos.feature.ventas.viewmodel.CajaViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.ClienteViewModel
+import com.bocatta.pos.feature.inventario.viewmodel.ComprasViewModel
+import com.bocatta.pos.feature.admin.viewmodel.ConfigNegocioViewModel
+import com.bocatta.pos.feature.admin.viewmodel.ConfigViewModel
+import com.bocatta.pos.feature.inventario.viewmodel.DashboardBodegaViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.DevolucionViewModel
+import com.bocatta.pos.feature.admin.viewmodel.EmployeeViewModelV2
+import com.bocatta.pos.feature.admin.viewmodel.ExpensesViewModelV2
+import com.bocatta.pos.feature.admin.viewmodel.GestionSucursalesViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.HeldOrderViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.HorarioViewModel
+import com.bocatta.pos.feature.inventario.viewmodel.InventarioAdminViewModel
+import com.bocatta.pos.feature.inventario.viewmodel.InventoryAdjustmentViewModelV2
+import com.bocatta.pos.feature.inventario.viewmodel.InventoryViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.MesaViewModel
 import com.bocatta.pos.presentation.viewmodel.MenuViewModel
-import com.bocatta.pos.presentation.viewmodel.ReportViewModelV2
-import com.bocatta.pos.presentation.viewmodel.ReportesInventarioViewModel
-import com.bocatta.pos.presentation.viewmodel.SalesViewModelV2
-import com.bocatta.pos.presentation.viewmodel.SessionViewModel
-import com.bocatta.pos.presentation.viewmodel.SyncInventarioViewModel
-import com.bocatta.pos.presentation.viewmodel.ThemeViewModel
+import com.bocatta.pos.feature.admin.viewmodel.ReportViewModelV2
+import com.bocatta.pos.feature.inventario.viewmodel.ReportesInventarioViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.SalesViewModelV2
+import com.bocatta.pos.feature.auth.viewmodel.SessionViewModel
+import com.bocatta.pos.feature.inventario.viewmodel.SyncInventarioViewModel
+import com.bocatta.pos.feature.admin.viewmodel.ThemeViewModel
 import com.bocatta.pos.data.queue.SQLiteStockAdjustmentQueue
 import com.bocatta.pos.domain.repository.IStockAdjustmentQueue
 import com.bocatta.pos.domain.repository.ISyncErrorRepository
@@ -76,11 +77,7 @@ val appModule = module {
     single { AuthRepository() }
     single<com.bocatta.pos.domain.repository.SalesRepository> { FirebaseSalesRepositoryV2(get(), get()) }
     single { OfflineDatabase.getInstance(get()) }
-    // Room database (Phase 1: ventas, operaciones, folios)
-    single { BocattaRoomDatabase.getInstance(get()) }
-    single { get<BocattaRoomDatabase>().ventaPendienteDao() }
-    single { get<BocattaRoomDatabase>().operacionPendienteDao() }
-    single { get<BocattaRoomDatabase>().folioDao() }
+    // Room database definition moved to :core:database
     single { InventoryRepository(get()) }
     single { MaintenanceRepository() }
     single { ReportRepository() }
@@ -100,8 +97,7 @@ val appModule = module {
     single<IProductRepository> { ProductRepositoryImpl() }
     single<IInventoryRepository> { InventoryRepositoryImpl(get(), get(), get()) }
 
-    // NETWORK
-    single { NetworkStateProvider(get()) }
+    // NETWORK module extracted to :core:network
 
     // USE CASES
     single { GenerarTicketWhatsAppUseCase() }
@@ -164,3 +160,4 @@ val appModule = module {
     viewModel { SolicitudViewModel() }
     viewModel { SalarioViewModel() }
 }
+

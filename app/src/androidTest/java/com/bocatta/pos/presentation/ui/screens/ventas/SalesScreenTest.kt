@@ -1,4 +1,4 @@
-package com.bocatta.pos.presentation.ui.screens.ventas
+package com.bocatta.pos.feature.ventas.ui.screens.ventas
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

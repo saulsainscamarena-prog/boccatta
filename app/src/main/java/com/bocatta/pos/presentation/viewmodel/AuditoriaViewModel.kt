@@ -1,6 +1,8 @@
-package com.bocatta.pos.presentation.viewmodel
+﻿package com.bocatta.pos.presentation.viewmodel
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.ViewModel
+import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.domain.model.*
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
@@ -92,7 +94,7 @@ class AuditoriaViewModel : BaseViewModel() {
                         .document(docId)
                         .update("aprobada", true)
                         .await()
-                    mensajeExito = "Cancelación aprobada ✓"
+                    mensajeExito = "CancelaciÃ³n aprobada âœ“"
                     callback()
                 }
             } catch (e: Exception) {
@@ -144,3 +146,6 @@ class AuditoriaViewModel : BaseViewModel() {
         listenerUsuarios?.remove()
     }
 }
+
+
+

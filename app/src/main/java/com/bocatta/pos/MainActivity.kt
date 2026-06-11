@@ -1,4 +1,4 @@
-package com.bocatta.pos
+﻿package com.bocatta.pos
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,7 +14,11 @@ import com.bocatta.pos.navigation.Routes
 import com.bocatta.pos.logging.LogHelper
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.presentation.ui.theme.BocattaTheme
-import com.bocatta.pos.presentation.viewmodel.*
+import com.bocatta.pos.feature.auth.viewmodel.*
+import com.bocatta.pos.feature.ventas.viewmodel.*
+import com.bocatta.pos.feature.admin.viewmodel.*
+import com.bocatta.pos.feature.inventario.viewmodel.*
+import com.bocatta.pos.core.ui.viewmodel.*
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
 import kotlinx.coroutines.launch
@@ -88,3 +92,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+

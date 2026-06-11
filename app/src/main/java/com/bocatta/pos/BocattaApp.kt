@@ -27,7 +27,11 @@ class BocattaApp : Application() {
         // Inicializar Koin
         startKoin {
             androidContext(this@BocattaApp)
-            modules(appModule)
+            modules(
+                appModule,
+                com.bocatta.pos.core.database.di.databaseModule,
+                com.bocatta.pos.core.network.di.networkModule
+            )
         }
     }
 }

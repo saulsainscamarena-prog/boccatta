@@ -10,7 +10,7 @@ import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
 import com.bocatta.pos.domain.repository.ResultadoVenta
 import com.bocatta.pos.data.repository.InventoryRepository
-import com.bocatta.pos.core.TicketUtils
+import com.bocatta.pos.core.model.TicketUtils
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -131,3 +131,4 @@ class OfflineManagerTest {
         verify { SyncScheduler.scheduleImmediateSync(mockContext) }
     }
 }
+

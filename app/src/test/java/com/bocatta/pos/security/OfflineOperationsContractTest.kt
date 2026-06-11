@@ -5,7 +5,7 @@ import com.bocatta.pos.data.sync.SyncWorker
 import com.bocatta.pos.data.sync.OfflineManager
 import com.bocatta.pos.domain.usecase.CheckoutUseCase
 import com.bocatta.pos.domain.usecase.RegistrarMermaProductoUseCase
-import com.bocatta.pos.presentation.viewmodel.SalesViewModelV2
+import com.bocatta.pos.feature.ventas.viewmodel.SalesViewModelV2
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 

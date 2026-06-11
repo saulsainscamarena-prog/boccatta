@@ -1,13 +1,12 @@
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
+    id("bocatta.android.application")
+    id("bocatta.android.compose")
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.ksp)
-    // id("org.jetbrains.kotlin.kapt")
     alias(libs.plugins.detekt)
     alias(libs.plugins.dropshots)
     id("jacoco")
@@ -79,11 +78,6 @@ kotlin {
 
 }
 
-composeCompiler {
-    metricsDestination = layout.buildDirectory.dir("compose_metrics")
-    reportsDestination = layout.buildDirectory.dir("compose_metrics")
-}
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -144,6 +138,15 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(project(":core:model"))
+    implementation(project(":core:database"))
+    implementation(project(":core:network"))
+    implementation(project(":core:ui"))
+    implementation(project(":core:data"))
+    implementation(project(":feature:auth"))
+    implementation(project(":feature:ventas"))
+    implementation(project(":feature:inventario"))
+    implementation(project(":feature:admin"))
 }
 
 // Configure detekt task
@@ -187,7 +190,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     )
 }
 
-// Jacoco coverage verification — fails build below 60%
+// Jacoco coverage verification ?" fails build below 60%
 tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
     group = "verification"
     description = "Verifies minimum 60% line coverage"
@@ -215,3 +218,6 @@ tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
         }
     }
 }
+
+
+

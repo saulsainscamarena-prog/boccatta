@@ -1,8 +1,13 @@
-package com.bocatta.pos.navigation
+﻿package com.bocatta.pos.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import com.bocatta.pos.feature.auth.viewmodel.*
+import com.bocatta.pos.feature.ventas.viewmodel.*
+import com.bocatta.pos.feature.admin.viewmodel.*
+import com.bocatta.pos.feature.inventario.viewmodel.*
+import com.bocatta.pos.core.ui.viewmodel.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,24 +16,32 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.bocatta.pos.data.repository.RegistroJornadaRepository
 import com.bocatta.pos.domain.model.RegistroJornada
-import com.bocatta.pos.presentation.ui.screens.admin.AdminScreen
-import com.bocatta.pos.presentation.ui.screens.admin.GestionSucursalesScreen
-import com.bocatta.pos.presentation.ui.screens.bodega.DashboardBodegaScreen
-import com.bocatta.pos.presentation.ui.screens.caja.CierreCajaScreen
-import com.bocatta.pos.presentation.ui.screens.clientes.ClientesScreen
-import com.bocatta.pos.presentation.ui.screens.compras.ComprasScreen
-import com.bocatta.pos.presentation.ui.screens.devoluciones.DevolucionesScreen
-import com.bocatta.pos.presentation.ui.screens.gastos.GastosScreen
-import com.bocatta.pos.presentation.ui.screens.inventario.AperturaInventarioScreen
-import com.bocatta.pos.presentation.ui.screens.inventario.CierreInventarioScreen
-import com.bocatta.pos.presentation.ui.screens.inventario.InventoryScreen
-import com.bocatta.pos.presentation.ui.screens.inventario.SyncInventarioScreen
-import com.bocatta.pos.presentation.ui.screens.login.LoginScreen
-import com.bocatta.pos.presentation.ui.screens.operacion.AperturaDiaScreen
-import com.bocatta.pos.presentation.ui.screens.operacion.TurnosScreen
-import com.bocatta.pos.presentation.ui.screens.reportes.ReportScreen
-import com.bocatta.pos.presentation.ui.screens.reportes.ReportesInventarioScreen
-import com.bocatta.pos.presentation.ui.screens.ventas.SalesScreen
+import com.bocatta.pos.feature.admin.ui.screens.admin.AdminScreen
+import com.bocatta.pos.feature.admin.ui.screens.admin.GestionSucursalesScreen
+import com.bocatta.pos.feature.inventario.ui.screens.bodega.DashboardBodegaScreen
+import com.bocatta.pos.feature.admin.ui.screens.caja.CierreCajaScreen
+import com.bocatta.pos.feature.ventas.ui.screens.clientes.ClientesScreen
+import com.bocatta.pos.feature.inventario.ui.screens.compras.ComprasScreen
+import com.bocatta.pos.feature.ventas.ui.screens.devoluciones.DevolucionesScreen
+import com.bocatta.pos.feature.admin.ui.screens.gastos.GastosScreen
+import com.bocatta.pos.feature.inventario.ui.screens.inventario.AperturaInventarioScreen
+import com.bocatta.pos.feature.inventario.ui.screens.inventario.CierreInventarioScreen
+import com.bocatta.pos.feature.inventario.ui.screens.inventario.InventoryScreen
+import com.bocatta.pos.feature.inventario.ui.screens.inventario.SyncInventarioScreen
+import com.bocatta.pos.feature.auth.ui.screens.login.LoginScreen
+import com.bocatta.pos.feature.ventas.ui.screens.operacion.AperturaDiaScreen
+import com.bocatta.pos.feature.ventas.ui.screens.operacion.TurnosScreen
+import com.bocatta.pos.feature.admin.ui.screens.reportes.ReportScreen
+import com.bocatta.pos.feature.inventario.ui.screens.reportes.ReportesInventarioScreen
+import com.bocatta.pos.feature.ventas.ui.screens.ventas.SalesScreen
+import com.bocatta.pos.feature.auth.viewmodel.SessionViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.CajaViewModel
+import com.bocatta.pos.feature.admin.viewmodel.AdminViewModel
+import com.bocatta.pos.feature.admin.viewmodel.ReportViewModelV2
+import com.bocatta.pos.feature.admin.viewmodel.ExpensesViewModelV2
+import com.bocatta.pos.feature.admin.viewmodel.GestionSucursalesViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.DevolucionViewModel
+import com.bocatta.pos.feature.ventas.viewmodel.ClienteViewModel
 import com.bocatta.pos.presentation.viewmodel.*
 import com.bocatta.pos.presentation.ui.theme.BocattaLightColorScheme
 import kotlinx.coroutines.launch
@@ -260,7 +273,7 @@ fun AppNavGraph(
         }
 
         composable<Routes.Actividad> {
-            com.bocatta.pos.presentation.ui.screens.ventas.ActividadScreen(
+            com.bocatta.pos.feature.ventas.ui.screens.ventas.ActividadScreen(
                 mesaVm = mesaVm,
                 heldOrderVm = heldOrderVm,
                 salesVm = salesVmV2,
@@ -278,3 +291,5 @@ fun AppNavGraph(
 
 private fun normalizarSucursalNav(sucursal: String): String =
     sucursal.trim().lowercase(java.util.Locale.ROOT).replace(" ", "_")
+
+
