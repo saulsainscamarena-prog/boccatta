@@ -1,46 +1,39 @@
-# Bocatta POS — Lluvia de Ideas, Diagnósticos y Propuestas (App & Web)
+# Bocatta POS — Lluvia de Ideas y Propuestas (Enfoque Simplificado)
 
-Este documento centraliza el diagnóstico técnico-operativo de Bocatta POS y las propuestas de desarrollo tanto para la aplicación de mostrador (Android) como para el futuro Panel Web de Administración (Dueño).
-
----
-
-## PARTE 1: DIAGNÓSTICO Y PROPUESTAS PARA LA APP (TABLET/MÓVIL)
-
-### 1.1. Diagnóstico de la App Actual
-1.  **Falta de validación de entradas financieras:** Al ingresar efectivo recibido o conteos de caja, el sistema depende de que el cajero haga el cálculo mental del cambio o del arqueo total. Esto genera errores operativos.
-2.  **Búsqueda rígida en el catálogo:** La barra de búsqueda de `SalesScreen.kt` filtra por coincidencia exacta de texto (`.contains`). Un error de dedo (ej. *"crepa salda"*) arroja cero resultados en plena venta.
-3.  **Falta de visibilidad del estado de colas offline:** El cajero no sabe con certeza si las ventas se guardaron en SQLite local o si ya se sincronizaron con Firestore, lo que genera desconfianza ante cortes de red.
-
-### 1.2. Propuestas de Mejora para la App
-*   **Calculadora de Denominaciones en Caja (Arqueo):**
-    *   En lugar de un campo de texto plano para ingresar el monto del arqueo, mostrar un formulario dinámico donde el cajero ingrese las cantidades de billetes/monedas (ej. 5 billetes de $500, 10 de $200). La app calcula la suma final automáticamente, eliminando errores de cálculo manual.
-*   **Búsqueda Difusa (Fuzzy Search) en Mostrador:**
-    *   Implementar el algoritmo de Levenshtein en el filtrado de productos de `SalesScreen.kt` (como ya se hace en clientes). Si el cajero escribe *"wafel de oreo"*, el catálogo debe seguir mostrando *"Waffle Oreo"*.
-*   **Monitor Visual de Sincronización Offline (Widget de Barra):**
-    *   Añadir un badge discreto en la barra superior junto al estado de red. Por ejemplo: `[Sync: 3 pendientes]`. Si el sistema está offline y hay 3 ventas en SQLite local pendientes de subir por `SyncWorker`, el cajero tiene la tranquilidad de que sus tickets están a salvo.
-*   **Selector Dinámico de Desechables y Modalidad:**
-    *   Reemplazar el switch de "Para Llevar" por un selector de tipo de venta (Local, Llevar, Delivery). El sistema deducirá de forma inteligente los insumos asociados (platos, cubiertos, bolsas, cajas).
+Este documento centraliza los acuerdos tomados sobre las mejoras del sistema, priorizando la simplicidad del código, la velocidad en mostrador y evitando la complejidad innecesaria de infraestructura (arquitectura self-contained).
 
 ---
 
-## PARTE 2: DIAGNÓSTICO Y PROPUESTAS PARA LA WEB (PANEL DE DUEÑO)
+## 1. MÓDULO DE VENTAS Y CONSUMO (APP)
 
-### 2.1. Diagnóstico del Flujo Administrativo
-1.  **Dependencia de la tablet para administración:** Modificar precios, crear insumos o revisar recetas hoy en día se hace desde el módulo de administración en la tablet de ventas. Esto interrumpe la operación diaria del mostrador y es incómodo para pantallas táctiles.
-2.  **Carencia de métricas consolidadas en tiempo real:** El dueño no tiene un panel remoto para comparar las ventas, gastos y rendimientos de la sucursal Atlixco contra la sucursal Metepec en vivo, teniendo que revisar Firestore a mano o depender de reportes compartidos por WhatsApp.
+### 1.1. Cobro Rápido con Billetes de México (Efectivo)
+*   **Enfoque:**
+    *   Tanto para tablets como para teléfonos, la interfaz de pago debe priorizar botones de denominación directa para billetes mexicanos ($20, $50, $100, $200, $500, $1000) y un botón de **Efectivo Exacto** muy accesible.
+    *   Esto acelera el cobro físico en mostrador y evita errores de cálculo de cambio sin agregar complejidad técnica.
 
-### 2.2. Propuestas de Mejora para la Web (Portal del Dueño)
-*   **Catálogo Centralizado Multi-Sucursal:**
-    *   Una aplicación web ligera (React/Next.js) conectada al mismo Firestore. El dueño puede crear productos, editar recetas y modificar precios de venta diferenciados por sucursal (Metepec/Atlixco) cómodamente desde su computadora. Las tablets reciben las actualizaciones en vivo gracias a los listeners de Firestore.
-*   **Panel Consolidador de Ventas y Gastos en Tiempo Real:**
-    *   Gráficas interactivas que comparen el rendimiento de ambas sucursales. Muestra curvas de ventas por hora, ticket promedio y los productos más vendidos en el día de forma remota.
-*   **Consola de Administración de Mermas por Empleado:**
-    *   Un reporte consolidado web que agrupe las mermas registradas por los encargados en cada tablet, permitiendo filtrar por sucursal, empleado y tipo de merma para analizar pérdidas de materia prima.
-*   **Editor de Reglas de Promociones Dinámicas:**
-    *   Interfaz visual para crear objetos `PromocionUniversal` (BOGO 2x1, Happy Hours por día/hora, cupones de descuento). Una vez guardados en la web, se despliegan automáticamente a todas las sucursales sin necesidad de tocar código.
-*   **Gestor de Empleados y Nómina Operativa:**
-    *   Administrar el personal, asignar roles (Admin, Vendedor), generar nuevos PINs de caja y configurar salarios base para control interno de la nómina.
+### 1.2. Gestión de Desechables (Sin Sobrecargar el Código)
+*   **Decisión de Arquitectura:**
+    *   **NO** agregar procesos asíncronos, listeners adicionales o corrutinas complejas en la base de datos para esto.
+    *   Mantener el cálculo de empaques de forma síncrona en memoria en la capa de dominio (`InventoryDeductions.kt`) al momento de finalizar la venta.
+    *   Permitir únicamente un ajuste básico de "Tipo de Venta" en el checkout para deducir el combo de desechables correspondiente, manteniendo el código limpio y libre de deudas técnicas.
 
 ---
 
-*Actualizado y expandido en el repositorio del proyecto. Fecha: Junio 2026.*
+## 2. PANEL DE ADMINISTRADOR INTEGRADO (DENTRO DE LA APP)
+
+### 2.1. Catálogo, Mermas y Descuentos en la App
+*   **Decisión de Arquitectura:**
+    *   **NO** se implementará un portal web independiente para evitar costos de hosting, despliegue y mantenimiento de otra plataforma.
+    *   Toda la administración (Gestión de precios por sucursal, mermas de producción, reportes de descuentos y auditoría) formará parte del módulo `feature:admin` **dentro de la propia aplicación Android**.
+    *   Esto centraliza el desarrollo en una única base de código y aprovecha la persistencia local/remota que la app ya tiene construida.
+
+---
+
+## 3. SEGURIDAD Y ROBUSTEZ (INDISPENSABLES)
+
+*   **Prevención de Doble Toque:** Flag en UI para bloquear el botón de confirmación de pago en cuanto se registra el primer click, previniendo duplicidad de ventas.
+*   **Detección de Teléfono Duplicado en Clientes:** Al registrar un cliente con su Nombre y WhatsApp, alertar si el número ya existe en SQLite local o Firestore para evitar registros duplicados.
+
+---
+
+*Última actualización: Junio 2026.*
