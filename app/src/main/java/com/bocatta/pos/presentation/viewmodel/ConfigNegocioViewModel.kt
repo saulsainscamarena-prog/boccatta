@@ -36,7 +36,13 @@ class ConfigNegocioViewModel(private val repository: ConfiguracionRepository = C
     var isSaving by mutableStateOf(false)
 
     init {
-        cargarDatos()
+        load()
+    }
+
+    private fun load() {
+        launchIO {
+            cargarDatos()
+        }
     }
 
     fun cargarDatos() {

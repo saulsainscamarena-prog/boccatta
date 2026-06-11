@@ -25,8 +25,14 @@ class MesaViewModel(
         private set
 
     init {
-        cargarZonas()
-        cargarMesas()
+        load()
+    }
+
+    private fun load() {
+        launchIO {
+            cargarZonas()
+            cargarMesas()
+        }
     }
 
     fun cargarZonas() {

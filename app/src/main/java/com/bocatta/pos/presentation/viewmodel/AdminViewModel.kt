@@ -168,31 +168,24 @@ class AdminViewModel(
 
 
     init {
+        load()
+    }
 
-        escucharProductos()
-
-        escucharUsuarios()
-
-        escucharEmpleadosOperativos()
-
-        cargarHistorial()
-
-        escucharCancelaciones()
-
-        escucharDiferenciasInventario()
-
-        escucharRecetas()
-
-        escucharGastosHoy()
-
-        escucharConfigGlobal()
-
-        escucharInsumosMaestrosAutomatico()
-
-        escucharCategorias()
-
-        escucharComprasPendientes()
-
+    private fun load() {
+        launchIO {
+            escucharProductos()
+            escucharUsuarios()
+            escucharEmpleadosOperativos()
+            cargarHistorial()
+            escucharCancelaciones()
+            escucharDiferenciasInventario()
+            escucharRecetas()
+            escucharGastosHoy()
+            escucharConfigGlobal()
+            escucharInsumosMaestrosAutomatico()
+            escucharCategorias()
+            escucharComprasPendientes()
+        }
     }
 
 

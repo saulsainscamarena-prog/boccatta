@@ -74,7 +74,7 @@ fun ActividadScreen(
     val mesasFiltradas = mesaVm.mesas.filter { it.zonaId == selectedZonaId }
     val ventasRapidas = heldOrderVm.orders.filter { it.mesaId.isNullOrBlank() }
 
-    Scaffold(
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             LargeTopAppBar(
                 title = {

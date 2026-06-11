@@ -16,7 +16,7 @@ fun OnboardingScreen(
     var nombreNegocio by remember { mutableStateOf("") }
     var giroNegocio by remember { mutableStateOf("RESTAURANT") }
 
-    Scaffold(
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(title = { Text("Bienvenido a Bocatta POS") })
         }

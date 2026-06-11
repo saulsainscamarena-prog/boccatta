@@ -141,11 +141,17 @@ class CajaViewModel(
         get() = resultadoCuadreActual?.esCorrecto ?: true
 
     init {
-        escucharTurnoActivo()
-        escucharTotalesDia()
-        verificarPendientes()
-        escucharParametrosCaja()
-        iniciarObservacionFallidas()
+        load()
+    }
+
+    private fun load() {
+        launchIO {
+            escucharTurnoActivo()
+            escucharTotalesDia()
+            verificarPendientes()
+            escucharParametrosCaja()
+            iniciarObservacionFallidas()
+        }
     }
 
     private fun iniciarObservacionFallidas() {

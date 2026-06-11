@@ -48,7 +48,13 @@ class GestionSucursalesViewModel(
         private set
 
     init {
-        escucharSucursales()
+        load()
+    }
+
+    private fun load() {
+        launchIO {
+            escucharSucursales()
+        }
     }
 
     private fun escucharSucursales() {

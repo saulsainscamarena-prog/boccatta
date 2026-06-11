@@ -26,7 +26,13 @@ class DevolucionViewModel : BaseViewModel() {
         private set
 
     init {
-        escucharSolicitudes()
+        load()
+    }
+
+    private fun load() {
+        launchIO {
+            escucharSolicitudes()
+        }
     }
 
     private fun escucharSolicitudes() {

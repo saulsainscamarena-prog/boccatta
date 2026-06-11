@@ -21,8 +21,14 @@ class InventoryAdjustmentViewModelV2 : BaseViewModel() {
     private var listenerMermas: com.google.firebase.firestore.ListenerRegistration? = null
 
     init {
-        escucharInsumos()
-        escucharMermas()
+        load()
+    }
+
+    private fun load() {
+        launchIO {
+            escucharInsumos()
+            escucharMermas()
+        }
     }
 
     private fun escucharInsumos() {
