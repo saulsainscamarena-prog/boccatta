@@ -86,7 +86,7 @@ data class TurnoContingenciaLocal(
     }
 }
 
-class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class OfflineDatabase(context: Context) : OfflineStorage, SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "bocatta_offline.db"
@@ -109,7 +109,12 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         @Volatile
         private var INSTANCE: OfflineDatabase? = null
 
+        /** For testing — set to a mock to avoid creating a real SQLiteOpenHelper. */
+        @Volatile
+        var testInstance: OfflineDatabase? = null
+
         fun getInstance(context: Context): OfflineDatabase {
+            testInstance?.let { return it }
             return INSTANCE ?: synchronized(this) {
                 val instance = OfflineDatabase(context.applicationContext)
                 INSTANCE = instance
@@ -428,10 +433,10 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
-    fun guardarVentaYDescontarStockReservandoFolio(
+    override fun guardarVentaYDescontarStockReservandoFolio(
         ventaBase: VentaOffline,
         deducciones: Map<String, Double>,
-        legacyUltimoTicket: Long = 0L
+        legacyUltimoTicket: Long
     ): VentaOffline {
         val db = writableDatabase
         db.beginTransaction()
@@ -770,7 +775,7 @@ class OfflineDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         )
     }
 
-    fun guardarOperacion(op: OperacionOffline) {
+    override fun guardarOperacion(op: OperacionOffline) {
         val db = writableDatabase
         val values = ContentValues().apply {
             put("id", op.id)

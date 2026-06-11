@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.bocatta.pos.core.TicketUtils
 import com.bocatta.pos.data.local.OfflineDatabase
+import com.bocatta.pos.data.local.OfflineStorage
 import com.bocatta.pos.data.local.OperacionOffline
 import com.bocatta.pos.data.local.VentaOffline
 import com.bocatta.pos.domain.model.ClienteV2
@@ -13,10 +14,26 @@ import com.bocatta.pos.domain.repository.ResultadoVenta
 import com.bocatta.pos.data.repository.InventoryRepository
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 object OfflineManager {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    /** For testing — set to a mock/fake [OfflineStorage]. */
+    @kotlin.jvm.JvmStatic
+    var testStorage: OfflineStorage? = null
+
+    /** For testing — override JSON instance. */
+    @kotlin.jvm.JvmStatic
+    var testJson: Json? = null
+
+    private val json: Json
+        get() = testJson ?: Json { ignoreUnknownKeys = true }
+
+    private fun storage(context: Context): OfflineStorage =
+        testStorage ?: OfflineDatabase.getInstance(context)
 
     fun isNetworkAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -47,6 +64,7 @@ object OfflineManager {
         val ventaId = forcedVentaId ?: "offline_${System.currentTimeMillis()}"
         val sucursalId = sucursal.lowercase(java.util.Locale.getDefault())
         val db = OfflineDatabase.getInstance(context)
+        val store = storage(context)
         val inventoryRepo = InventoryRepository(db)
 
         // Calcular primero; venta y stock se confirman juntos en SQLite.
@@ -58,28 +76,34 @@ object OfflineManager {
         }
 
         val carritoJson = json.encodeToString(carrito.map { item ->
-            mapOf(
-                "nombre" to item.nombre,
-                "cantidad" to item.cantidad.toDouble(),
-                "precio" to item.precioFinal.toDouble(),
-                "productoId" to item.producto.id,
-                "recetaId" to (item.producto.recetaId ?: ""),
-                "categoria" to item.producto.categoria,
-                "esSeparado" to item.esSeparado,
-                "base" to item.base,
-                "aderezos" to item.aderezos,
-                "toppings" to item.toppings,
-                "paraLlevar" to item.paraLlevar,
-                "cantidadGramos" to item.cantidadGramos,
-                "componentesCombo" to item.componentesCombo.map { componente ->
-                    mapOf(
-                        "nombre" to componente.nombre,
-                        "cantidad" to componente.cantidad.toDouble(),
-                        "base" to componente.base,
-                        "aderezos" to componente.aderezos,
-                        "toppings" to componente.toppings,
-                        "paraLlevar" to componente.paraLlevar
-                    )
+            JsonObject(
+                buildMap {
+                    put("nombre", JsonPrimitive(item.nombre))
+                    put("cantidad", JsonPrimitive(item.cantidad.toDouble()))
+                    put("precio", JsonPrimitive(item.precioFinal.toDouble()))
+                    put("productoId", JsonPrimitive(item.producto.id))
+                    put("recetaId", JsonPrimitive(item.producto.recetaId ?: ""))
+                    put("categoria", JsonPrimitive(item.producto.categoria))
+                    put("esSeparado", JsonPrimitive(item.esSeparado))
+                    put("base", item.base?.let { JsonPrimitive(it) } ?: JsonNull)
+                    put("aderezos", JsonArray(item.aderezos.map { JsonPrimitive(it) }))
+                    put("toppings", JsonArray(item.toppings.map { JsonPrimitive(it) }))
+                    put("paraLlevar", JsonPrimitive(item.paraLlevar))
+                    put("cantidadGramos", item.cantidadGramos?.let { JsonPrimitive(it) } ?: JsonNull)
+                    put("componentesCombo", JsonArray(
+                        item.componentesCombo.map { componente ->
+                            JsonObject(
+                                buildMap {
+                                    put("nombre", JsonPrimitive(componente.nombre))
+                                    put("cantidad", JsonPrimitive(componente.cantidad.toDouble()))
+                                    put("base", componente.base?.let { JsonPrimitive(it) } ?: JsonNull)
+                                    put("aderezos", JsonArray(componente.aderezos.map { JsonPrimitive(it) }))
+                                    put("toppings", JsonArray(componente.toppings.map { JsonPrimitive(it) }))
+                                    put("paraLlevar", JsonPrimitive(componente.paraLlevar))
+                                }
+                            )
+                        }
+                    ))
                 }
             )
         })
@@ -106,7 +130,7 @@ object OfflineManager {
             ultimoIntento = null
         )
 
-        val ventaConfirmada = db.guardarVentaYDescontarStockReservandoFolio(
+        val ventaConfirmada = store.guardarVentaYDescontarStockReservandoFolio(
             ventaBase = ventaPendiente,
             deducciones = deducciones
         )
@@ -144,7 +168,7 @@ object OfflineManager {
             intentos = 0
         )
 
-        OfflineDatabase.getInstance(context).guardarOperacion(operacion)
+        storage(context).guardarOperacion(operacion)
         SyncScheduler.scheduleImmediateSync(context)
     }
 

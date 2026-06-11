@@ -2,7 +2,9 @@ package com.bocatta.pos.data.sync
 
 import android.content.Context
 import com.bocatta.pos.data.local.OfflineDatabase
+import com.bocatta.pos.data.local.OfflineStorage
 import com.bocatta.pos.data.local.VentaOffline
+import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
@@ -29,6 +31,7 @@ class OfflineManagerTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var testScope: TestScope
     private lateinit var mockContext: Context
+    private lateinit var mockStorage: OfflineStorage
     private lateinit var mockDb: OfflineDatabase
     private lateinit var mockInventoryRepo: InventoryRepository
 
@@ -37,11 +40,15 @@ class OfflineManagerTest {
         Dispatchers.setMain(testDispatcher)
         testScope = TestScope(testDispatcher)
         mockContext = mockk(relaxed = true)
-        mockDb = mockk(relaxed = true)
+        mockStorage = mockk<OfflineStorage>(relaxed = true)
+        mockDb = mockk<OfflineDatabase>(relaxed = true)
         mockInventoryRepo = mockk(relaxed = true)
-        // Stub static calls
-        mockkStatic(OfflineDatabase::class)
-        every { OfflineDatabase.getInstance(mockContext) } returns mockDb
+        // Inject mocks instead of calling real OfflineDatabase (avoids mockkStatic + SQLiteOpenHelper)
+        OfflineManager.testStorage = mockStorage
+        OfflineDatabase.testInstance = mockDb
+        // Mock Firebase to avoid Process.myPid() crash in unit tests
+        mockkObject(FirebaseFirestoreProvider)
+        every { FirebaseFirestoreProvider.db } returns mockk(relaxed = true)
         mockkConstructor(InventoryRepository::class)
         every { anyConstructed<InventoryRepository>().calcularDeduccionesItemOffline(any()) } returns emptyMap()
         // Stub SyncScheduler
@@ -51,6 +58,8 @@ class OfflineManagerTest {
 
     @After
     fun tearDown() {
+        OfflineManager.testStorage = null
+        OfflineDatabase.testInstance = null
         unmockkAll()
         Dispatchers.resetMain()
     }
@@ -94,11 +103,11 @@ class OfflineManagerTest {
             notaOrden = "",
             forcedVentaId = "testVentaId"
         )
-        // Verify that the DB was called to store the sale
-        verify { mockDb.guardarVentaYDescontarStockReservandoFolio(any(), any()) }
+        // Verify that the storage was called to store the sale
+        verify { mockStorage.guardarVentaYDescontarStockReservandoFolio(any(), any()) }
         // Verify that the sale stored has ESTADO_PENDIENTE
         val ventaSlot = slot<VentaOffline>()
-        verify { mockDb.guardarVentaYDescontarStockReservandoFolio(capture(ventaSlot), any()) }
+        verify { mockStorage.guardarVentaYDescontarStockReservandoFolio(capture(ventaSlot), any()) }
         assertEquals(VentaOffline.ESTADO_PENDIENTE, ventaSlot.captured.estado)
         // Verify sync scheduled
         verify { SyncScheduler.scheduleImmediateSync(mockContext) }
@@ -118,7 +127,7 @@ class OfflineManagerTest {
             dataJson = "{}",
             requiereAprobacion = true
         )
-        verify { mockDb.guardarOperacion(any()) }
+        verify { mockStorage.guardarOperacion(any()) }
         verify { SyncScheduler.scheduleImmediateSync(mockContext) }
     }
 }

@@ -24,7 +24,7 @@ class InventoryRepository(
     private val offlineDb: OfflineDatabase? = null,
     private val adjustmentQueue: IStockAdjustmentQueue? = null
 ) {
-    private val firestore = FirebaseFirestoreProvider.db
+    private val firestore by lazy { FirebaseFirestoreProvider.db }
 
     suspend fun registrarCompra(
         insumoId: String,
