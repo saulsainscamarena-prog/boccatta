@@ -1,4 +1,4 @@
-﻿package com.bocatta.pos.navigation
+package com.bocatta.pos.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +42,7 @@ import com.bocatta.pos.feature.admin.viewmodel.ExpensesViewModelV2
 import com.bocatta.pos.feature.admin.viewmodel.GestionSucursalesViewModel
 import com.bocatta.pos.feature.ventas.viewmodel.DevolucionViewModel
 import com.bocatta.pos.feature.ventas.viewmodel.ClienteViewModel
+import com.bocatta.pos.feature.ventas.ui.components.DialogCompraUnificado
 import com.bocatta.pos.presentation.viewmodel.*
 import com.bocatta.pos.presentation.ui.theme.BocattaLightColorScheme
 import kotlinx.coroutines.launch
@@ -175,7 +176,22 @@ fun AppNavGraph(
                 onVerCaja = { navController.navigate(Routes.Caja) },
                 onVerDevoluciones = { navController.navigate(Routes.Devoluciones) },
                 onVerActividad = { navController.navigate(Routes.Actividad) },
-                onLogout = { sessionVm.cerrarSesion(); authVm.logout() }
+                onLogout = { sessionVm.cerrarSesion(); authVm.logout() },
+                compraRapidaContent = { onDismiss ->
+                    val adminVmCompra: AdminViewModel = koinViewModel()
+                    DialogCompraUnificado(
+                        insumos = adminVmCompra.insumosMaestros,
+                        nombreUsuario = sessionVm.nombreUsuario,
+                        usuarioId = sessionVm.uid,
+                        sucursal = sessionVm.sucursalActual,
+                        esAdmin = sessionVm.esAdmin,
+                        onConfirmar = { insumoId, insumoNombre, presentacion, cant, cont, precio ->
+                            adminVmCompra.registrarCompraRapida(insumoId, insumoNombre, presentacion, cant, cont, precio, sessionVm.uid, sessionVm.nombreUsuario, sessionVm.sucursalActual, sessionVm.esAdmin)
+                            onDismiss()
+                        },
+                        onDismiss = onDismiss
+                    )
+                }
             )
         }
 

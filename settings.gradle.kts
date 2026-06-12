@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -24,3 +25,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "bocatta"
 include(":app")
+include(":core:data")
+include(":core:database")
+include(":core:model")
+include(":core:network")
+include(":core:ui")
+include(":feature:admin")
+include(":feature:auth")
+include(":feature:inventario")
+include(":feature:ventas")

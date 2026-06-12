@@ -130,7 +130,7 @@ val appModule = module {
 
     // VIEWMODELS
     viewModel { SessionViewModel(get(), get()) }
-    viewModel { SalesViewModelV2(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { SalesViewModelV2(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CajaViewModel(get(), get(), get()) }
     viewModel { AdminViewModel(get(), get(), get(), get()) }
     viewModel { InventoryViewModel(get()) }
