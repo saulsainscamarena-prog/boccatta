@@ -88,6 +88,7 @@ internal fun SalesTopBar(
     isOnline: Boolean,
     sucursalActual: String,
     isTablet: Boolean,
+    usaRecetas: Boolean,
     onMenuClick: () -> Unit,
     onRetiroAlimento: () -> Unit,
     onCompraRapida: () -> Unit,
@@ -144,7 +145,9 @@ internal fun SalesTopBar(
         },
         actions = {
             if (isTablet) {
-                TopBarAction(icon = Icons.Default.Restaurant, description = "Retiro alimento", onClick = onRetiroAlimento)
+                if (usaRecetas) {
+                    TopBarAction(icon = Icons.Default.Restaurant, description = "Retiro alimento", onClick = onRetiroAlimento)
+                }
                 TopBarAction(
                     icon = Icons.Default.AddShoppingCart,
                     description = "Compra rapida",

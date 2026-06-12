@@ -80,7 +80,11 @@ fun SalesScreen(
     fun seleccionarProducto(prod: SalesInventoryProductV2) {
         registrarInteraccion()
         val categoria = prod.categoria.uppercase(Locale.ROOT)
-        val requiereConstructor = categoria.contains("CREPA") || categoria.contains("COMBO")
+        val requiereConstructor = if (!vmV2.businessFeatures.showCartBases) {
+            false
+        } else {
+            categoria.contains("CREPA") || categoria.contains("COMBO")
+        }
         when {
             prod.porPeso -> productoPeso = prod
             requiereConstructor || prod.configSchema.isNotEmpty() -> productoConfigurando = prod
@@ -495,6 +499,7 @@ fun SalesScreen(
                             isOnline = isOnline,
                             sucursalActual = session.sucursalActual,
                             isTablet = isTablet,
+                            usaRecetas = vmV2.businessFeatures.usaRecetas,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onRetiroAlimento = { mostrarRetiroAlimento = true },
                             onCompraRapida = { mostrarCompraRapida = true },
