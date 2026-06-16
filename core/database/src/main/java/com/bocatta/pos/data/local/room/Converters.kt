@@ -8,11 +8,4 @@ class Converters {
 
     @TypeConverter
     fun toBoolean(value: Int?): Boolean? = value?.let { it == 1 }
-
-    // JSON String passthrough
-    @TypeConverter
-    fun fromJsonString(value: String?): String? = value
-
-    @TypeConverter
-    fun toJsonString(value: String?): String? = value
 }
