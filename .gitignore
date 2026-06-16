@@ -26,3 +26,19 @@ scratch/
 hs_err_pid*
 replay_pid*
 audit-avd/
+
+# Build outputs en todos los módulos (no solo raíz)
+**/build/
+
+# Codex AVD screenshots y metadatos
+.codex/
+
+# Archivos temporales de diagnóstico
+compilation_errors.txt
+dump*.xml
+build_info.txt
+ksp_versions.xml
+
+# Scripts de migración/fix que ya no corresponden
+fix_*.py
+*.bat

@@ -1,1 +1,0 @@
-com.bocatta.pos.core.database
