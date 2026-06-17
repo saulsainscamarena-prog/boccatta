@@ -2,8 +2,8 @@ package com.bocatta.pos.data.sync
 
 import android.content.Context
 import com.bocatta.pos.data.local.OfflineDatabase
-import com.bocatta.pos.data.local.OfflineStorage
-import com.bocatta.pos.data.local.VentaOffline
+import com.bocatta.pos.domain.storage.OfflineStorage
+import com.bocatta.pos.domain.model.VentaOffline
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
