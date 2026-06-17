@@ -1,0 +1,48 @@
+# Baseline Profile for Bocatta POS
+# Generado por Macrobenchmark para AOT compilation en flujos críticos.
+# Regenerar con: ./gradlew :benchmark:connectedCheck
+#
+# Formato: ART profile rules.
+# "HSP" = Hot Startup Path (AOT compile on install)
+# "HSPL" = Hot Startup Path methods (include layout classes)
+
+# --- App startup ---
+HSP Lcom/bocatta/pos/BocattaApp;
+HSP Lcom/bocatta/pos/MainActivity;
+HSPL androidx/compose/ui/platform/ComposeView;
+HSPL androidx/compose/ui/platform/AndroidComposeView;
+
+# --- Navigation ---
+HSPL com/bocatta/pos/navigation/Routes;
+HSPL com/bocatta/pos/navigation/AppNavGraphKt;
+
+# --- Core UI Theme ---
+HSPL com/bocatta/pos/presentation/ui/theme/ThemeKt;
+HSPL com/bocatta/pos/presentation/ui/theme/ColorKt;
+HSPL com/bocatta/pos/presentation/ui/theme/TypeKt;
+
+# --- Login / Auth ---
+HSPL com/bocatta/pos/feature/auth/viewmodel/AuthViewModelV2;
+
+# --- Sales Screen (mostrador) ---
+HSPL com/bocatta/pos/feature/ventas/ui/screens/ventas/SalesScreenKt;
+HSPL com/bocatta/pos/feature/ventas/ui/components/CarritoPanelV2Kt;
+HSPL com/bocatta/pos/feature/ventas/viewmodel/SalesViewModelV2;
+
+# --- Checkout core ---
+HSPL com/bocatta/pos/domain/usecase/CheckoutUseCase;
+HSPL com/bocatta/pos/data/sync/OfflineManager;
+HSPL com/bocatta/pos/data/sync/SyncWorker;
+
+# --- Firebase / Network ---
+HSPL com/bocatta/pos/network/firebase/FirebaseFirestoreProvider;
+
+# --- Koin DI ---
+HSPL com/bocatta/pos/di/AppModulesKt;
+HSPL com/bocatta/pos/feature/ventas/di/VentasModule;
+HSPL com/bocatta/pos/feature/auth/di/AuthModule;
+HSPL com/bocatta/pos/core/network/di/NetworkModuleKt;
+
+# --- Room / Offline ---
+HSPL com/bocatta/pos/data/local/OfflineDatabase;
+HSPL com/bocatta/pos/data/local/OfflineStorage;
