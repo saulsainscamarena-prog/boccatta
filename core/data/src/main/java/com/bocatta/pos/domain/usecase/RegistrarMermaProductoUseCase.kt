@@ -2,7 +2,7 @@ package com.bocatta.pos.domain.usecase
 
 import android.content.Context
 import com.bocatta.pos.data.local.OfflineDatabase
-import com.bocatta.pos.data.local.OperacionOffline
+import com.bocatta.pos.domain.model.OperacionOffline
 import com.bocatta.pos.data.repository.InventoryRepository
 import com.bocatta.pos.data.sync.SyncScheduler
 import com.bocatta.pos.domain.model.ItemCarritoV2

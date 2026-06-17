@@ -7,84 +7,8 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.bocatta.pos.core.model.TicketUtils
 import com.bocatta.pos.domain.model.*
+import com.bocatta.pos.domain.storage.OfflineStorage
 import timber.log.Timber
-
-data class VentaOffline(
-    val id: String,
-    val tenantId: String = "tenant_pionero",
-    val ticket: Long,
-    val codigoTicket: String,
-    val total: Double,
-    val descuentoLealtad: Double,
-    val descuentoPromociones: Double = 0.0,
-    val descuentoManual: Double = 0.0,
-    val propina: Double = 0.0,
-    val notaOrden: String = "",
-    val fecha: Long,
-    val sucursal: String,
-    val atendio: String,
-    val metodoPago: String,
-    val esConsumoEmpleado: Boolean,
-    val clienteId: String?,
-    val carritoJson: String,
-    val estado: String = VentaOffline.ESTADO_PENDIENTE,
-    val intentos: Int = 0,
-    val ultimoIntento: Long? = null
-) {
-    companion object {
-        const val ESTADO_PENDIENTE = "pendiente"
-        const val ESTADO_SINCRONIZADA = "sincronizada"
-        const val ESTADO_FALLIDA = "fallida"
-        const val ESTADO_FALLIDA_CRITICA = "fallida_critica"
-        const val MAX_INTENTOS = 3
-    }
-}
-
-data class OperacionOffline(
-    val id: String,
-    val tenantId: String = "tenant_pionero",
-    val tipo: String,
-    val ventaId: String?,
-    val motivo: String,
-    val usuarioId: String,
-    val sucursal: String,
-    val fecha: Long,
-    val requiereAprobacion: Boolean,
-    val dataJson: String,
-    val estado: String = OperacionOffline.ESTADO_PENDIENTE,
-    val intentos: Int = 0
-) {
-    companion object {
-        const val TIPO_DEVOLUCION = "devolucion"
-        const val TIPO_CANCELACION = "cancelacion"
-        const val TIPO_MERMA = "merma"
-        const val ESTADO_PENDIENTE = "pendiente"
-        const val ESTADO_SINCRONIZADA = "sincronizada"
-        const val ESTADO_FALLIDA = "fallida"
-        const val MAX_INTENTOS = 3
-    }
-}
-
-data class TurnoContingenciaLocal(
-    val id: String,
-    val tenantId: String = "tenant_pionero",
-    val sucursal: String,
-    val usuarioId: String,
-    val usuarioNombre: String,
-    val rol: String,
-    val fondoInicial: Double,
-    val fechaApertura: Long,
-    val fechaCierre: Long? = null,
-    val estado: String = ESTADO_ABIERTO,
-    val efectivoContado: Double = 0.0,
-    val tarjetaContada: Double = 0.0,
-    val syncPendiente: Boolean = true
-) {
-    companion object {
-        const val ESTADO_ABIERTO = "abierto"
-        const val ESTADO_CERRADO = "cerrado"
-    }
-}
 
 class OfflineDatabase(context: Context) : OfflineStorage, SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -627,6 +551,20 @@ class OfflineDatabase(context: Context) : OfflineStorage, SQLiteOpenHelper(conte
     fun contarPendientes(): Int {
         val db = readableDatabase
         return db.rawQuery("SELECT COUNT(*) FROM $TABLE_VENTAS WHERE estado = ?", arrayOf(VentaOffline.ESTADO_PENDIENTE)).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        }
+    }
+
+    fun contarOperacionesPendientes(): Int {
+        val db = readableDatabase
+        return db.rawQuery("SELECT COUNT(*) FROM $TABLE_OPS WHERE estado = ?", arrayOf(OperacionOffline.ESTADO_PENDIENTE)).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else 0
+        }
+    }
+
+    fun contarTurnosContingenciaPendientes(): Int {
+        val db = readableDatabase
+        return db.rawQuery("SELECT COUNT(*) FROM $TABLE_TURNOS_CONTINGENCIA WHERE syncPendiente = 1", null).use { cursor ->
             if (cursor.moveToFirst()) cursor.getInt(0) else 0
         }
     }

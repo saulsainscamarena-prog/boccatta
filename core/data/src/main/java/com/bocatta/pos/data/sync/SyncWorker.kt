@@ -14,9 +14,8 @@ import androidx.work.WorkerParameters
 
 import com.bocatta.pos.data.local.OfflineDatabase
 
-import com.bocatta.pos.data.local.VentaOffline
-
-import com.bocatta.pos.data.local.OperacionOffline
+import com.bocatta.pos.domain.model.OperacionOffline
+import com.bocatta.pos.domain.model.VentaOffline
 
 import com.bocatta.pos.data.repository.StockAllocationRepository
 
@@ -599,8 +598,9 @@ class SyncWorker(
 
             }
 
-            if (!venta.clienteId.isNullOrBlank() && !venta.esConsumoEmpleado) {
-                val clienteRef = db.collection(FirestoreCollections.CLIENTES).document(venta.clienteId)
+            val clienteId = venta.clienteId
+            if (!clienteId.isNullOrBlank() && !venta.esConsumoEmpleado) {
+                val clienteRef = db.collection(FirestoreCollections.CLIENTES).document(clienteId)
                 val clienteSnap = transaction.get(clienteRef)
                 if (clienteSnap.exists()) {
                     val visitasActuales = clienteSnap.getLong("visitasCicloActual") ?: 0L
@@ -689,7 +689,7 @@ class SyncWorker(
 
 
 
-    private suspend fun sincronizarOperacion(operacion: com.bocatta.pos.data.local.OperacionOffline) {
+    private suspend fun sincronizarOperacion(operacion: com.bocatta.pos.domain.model.OperacionOffline) {
 
         val extraData = operacion.dataJson.takeIf { it.isNotBlank() }?.let { dataJson ->
 
@@ -742,7 +742,7 @@ class SyncWorker(
 
 
 
-    private suspend fun sincronizarTurnoContingencia(turno: com.bocatta.pos.data.local.TurnoContingenciaLocal) {
+    private suspend fun sincronizarTurnoContingencia(turno: com.bocatta.pos.domain.model.TurnoContingenciaLocal) {
 
         val data = mapOf(
 

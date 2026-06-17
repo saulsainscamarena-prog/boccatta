@@ -7,11 +7,15 @@ import com.bocatta.pos.domain.model.GastoV2
 import com.bocatta.pos.domain.model.IngredienteReceta
 import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.model.ItemVendidoV2
+import com.bocatta.pos.domain.model.VentaV2
 import com.bocatta.pos.domain.repository.ResultadoVenta
 import com.bocatta.pos.domain.repository.SalesRepository
 import com.google.firebase.firestore.FieldValue
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.util.Locale
@@ -241,6 +245,59 @@ class FirebaseSalesRepositoryV2(
 
             ResultadoVenta(numeroTicket = nextTicket, codigoTicket = codigoTicket)
         }.await()
+    }
+
+    override fun getActiveKdsOrders(sucursal: String): Flow<List<VentaV2>> = callbackFlow {
+        val sucursalId = normalizarSucursal(sucursal)
+        val registration = db.collection(FirestoreCollections.VENTAS)
+            .whereEqualTo("branchId", sucursalId)
+            .whereIn("estadoCocina", listOf("pendiente", "preparando"))
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Timber.tag("KDS").e(error, "Error listening to KDS orders")
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val orders = snapshot.documents.mapNotNull { doc ->
+                        val data = doc.data ?: return@mapNotNull null
+                        VentaV2(
+                            id = doc.id,
+                            tenantId = data["tenantId"] as? String ?: "",
+                            businessType = data["businessType"] as? String ?: "",
+                            ticket = (data["ticket"] as? Long) ?: 0L,
+                            numeroTicket = (data["numeroTicket"] as? Long) ?: 0L,
+                            codigoTicket = data["codigoTicket"] as? String ?: "",
+                            total = (data["total"] as? Double) ?: 0.0,
+                            descuentoLealtad = (data["descuentoLealtad"] as? Double) ?: 0.0,
+                            propina = (data["propina"] as? Double) ?: 0.0,
+                            notaOrden = data["notaOrden"] as? String ?: "",
+                            fecha = (data["fecha"] as? Long) ?: 0L,
+                            sucursal = data["sucursal"] as? String ?: sucursalId,
+                            atendio = data["atendio"] as? String ?: "",
+                            metodoPago = data["metodoPago"] as? String ?: "efectivo",
+                            esConsumoEmpleado = data["esConsumoEmpleado"] as? Boolean ?: false,
+                            estado = data["estado"] as? String ?: "completada",
+                            clienteId = data["clienteId"] as? String?,
+                            estadoCocina = data["estadoCocina"] as? String ?: ""
+                        )
+                    }
+                    trySend(orders)
+                }
+            }
+        awaitClose { registration.remove() }
+    }
+
+    override suspend fun updateKdsOrderStatus(ventaId: String, estado: String, sucursal: String): Boolean {
+        return try {
+            val sucursalId = normalizarSucursal(sucursal)
+            db.collection(FirestoreCollections.VENTAS).document(ventaId)
+                .update("estadoCocina", estado, "branchId", sucursalId)
+                .await()
+            true
+        } catch (e: Exception) {
+            Timber.tag("KDS").e(e, "Error updating KDS order status for $ventaId to $estado")
+            false
+        }
     }
 
     private fun normalizarSucursal(sucursal: String): String =

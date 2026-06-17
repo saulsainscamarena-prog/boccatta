@@ -1,6 +1,8 @@
 package com.bocatta.pos.domain.repository
 
 import com.bocatta.pos.domain.model.ItemCarritoV2
+import com.bocatta.pos.domain.model.VentaV2
+import kotlinx.coroutines.flow.Flow
 
 data class ResultadoVenta(
     val numeroTicket: Long,
@@ -30,4 +32,8 @@ interface SalesRepository {
         sucursal: String,
         usuarioId: String
     ): Boolean
+
+    fun getActiveKdsOrders(sucursal: String): Flow<List<VentaV2>>
+
+    suspend fun updateKdsOrderStatus(ventaId: String, estado: String, sucursal: String): Boolean
 }

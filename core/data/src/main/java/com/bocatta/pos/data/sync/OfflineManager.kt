@@ -5,9 +5,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.bocatta.pos.core.model.TicketUtils
 import com.bocatta.pos.data.local.OfflineDatabase
-import com.bocatta.pos.data.local.OfflineStorage
-import com.bocatta.pos.data.local.OperacionOffline
-import com.bocatta.pos.data.local.VentaOffline
+import com.bocatta.pos.domain.storage.OfflineStorage
+import com.bocatta.pos.domain.model.OperacionOffline
+import com.bocatta.pos.domain.model.VentaOffline
 import com.bocatta.pos.domain.model.ClienteV2
 import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.repository.ResultadoVenta
@@ -150,9 +150,10 @@ object OfflineManager {
         usuarioId: String,
         sucursal: String,
         dataJson: String,
-        requiereAprobacion: Boolean = true
+        requiereAprobacion: Boolean = true,
+        forcedOperationId: String? = null
     ) {
-        val operacionId = "offline_op_${System.currentTimeMillis()}"
+        val operacionId = forcedOperationId ?: "offline_op_${System.currentTimeMillis()}"
 
         val operacion = OperacionOffline(
             id = operacionId,
