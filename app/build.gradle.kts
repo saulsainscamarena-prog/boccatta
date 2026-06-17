@@ -131,6 +131,9 @@ dependencies {
     // WorkManager (Sincronización en segundo plano)
     implementation(libs.work.runtime.ktx)
 
+    // Baseline Profiles (ProfileInstaller)
+    implementation(libs.androidx.profileinstaller)
+
     // Serialización JSON para guardar ventas offline
     implementation(libs.kotlinx.serialization.json)
 

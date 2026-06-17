@@ -2,7 +2,6 @@ package com.bocatta.pos.di
 
 import com.bocatta.pos.feature.ventas.di.SalesDependencies
 import com.bocatta.pos.data.local.OfflineDatabase
-import com.bocatta.pos.data.local.room.BocattaRoomDatabase
 import com.bocatta.pos.data.repository.AuthRepository
 import com.bocatta.pos.data.repository.ConfiguracionRepository
 import com.bocatta.pos.data.repository.DataSeederV2
