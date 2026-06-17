@@ -1,5 +1,6 @@
 package com.bocatta.pos.core
 
+import com.bocatta.pos.core.model.TicketUtils
 import org.junit.Test
 import org.junit.Assert.*
 

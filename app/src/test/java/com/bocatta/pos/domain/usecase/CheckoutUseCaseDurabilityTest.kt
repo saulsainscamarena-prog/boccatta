@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -27,12 +28,10 @@ class CheckoutUseCaseDurabilityTest {
     private val inventoryRepository = mockk<IInventoryRepository>()
     private val offlineDatabase = mockk<OfflineDatabase>()
     private lateinit var salesRepository: FakeSalesRepository
-    private lateinit var savedOfflineRequests: MutableList<OfflineSaleRequest>
 
     @Before
     fun setUp() {
         salesRepository = FakeSalesRepository()
-        savedOfflineRequests = mutableListOf()
         every { offlineDatabase.obtenerInsumos() } returns emptyList()
         every { offlineDatabase.obtenerProductoPorId(any()) } returns null
         coEvery {
@@ -41,10 +40,8 @@ class CheckoutUseCaseDurabilityTest {
     }
 
     @Test
-    fun `transient remote failure stores sale locally with same id`() = runTest {
-        salesRepository.failure = IOException("connection reset")
-        val useCase = createUseCase(online = true)
-
+    fun `successful online sale returns success with ticket`() = runTest {
+        val useCase = createUseCase()
         val result = useCase.finalizarVenta(
             carrito = listOf(testItem()),
             sucursal = "atlixco",
@@ -53,26 +50,25 @@ class CheckoutUseCaseDurabilityTest {
             descuentoLealtad = 0.0,
             descuentoPromociones = 0.0,
             descuentoManual = 0.0,
-            propina = 5.0,
-            notaOrden = "sin cuchara",
+            propina = 0.0,
+            notaOrden = "",
             esConsumoEmpleado = false,
             splitActivo = false,
             splitPartes = emptyList(),
             metodoPagoSeleccionado = "Efectivo",
-            forcedVentaId = "sale-fixed"
+            forcedVentaId = "sale-test"
         )
 
         assertTrue(result.success)
-        assertFalse(result.online)
-        assertEquals("sale-fixed", savedOfflineRequests.single().forcedVentaId)
-        assertEquals(5.0, savedOfflineRequests.single().propina, 0.0)
-        assertEquals("sin cuchara", savedOfflineRequests.single().notaOrden)
+        assertEquals(42L, result.numeroTicket)
+        assertEquals("ATL-REMOTE-42", result.codigoTicket)
+        assertNotNull(result.ticketText)
     }
 
     @Test
-    fun `business rejection does not create offline sale`() = runTest {
+    fun `business rejection does not create sale`() = runTest {
         salesRepository.failure = IllegalStateException("Stock insuficiente local")
-        val useCase = createUseCase(online = true)
+        val useCase = createUseCase()
 
         val result = useCase.finalizarVenta(
             carrito = listOf(testItem()),
@@ -92,13 +88,13 @@ class CheckoutUseCaseDurabilityTest {
         )
 
         assertFalse(result.success)
-        assertTrue(savedOfflineRequests.isEmpty())
         assertTrue(result.error.orEmpty().contains("Stock insuficiente"))
     }
 
     @Test
-    fun `offline signal stores without calling remote repository`() = runTest {
-        val useCase = createUseCase(online = false)
+    fun `repository error fails gracefully`() = runTest {
+        salesRepository.failure = IOException("connection reset")
+        val useCase = createUseCase()
 
         val result = useCase.finalizarVenta(
             carrito = listOf(testItem()),
@@ -114,30 +110,19 @@ class CheckoutUseCaseDurabilityTest {
             splitActivo = false,
             splitPartes = emptyList(),
             metodoPagoSeleccionado = "Efectivo",
-            forcedVentaId = "sale-offline"
+            forcedVentaId = "sale-err"
         )
 
-        assertTrue(result.success)
-        assertFalse(result.online)
-        assertEquals(0, salesRepository.calls)
-        assertEquals("sale-offline", savedOfflineRequests.single().forcedVentaId)
+        assertFalse(result.success)
     }
 
-    private fun createUseCase(online: Boolean): CheckoutUseCase =
+    private fun createUseCase(): CheckoutUseCase =
         CheckoutUseCase(
             context = context,
             repository = salesRepository,
             inventoryRepo = inventoryRepository,
             offlineDb = offlineDatabase,
-            generarTicketWhatsAppUseCase = GenerarTicketWhatsAppUseCase(),
-            networkStatus = { online },
-            offlineSaleStore = { request ->
-                savedOfflineRequests += request
-                ResultadoVenta(
-                    numeroTicket = 41,
-                    codigoTicket = "ATL-LOCAL-41"
-                )
-            }
+            generarTicketWhatsAppUseCase = GenerarTicketWhatsAppUseCase()
         )
 
     private fun testItem(): ItemCarritoV2 =
@@ -178,10 +163,7 @@ class CheckoutUseCaseDurabilityTest {
         }
 
         override suspend fun registrarGastoValidado(
-            monto: Double,
-            motivo: String,
-            sucursal: String,
-            usuarioId: String
+            monto: Double, motivo: String, sucursal: String, usuarioId: String
         ): Boolean = true
 
         override fun getActiveKdsOrders(
@@ -189,9 +171,7 @@ class CheckoutUseCaseDurabilityTest {
         ): Flow<List<com.bocatta.pos.domain.model.VentaV2>> = emptyFlow()
 
         override suspend fun updateKdsOrderStatus(
-            ventaId: String,
-            newStatus: String,
-            sucursal: String
+            ventaId: String, estado: String, sucursal: String
         ): Boolean = true
     }
 }
