@@ -5,7 +5,7 @@ import com.bocatta.pos.core.ui.viewmodel.BaseViewModel
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewModelScope
 import com.bocatta.pos.data.local.OfflineDatabase
-import com.bocatta.pos.data.local.TurnoContingenciaLocal
+import com.bocatta.pos.domain.model.TurnoContingenciaLocal
 import com.bocatta.pos.data.local.room.dao.VentaPendienteDao
 import com.bocatta.pos.data.local.room.entity.VentaPendienteEntity
 import com.bocatta.pos.data.repository.StockAllocationRepository
@@ -66,7 +66,7 @@ class CajaViewModel(
     // VENTAS OFFLINE FALLIDAS — badge presionable en Caja (solo admin puede actuar)
     private val _conteoVentasFallidas = MutableStateFlow(0)
     val conteoVentasFallidas = _conteoVentasFallidas.asStateFlow()
-    var ventasFallidas by mutableStateOf<List<com.bocatta.pos.data.local.VentaOffline>>(emptyList())
+    var ventasFallidas by mutableStateOf<List<com.bocatta.pos.domain.model.VentaOffline>>(emptyList())
         private set
     var mostrarDialogoFallidas by mutableStateOf(false)
         private set

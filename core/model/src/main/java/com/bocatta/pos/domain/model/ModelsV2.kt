@@ -2,6 +2,92 @@ package com.bocatta.pos.domain.model
 
 import java.math.BigDecimal
 
+/**
+ * Venta offline almacenada localmente para sincronización posterior.
+ */
+data class VentaOffline(
+    val id: String = "",
+    val tenantId: String = "tenant_pionero",
+    val ticket: Long = 0L,
+    val codigoTicket: String = "",
+    val total: Double = 0.0,
+    val descuentoLealtad: Double = 0.0,
+    val descuentoPromociones: Double = 0.0,
+    val descuentoManual: Double = 0.0,
+    val propina: Double = 0.0,
+    val notaOrden: String = "",
+    val fecha: Long = 0L,
+    val sucursal: String = "",
+    val atendio: String = "",
+    val metodoPago: String = "",
+    val esConsumoEmpleado: Boolean = false,
+    val clienteId: String? = null,
+    val carritoJson: String = "",
+    val estado: String = ESTADO_PENDIENTE,
+    val intentos: Int = 0,
+    val ultimoIntento: Long? = null
+) {
+    companion object {
+        const val ESTADO_PENDIENTE = "pendiente"
+        const val ESTADO_SINCRONIZADA = "sincronizada"
+        const val ESTADO_FALLIDA = "fallida"
+        const val ESTADO_FALLIDA_CRITICA = "fallida_critica"
+        const val MAX_INTENTOS = 3
+    }
+}
+
+/**
+ * Operación offline (devolución, cancelación, merma) para sincronización posterior.
+ */
+data class OperacionOffline(
+    val id: String = "",
+    val tenantId: String = "tenant_pionero",
+    val tipo: String = "",
+    val ventaId: String? = null,
+    val motivo: String = "",
+    val usuarioId: String = "",
+    val sucursal: String = "",
+    val fecha: Long = 0L,
+    val requiereAprobacion: Boolean = false,
+    val dataJson: String = "",
+    val estado: String = ESTADO_PENDIENTE,
+    val intentos: Int = 0
+) {
+    companion object {
+        const val TIPO_DEVOLUCION = "devolucion"
+        const val TIPO_CANCELACION = "cancelacion"
+        const val TIPO_MERMA = "merma"
+        const val ESTADO_PENDIENTE = "pendiente"
+        const val ESTADO_SINCRONIZADA = "sincronizada"
+        const val ESTADO_FALLIDA = "fallida"
+        const val MAX_INTENTOS = 3
+    }
+}
+
+/**
+ * Turno de contingencia local (offline-first cuando Firestore no está disponible).
+ */
+data class TurnoContingenciaLocal(
+    val id: String = "",
+    val tenantId: String = "tenant_pionero",
+    val sucursal: String = "",
+    val usuarioId: String = "",
+    val usuarioNombre: String = "",
+    val rol: String = "",
+    val fondoInicial: Double = 0.0,
+    val fechaApertura: Long = 0L,
+    val fechaCierre: Long? = null,
+    val estado: String = ESTADO_ABIERTO,
+    val efectivoContado: Double = 0.0,
+    val tarjetaContada: Double = 0.0,
+    val syncPendiente: Boolean = true
+) {
+    companion object {
+        const val ESTADO_ABIERTO = "abierto"
+        const val ESTADO_CERRADO = "cerrado"
+    }
+}
+
 data class ConsumibleRequerido(
     val consumibleId: String = "",
     val cantidad: Double = 1.0,
@@ -138,7 +224,8 @@ data class VentaV2(
     val estado: String = "completada",
     val clienteId: String? = null,
     val productos: List<ItemVendidoV2> = emptyList(),
-    val productosIds: List<String> = emptyList()
+    val productosIds: List<String> = emptyList(),
+    val estadoCocina: String = ""
 )
 
 data class GastoV2(
