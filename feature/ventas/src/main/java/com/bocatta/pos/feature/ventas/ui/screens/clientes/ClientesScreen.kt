@@ -144,8 +144,8 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                     val estadoMembresia = MembresiaManager.verificarEstadoMembresia(cliente.visitasCicloActual)
                     val badgeColor = when (estadoMembresia.nivel) {
                         "PLATINO" -> MaterialTheme.colorScheme.tertiary
-                        "ORO" -> Color(0xFFFFA000)
-                        else -> Color(0xFF9E9E9E)
+                        "ORO" -> MaterialTheme.bocattaSemanticColors.warning
+                        else -> MaterialTheme.colorScheme.outline
                     }
                     Surface(
                         color = badgeColor,
@@ -154,7 +154,11 @@ private fun ClienteIndustrialCard(cliente: ClienteV2, onEditar: () -> Unit, onEl
                         Text(
                             text = estadoMembresia.nivel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
+                            color = when (estadoMembresia.nivel) {
+                                "PLATINO" -> MaterialTheme.colorScheme.onTertiary
+                                "ORO" -> MaterialTheme.bocattaSemanticColors.onWarning
+                                else -> MaterialTheme.colorScheme.surface
+                            },
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }

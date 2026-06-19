@@ -37,7 +37,10 @@ fun AdminPinDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(androidx.compose.ui.res.stringResource(com.bocatta.pos.core.ui.R.string.admin_pin_cancelar), color = Color.White.copy(0.6f))
+                Text(
+                    androidx.compose.ui.res.stringResource(com.bocatta.pos.core.ui.R.string.admin_pin_cancelar),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         },
         title = {
@@ -45,7 +48,7 @@ fun AdminPinDialog(
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(mensaje, fontSize = 14.sp, color = Color.White.copy(0.7f))
+                Text(mensaje, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(20.dp))
                 OutlinedTextField(
                     value = pin,
@@ -57,8 +60,8 @@ fun AdminPinDialog(
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.tertiary,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     )
                 )
                 if (error != null) {

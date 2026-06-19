@@ -79,24 +79,24 @@ fun CierreInventarioScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("CIERRE DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("CIERRE DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onBackground)
                         Text("RECUENTO FÍSICO FINAL · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
-                        Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(10.dp))
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
             )
         },
         bottomBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
                 Column(Modifier.padding(24.dp)) {
@@ -133,9 +133,9 @@ fun CierreInventarioScreen(
                         modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = MaterialTheme.colorScheme.tertiary),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !cargando && !guardado && itemsConteo.any { it.conteoFisico.isNotBlank() },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary, contentColor = Color.White, disabledContainerColor = Color.White.copy(0.1f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary, contentColor = MaterialTheme.colorScheme.onTertiary, disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant),
                     ) {
-                        if (cargando) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        if (cargando) CircularProgressIndicator(color = MaterialTheme.colorScheme.onTertiary, modifier = Modifier.size(24.dp))
                         else {
                             Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory2, "Inventario")
                             Spacer(Modifier.width(12.dp))
@@ -154,13 +154,13 @@ fun CierreInventarioScreen(
                 contentPadding = PaddingValues(bottom = 32.dp, top = 16.dp)
             ) {
                 item {
-                    Text("Recuento Físico Final", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text("Recuento Físico Final", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                 }
                 items(itemsConteo) { item ->
                     val fisico = item.conteoFisico.toDoubleOrNull()
                     val dif = if (fisico != null) item.stockSistema - fisico else null
                     val statusColor = when {
-                        dif == null -> Color.White.copy(0.1f)
+                        dif == null -> MaterialTheme.colorScheme.outlineVariant
                         dif > 0.01 -> MaterialTheme.colorScheme.tertiary
                         dif < -0.01 -> MaterialTheme.colorScheme.primary
                         else -> MaterialTheme.colorScheme.tertiary
@@ -173,8 +173,8 @@ fun CierreInventarioScreen(
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Column {
-                                    Text(item.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
-                                    Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+                                    Text(item.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, letterSpacing = 1.sp)
+                                    Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                                 }
                                 
                                 if (dif != null && Math.abs(dif) > 0.01) {
@@ -197,11 +197,11 @@ fun CierreInventarioScreen(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = statusColor,
-                                    unfocusedBorderColor = Color.White.copy(0.1f),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     focusedLabelColor = statusColor,
-                                    unfocusedLabelColor = Color.White.copy(0.3f)
+                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
                         }
@@ -211,6 +211,4 @@ fun CierreInventarioScreen(
         }
     }
 }
-
-
 

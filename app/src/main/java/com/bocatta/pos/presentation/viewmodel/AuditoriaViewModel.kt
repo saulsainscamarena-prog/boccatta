@@ -94,7 +94,7 @@ class AuditoriaViewModel : BaseViewModel() {
                         .document(docId)
                         .update("aprobada", true)
                         .await()
-                    mensajeExito = "CancelaciÃ³n aprobada âœ“"
+                    mensajeExito = "Cancelación aprobada"
                     callback()
                 }
             } catch (e: Exception) {
@@ -146,6 +146,5 @@ class AuditoriaViewModel : BaseViewModel() {
         listenerUsuarios?.remove()
     }
 }
-
 
 

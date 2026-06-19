@@ -112,7 +112,9 @@ fun AdminScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -182,68 +184,73 @@ fun AdminScreen(
             when (seccionActiva) {
                 "dashboard" -> {
                     Column(Modifier.fillMaxSize()) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            modifier = Modifier.fillMaxWidth().height(330.dp),
-                            contentPadding = PaddingValues(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            item {
+                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                            val columnCount = if (maxWidth >= 720.dp) 3 else 2
+                            val gap = 12.dp
+                            val contentWidth = maxWidth - 32.dp
+                            val cardWidth = (contentWidth - gap * (columnCount - 1)) / columnCount
+                            FlowRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                maxItemsInEachRow = columnCount,
+                                horizontalArrangement = Arrangement.spacedBy(gap),
+                                verticalArrangement = Arrangement.spacedBy(gap)
+                            ) {
                                 DashboardCardPremium(
                                     title = vm.businessFeatures.labelCatalogo,
                                     subtitle = stringResource(R.string.admin_card_sub_productos, vm.productos.size),
                                     icon = Icons.AutoMirrored.Filled.MenuBook,
                                     color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.width(cardWidth),
                                     onClick = { seccionActiva = "menu" }
                                 )
-                            }
-                            if (vm.businessFeatures.usaRecetas) {
-                                item {
+                                if (vm.businessFeatures.usaRecetas) {
                                     DashboardCardPremium(
                                         title = stringResource(R.string.admin_card_recetas),
                                         subtitle = stringResource(R.string.admin_card_sub_config),
                                         icon = Icons.AutoMirrored.Filled.ReceiptLong,
                                         color = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.width(cardWidth),
                                         onClick = { seccionActiva = "recetas" }
                                     )
                                 }
-                            }
-                            if (vm.businessFeatures.usaRecetas || vm.businessFeatures.usaVariantesRetail) {
-                                item {
+                                if (vm.businessFeatures.usaRecetas || vm.businessFeatures.usaVariantesRetail) {
                                     DashboardCardPremium(
                                         title = stringResource(R.string.admin_card_inventario),
-                                        subtitle = if (vm.businessFeatures.usaRecetas) stringResource(R.string.admin_card_sub_insumos, vm.insumosMaestros.size) else "Stock disponible",
+                                        subtitle = if (vm.businessFeatures.usaRecetas) {
+                                            stringResource(R.string.admin_card_sub_insumos, vm.insumosMaestros.size)
+                                        } else {
+                                            stringResource(R.string.admin_card_stock_available)
+                                        },
                                         icon = Icons.Default.Warehouse,
                                         color = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.width(cardWidth),
                                         onClick = { seccionActiva = "inventario" }
                                     )
                                 }
-                            }
-                            item {
                                 DashboardCardPremium(
                                     title = stringResource(R.string.admin_card_personal),
                                     subtitle = stringResource(R.string.admin_card_sub_permisos),
                                     icon = Icons.Default.People,
                                     color = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.width(cardWidth),
                                     onClick = { seccionActiva = "empleados" }
                                 )
-                            }
-                            item {
                                 DashboardCardPremium(
                                     title = stringResource(R.string.admin_card_reportes),
                                     subtitle = stringResource(R.string.admin_card_sub_estadisticas),
                                     icon = Icons.Default.Analytics,
                                     color = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.width(cardWidth),
                                     onClick = { seccionActiva = "reportes" }
                                 )
-                            }
-                            item {
                                 DashboardCardPremium(
                                     title = stringResource(R.string.admin_card_ajustes),
                                     subtitle = stringResource(R.string.admin_card_sub_parametros),
                                     icon = Icons.Default.Settings,
                                     color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.width(cardWidth),
                                     onClick = { seccionActiva = "config" }
                                 )
                             }
@@ -305,4 +312,3 @@ fun AdminScreen(
         }
     }
 }
-

@@ -66,22 +66,22 @@ fun GastosScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("GASTOS Y OPERACIÓN", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("GASTOS Y OPERACIÓN", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onBackground)
                         Text("REGISTRO DE SALIDAS · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
+                        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(10.dp))
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainerLow)))) {
             LazyColumn(
                 modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -89,7 +89,7 @@ fun GastosScreen(
             ) {
                 if (vm.insumosDisponibles.isNotEmpty()) {
                     item {
-                        Text("INSUMOS FRECUENTES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp)
+                        Text("INSUMOS FRECUENTES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
                         Spacer(Modifier.height(12.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             items(vm.insumosDisponibles) { insumo ->
@@ -119,13 +119,13 @@ fun GastosScreen(
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primary,
                                         selectedLabelColor = MaterialTheme.colorScheme.background,
-                                        containerColor = Color.White.copy(0.05f),
-                                        labelColor = Color.White.copy(0.6f)
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
                                     border = FilterChipDefaults.filterChipBorder(
                                         enabled = true,
                                         selected = selected,
-                                        borderColor = Color.White.copy(0.1f),
+                                        borderColor = MaterialTheme.colorScheme.outlineVariant,
                                         selectedBorderColor = MaterialTheme.colorScheme.primary
                                     )
                                 )
@@ -135,12 +135,12 @@ fun GastosScreen(
                 }
 
                 item {
-                    Text("NUEVA ENTRADA DE GASTO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White.copy(0.4f), letterSpacing = 1.sp)
+                    Text("NUEVA ENTRADA DE GASTO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.sp)
                     Spacer(Modifier.height(12.dp))
                     Surface(
                         shape = RoundedCornerShape(28.dp),
                         color = MaterialTheme.colorScheme.surfaceContainer,
-                        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             if (categoria == "Insumo") {
@@ -325,7 +325,7 @@ fun GastosScreen(
                         BocattaMetricCardPremium(
                             titulo = "REGISTROS",
                             valor = vm.gastos.size.toString(),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -360,7 +360,7 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
         "Sueldos" -> Icons.Default.Person to MaterialTheme.colorScheme.tertiary
         "Renta" -> Icons.Default.Home to MaterialTheme.colorScheme.secondary
         "Mantenimiento" -> Icons.Default.Build to MaterialTheme.colorScheme.error
-        else -> Icons.Default.ShoppingBag to Color.White.copy(0.6f)
+        else -> Icons.Default.ShoppingBag to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Surface(
@@ -381,12 +381,12 @@ fun GastoItemRow(gasto: GastoV2, onEliminar: () -> Unit) {
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(gasto.descripcion.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1, color = Color.White)
+                Text(gasto.descripcion.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurface)
                 StatusBadgePremium(gasto.categoria.uppercase(java.util.Locale.getDefault()), color)
             }
             Text("-$${"%.2f".format(gasto.monto)}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp)
             IconButton(onClick = onEliminar) {
-                Icon(Icons.Default.Delete, "Eliminar", tint = Color.White.copy(0.2f))
+                Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

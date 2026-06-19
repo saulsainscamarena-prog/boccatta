@@ -102,24 +102,24 @@ fun AperturaInventarioScreen(
             LargeTopAppBar(
                 title = { 
                     Column {
-                        Text("CARGA DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                        Text("CARGA DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onBackground)
                         Text("AUDITORIA DE STOCK INICIAL - ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = { 
                     IconButton(onClick = onBack) { 
-                        Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp)) 
+                        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(10.dp))
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
             )
         },
         bottomBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
@@ -135,7 +135,7 @@ fun AperturaInventarioScreen(
                         modifier = Modifier.fillMaxWidth().height(64.dp).shadow(16.dp, RoundedCornerShape(20.dp), spotColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !cargando && !guardado && contados == total && total > 0,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.background, disabledContainerColor = Color.White.copy(0.1f)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant),
                     ) {
                         Icon(if (guardado) Icons.Default.CheckCircle else Icons.Default.Inventory, "Inventario")
                         Spacer(Modifier.width(12.dp))
@@ -160,7 +160,7 @@ fun AperturaInventarioScreen(
                         Text(
                             "Valida el stock f\u00EDsico inicial. El sistema compara contra el cierre de ayer.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(0.5f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -168,7 +168,7 @@ fun AperturaInventarioScreen(
                         val fisico = item.conteoFisico.toDoubleOrNull()
                         val diferencia = if (fisico != null) fisico - item.stockSistema else null
                         val statusColor = when {
-                            diferencia == null -> Color.White.copy(0.1f)
+                            diferencia == null -> MaterialTheme.colorScheme.outlineVariant
                             Math.abs(diferencia) < 0.01 -> MaterialTheme.colorScheme.tertiary
                             diferencia < 0 -> MaterialTheme.colorScheme.tertiary
                             else -> MaterialTheme.colorScheme.primary
@@ -182,8 +182,8 @@ fun AperturaInventarioScreen(
                             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Column {
-                                        Text(item.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp, letterSpacing = 1.sp)
-                                        Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
+                                        Text(item.nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, letterSpacing = 1.sp)
+                                        Text("STOCK EN SISTEMA: ${item.stockSistema}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                                     }
                                     
                                     if (diferencia != null && Math.abs(diferencia) > 0.01) {
@@ -206,11 +206,11 @@ fun AperturaInventarioScreen(
                                     shape = RoundedCornerShape(16.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedBorderColor = statusColor,
-                                        unfocusedBorderColor = Color.White.copy(0.1f),
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                         focusedLabelColor = statusColor,
-                                        unfocusedLabelColor = Color.White.copy(0.3f)
+                                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -221,8 +221,6 @@ fun AperturaInventarioScreen(
         }
     }
 }
-
-
 
 
 

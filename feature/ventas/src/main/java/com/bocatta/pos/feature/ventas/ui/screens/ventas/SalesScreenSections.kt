@@ -5,6 +5,8 @@ import com.bocatta.pos.feature.ventas.ui.components.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -53,6 +55,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
@@ -67,6 +71,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -79,6 +84,8 @@ import com.bocatta.pos.domain.usecase.CatalogoProcesado
 import com.bocatta.pos.presentation.ui.components.BocattaSearchBar
 import com.bocatta.pos.presentation.ui.components.NeonButton
 import com.bocatta.pos.presentation.ui.components.ProductCardPremium
+import com.bocatta.pos.presentation.ui.theme.bocattaSemanticColors
+import com.bocatta.pos.core.ui.R
 import java.math.BigDecimal
 import java.util.Locale
 
@@ -111,14 +118,19 @@ internal fun SalesTopBar(
                         Modifier
                             .size(8.dp)
                             .background(
-                                if (isOnline) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                                if (isOnline) MaterialTheme.bocattaSemanticColors.success
+                                else MaterialTheme.colorScheme.error,
                                 CircleShape
                             )
                     )
                     Spacer(Modifier.width(6.dp))
-                    val statusColor = if (isOnline) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                    val statusColor = if (isOnline) {
+                        MaterialTheme.bocattaSemanticColors.success
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    }
                     Text(
-                        "${if (isOnline) "SISTEMA ONLINE" else "SISTEMA OFFLINE"} - ${sucursalActual.uppercase(Locale.ROOT)}",
+                        "${stringResource(if (isOnline) R.string.sales_system_online else R.string.sales_system_offline)} - ${sucursalActual.uppercase(Locale.ROOT)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = statusColor.copy(0.8f),
                         fontWeight = FontWeight.Bold,
@@ -128,50 +140,56 @@ internal fun SalesTopBar(
             }
         },
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = CircleShape,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Menu,
-                        "Menu",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(10.dp)
-                    )
+            if (!isTablet) {
+                IconButton(onClick = onMenuClick) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = CircleShape,
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Menu,
+                            stringResource(R.string.sales_open_menu),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
                 }
             }
         },
         actions = {
             if (isTablet) {
                 if (usaRecetas) {
-                    TopBarAction(icon = Icons.Default.Restaurant, description = "Retiro alimento", onClick = onRetiroAlimento)
+                    TopBarAction(
+                        icon = Icons.Default.Restaurant,
+                        description = stringResource(R.string.sales_action_food_withdrawal),
+                        onClick = onRetiroAlimento
+                    )
                 }
                 TopBarAction(
                     icon = Icons.Default.AddShoppingCart,
-                    description = "Compra rapida",
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    containerColor = MaterialTheme.colorScheme.tertiary.copy(0.1f),
+                    description = stringResource(R.string.sales_action_quick_purchase),
+                    tint = MaterialTheme.bocattaSemanticColors.success,
+                    containerColor = MaterialTheme.bocattaSemanticColors.successContainer,
                     onClick = onCompraRapida
                 )
                 TopBarAction(
                     icon = Icons.Default.Block,
-                    description = "Cancelar venta",
+                    description = stringResource(R.string.sales_action_cancel_sale),
                     tint = MaterialTheme.colorScheme.error,
                     containerColor = MaterialTheme.colorScheme.error.copy(0.1f),
                     onClick = onCancelarVenta
                 )
                 TopBarAction(
                     icon = Icons.Default.Bookmark,
-                    description = "Actividad y mesas",
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    containerColor = MaterialTheme.colorScheme.tertiary.copy(0.1f),
+                    description = stringResource(R.string.sales_action_activity),
+                    tint = MaterialTheme.bocattaSemanticColors.success,
+                    containerColor = MaterialTheme.bocattaSemanticColors.successContainer,
                     onClick = onVerActividad
                 )
                 TopBarAction(
                     icon = Icons.AutoMirrored.Filled.Logout,
-                    description = "Cerrar sesion",
+                    description = stringResource(R.string.sales_nav_logout),
                     tint = MaterialTheme.colorScheme.error,
                     containerColor = MaterialTheme.colorScheme.error.copy(0.1f),
                     onClick = onLogout
@@ -604,31 +622,135 @@ internal fun BocattaSalesDrawer(
             }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            DrawerGroup("Venta")
-            DrawerItem("POS", Icons.Default.PointOfSale, selected = true) { }
-            DrawerItem("Mesas / Ordenes", Icons.Default.Restaurant) { onNavigate(onVerActividad) }
+            DrawerGroup(stringResource(R.string.sales_nav_sale))
+            DrawerItem(stringResource(R.string.sales_nav_pos), Icons.Default.PointOfSale, selected = true) { }
+            DrawerItem(stringResource(R.string.sales_nav_activity), Icons.Default.Restaurant) {
+                onNavigate(onVerActividad)
+            }
 
-            DrawerGroup("Operacion")
-            DrawerItem("Caja", Icons.Default.Payments) { onNavigate(onVerCaja) }
-            DrawerItem("Cerrar turno", Icons.Default.LockClock) { onNavigate(onVerCaja) }
-            DrawerItem("Gastos", Icons.AutoMirrored.Filled.ReceiptLong) { onNavigate(onVerGastos) }
-            DrawerItem("Devoluciones", Icons.AutoMirrored.Filled.Undo) { onNavigate(onVerDevoluciones) }
-            DrawerItem("Mermas / Desperdicios", Icons.Default.DeleteForever) { onNavigate(onRegistrarMerma) }
+            DrawerGroup(stringResource(R.string.sales_nav_operation))
+            DrawerItem(stringResource(R.string.sales_nav_cash), Icons.Default.Payments) { onNavigate(onVerCaja) }
+            DrawerItem(stringResource(R.string.sales_nav_expenses), Icons.AutoMirrored.Filled.ReceiptLong) {
+                onNavigate(onVerGastos)
+            }
+            DrawerItem(stringResource(R.string.sales_nav_returns), Icons.AutoMirrored.Filled.Undo) {
+                onNavigate(onVerDevoluciones)
+            }
+            DrawerItem(stringResource(R.string.sales_nav_waste), Icons.Default.DeleteForever) {
+                onNavigate(onRegistrarMerma)
+            }
 
-            DrawerGroup("Inventario")
-            DrawerItem("Inventario", Icons.Default.Inventory) { onNavigate(onVerInventario) }
+            DrawerGroup(stringResource(R.string.sales_nav_inventory))
+            DrawerItem(stringResource(R.string.sales_nav_inventory), Icons.Default.Inventory) {
+                onNavigate(onVerInventario)
+            }
 
             if (esAdmin) {
-                DrawerGroup("Admin")
-                DrawerItem("Control central", Icons.Default.AdminPanelSettings) { onNavigate(onVerAdmin) }
-                DrawerItem("Reportes", Icons.Default.Assessment) { onNavigate(onVerReportes) }
+                DrawerGroup(stringResource(R.string.sales_nav_admin))
+                DrawerItem(stringResource(R.string.sales_nav_control_center), Icons.Default.AdminPanelSettings) {
+                    onNavigate(onVerAdmin)
+                }
+                DrawerItem(stringResource(R.string.sales_nav_reports), Icons.Default.Assessment) {
+                    onNavigate(onVerReportes)
+                }
             }
 
             Spacer(Modifier.weight(1f))
             HorizontalDivider()
-            DrawerItem("Cerrar sesion", Icons.AutoMirrored.Filled.Logout, danger = true) { onNavigate(onLogout) }
+            DrawerItem(
+                stringResource(R.string.sales_nav_logout),
+                Icons.AutoMirrored.Filled.Logout,
+                danger = true
+            ) { onNavigate(onLogout) }
         }
     }
+}
+
+@Composable
+fun BocattaSalesNavigationRail(
+    esAdmin: Boolean,
+    onVerCaja: () -> Unit,
+    onVerInventario: () -> Unit,
+    onVerGastos: () -> Unit,
+    onVerDevoluciones: () -> Unit,
+    onVerAdmin: () -> Unit,
+    onVerReportes: () -> Unit,
+    onVerActividad: () -> Unit
+) {
+    NavigationRail(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxHeight()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            SalesRailItem(
+                label = stringResource(R.string.sales_nav_pos),
+                icon = Icons.Default.PointOfSale,
+                selected = true,
+                onClick = {}
+            )
+            SalesRailItem(
+                label = stringResource(R.string.sales_nav_activity),
+                icon = Icons.Default.Restaurant,
+                onClick = onVerActividad
+            )
+            SalesRailItem(
+                label = stringResource(R.string.sales_nav_cash),
+                icon = Icons.Default.Payments,
+                onClick = onVerCaja
+            )
+            SalesRailItem(
+                label = stringResource(R.string.sales_nav_expenses),
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                onClick = onVerGastos
+            )
+            SalesRailItem(
+                label = stringResource(R.string.sales_nav_returns),
+                icon = Icons.AutoMirrored.Filled.Undo,
+                onClick = onVerDevoluciones
+            )
+            SalesRailItem(
+                label = stringResource(R.string.sales_nav_inventory),
+                icon = Icons.Default.Inventory,
+                onClick = onVerInventario
+            )
+            if (esAdmin) {
+                SalesRailItem(
+                    label = stringResource(R.string.sales_nav_control_center),
+                    icon = Icons.Default.AdminPanelSettings,
+                    onClick = onVerAdmin
+                )
+                SalesRailItem(
+                    label = stringResource(R.string.sales_nav_reports),
+                    icon = Icons.Default.Assessment,
+                    onClick = onVerReportes
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SalesRailItem(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean = false,
+    onClick: () -> Unit
+) {
+    NavigationRailItem(
+        selected = selected,
+        onClick = onClick,
+        icon = { Icon(icon, contentDescription = label) },
+        label = { Text(label, maxLines = 1) },
+        alwaysShowLabel = false
+    )
 }
 
 @Composable
@@ -743,5 +865,3 @@ private fun SalesEmptyState(
         }
     }
 }
-
-

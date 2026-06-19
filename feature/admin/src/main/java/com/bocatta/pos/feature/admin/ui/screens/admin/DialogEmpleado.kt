@@ -165,7 +165,7 @@ fun DialogEmpleado(
                     }
                 }
 
-                HorizontalDivider(color = Color.White.copy(0.08f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 // Configuración de Módulos (Progressive Disclosure Buttons)
                 Text("Configuraciones avanzadas:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
@@ -357,7 +357,7 @@ fun DialogEmpleado(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    HorizontalDivider(color = Color.White.copy(0.08f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Text("Información Bancaria:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
                     OutlinedTextField(
@@ -386,7 +386,7 @@ fun DialogEmpleado(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    HorizontalDivider(color = Color.White.copy(0.08f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Text("Deducciones Fijas:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
                     OutlinedTextField(

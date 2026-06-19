@@ -56,10 +56,18 @@ fun DevolucionesScreen(
                 title = { 
                     Column {
                         Text("DEVOLUCIONES Y CANCELACIONES", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Black, fontSize = 16.sp)
-                        Text(if (esAdmin) "GESTION DE AUDITORIA" else "SOLICITAR REEMBOLSO", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                        Text(
+                            if (esAdmin) "GESTIÓN DE AUDITORÍA" else "SOLICITAR REEMBOLSO",
+                            color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.8f),
+                            fontSize = 10.sp
+                        )
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White) } },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = MaterialTheme.colorScheme.onSecondary)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary)
             )
         }
@@ -168,6 +176,5 @@ private fun VendedorDevolucionContent(vm: DevolucionViewModel, session: SessionV
         }
     }
 }
-
 
 

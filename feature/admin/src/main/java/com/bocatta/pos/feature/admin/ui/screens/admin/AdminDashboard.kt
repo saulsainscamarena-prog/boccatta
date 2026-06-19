@@ -254,14 +254,15 @@ fun DashboardCardPremium(
     subtitle: String,
     icon: ImageVector,
     color: Color,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        border = BorderStroke(1.dp, Color.White.copy(0.08f)),
-        modifier = Modifier.fillMaxWidth().height(90.dp)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = modifier.heightIn(min = 96.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(10.dp),
@@ -284,7 +285,7 @@ fun DashboardCardPremium(
                 Icon(
                     Icons.Default.ChevronRight,
                     null,
-                    tint = Color.White.copy(0.3f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -293,7 +294,7 @@ fun DashboardCardPremium(
                     title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -301,7 +302,7 @@ fun DashboardCardPremium(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 9.sp,
-                    color = Color.White.copy(0.5f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -309,5 +310,4 @@ fun DashboardCardPremium(
         }
     }
 }
-
 

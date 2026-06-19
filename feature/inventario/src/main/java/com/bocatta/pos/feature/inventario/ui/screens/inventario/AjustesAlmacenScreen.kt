@@ -70,7 +70,7 @@ fun AjustesAlmacenScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF0F111A))))
+            .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainerLow)))
     ) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
@@ -85,7 +85,7 @@ fun AjustesAlmacenScreen(
                                 fontWeight = FontWeight.Black,
                                 fontSize = 24.sp,
                                 letterSpacing = 1.5.sp,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
                                 "COMPRAS RÁPIDAS Y CONTROL DE MERMAS · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}",
@@ -99,14 +99,14 @@ fun AjustesAlmacenScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Surface(
-                                color = Color.White.copy(0.05f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 shape = CircleShape,
                                 modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     Icons.AutoMirrored.Filled.ArrowBack,
                                     "Volver",
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.padding(10.dp)
                                 )
                             }
@@ -119,7 +119,7 @@ fun AjustesAlmacenScreen(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
-                        titleContentColor = Color.White
+                        titleContentColor = MaterialTheme.colorScheme.onBackground
                     )
                 )
             }
@@ -142,7 +142,7 @@ fun AjustesAlmacenScreen(
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.White.copy(0.1f)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
 
@@ -157,7 +157,7 @@ fun AjustesAlmacenScreen(
 
                     if (insumosFiltrados.isEmpty()) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No se encontraron insumos", color = Color.White.copy(0.6f))
+                            Text("No se encontraron insumos", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
                         LazyVerticalGrid(
@@ -179,7 +179,7 @@ fun AjustesAlmacenScreen(
                                     shape = RoundedCornerShape(24.dp),
                                     border = BorderStroke(
                                         1.dp,
-                                        if (bajoStock) colorEstado.copy(0.3f) else Color.White.copy(0.06f)
+                                        if (bajoStock) colorEstado.copy(0.3f) else MaterialTheme.colorScheme.outlineVariant
                                     ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -205,12 +205,12 @@ fun AjustesAlmacenScreen(
                                                     insumo.nombre,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 15.sp,
-                                                    color = Color.White
+                                                    color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
                                                     "${"%.2f".format(stockActual)} ${insumo.unidadBase}".uppercase(java.util.Locale.getDefault()),
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = if (bajoStock) colorEstado else Color.White.copy(0.6f),
+                                                    color = if (bajoStock) colorEstado else MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             }
@@ -252,7 +252,7 @@ fun AjustesAlmacenScreen(
                                                 onClick = { insumoRegistrarEntrada = insumo },
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = MaterialTheme.colorScheme.primary,
-                                                    contentColor = Color.White
+                                                    contentColor = MaterialTheme.colorScheme.onPrimary
                                                 ),
                                                 shape = RoundedCornerShape(12.dp),
                                                 modifier = Modifier.weight(1f),
@@ -303,7 +303,7 @@ fun AjustesAlmacenScreen(
                         Text(
                             "Stock actual reportado: ${"%.2f".format(stockActual)} ${insumo.unidadBase}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         OutlinedTextField(
                             value = cantidadMerma,

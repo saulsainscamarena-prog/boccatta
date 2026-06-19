@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
             val systemDark = isSystemInDarkTheme()
             val useDark = sessionVm.modoOscuroManual ?: systemDark
 
-            BocattaTheme(darkTheme = useDark, dynamicColor = true, themeConfig = themeConfig) {
+            BocattaTheme(darkTheme = useDark, dynamicColor = false, themeConfig = themeConfig) {
                 val navController = rememberNavController()
 
                 LaunchedEffect(navController) {
@@ -92,4 +92,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

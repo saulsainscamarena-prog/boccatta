@@ -70,37 +70,37 @@ fun AperturaDiaScreen(
                 title = {
                     Column {
                         Text("BOCATTA POS", fontWeight = FontWeight.Black,
-                            fontSize = 24.sp, letterSpacing = 2.sp, color = Color.White)
+                            fontSize = 24.sp, letterSpacing = 2.sp, color = MaterialTheme.colorScheme.onBackground)
                         Text("INICIO DE JORNADA", style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent, titleContentColor = Color.White)
+                    containerColor = Color.Transparent, titleContentColor = MaterialTheme.colorScheme.onBackground)
             )
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
+            Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainerLow)))) {
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
 
                 // Stepper
                 Surface(
-                    color = Color.White.copy(0.05f),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.08f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Row(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically) {
                         PasoItemPremium("1", "SUCURSAL", pasoActual >= 1, pasoActual == 0)
                         Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp)
-                            .background(if (pasoActual >= 1) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
+                            .background(if (pasoActual >= 1) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant))
                         PasoItemPremium("2", "ASIGNACION", pasoActual >= 2, pasoActual == 1)
                         Box(modifier = Modifier.weight(1f).height(1.dp).padding(horizontal = 12.dp)
-                            .background(if (pasoActual >= 2) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.1f)))
+                            .background(if (pasoActual >= 2) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant))
                         PasoItemPremium("3", "CAJA", pasoActual >= 3, pasoActual == 2)
                     }
                 }
@@ -141,7 +141,7 @@ fun PasoItemPremium(num: String, label: String, completado: Boolean, activo: Boo
     val color = when {
         activo -> MaterialTheme.colorScheme.primary
         completado -> MaterialTheme.colorScheme.tertiary
-        else -> Color.White.copy(0.3f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(modifier = Modifier.size(36.dp).background(color.copy(0.15f), CircleShape)
@@ -160,9 +160,9 @@ fun SeleccionSucursalPremium(vm: SessionViewModel, onConfirm: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Column {
             Text("¿EN QUÉ SUCURSAL ESTÁS?", fontWeight = FontWeight.Black,
-                style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
             Text("Selecciona la sucursal donde trabajarás hoy.",
-                color = Color.White.copy(0.5f), fontSize = 14.sp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         }
         sucursales.forEach { suc ->
             SucursalCardPremium(nombre = suc, seleccionada = vm.sucursalActual == suc,
@@ -188,29 +188,29 @@ fun SeleccionSucursalPremium(vm: SessionViewModel, onConfirm: () -> Unit) {
 @Composable
 fun SucursalCardPremium(nombre: String, seleccionada: Boolean, onClick: () -> Unit) {
     Surface(onClick = onClick,
-        color = if (seleccionada) MaterialTheme.colorScheme.tertiary.copy(0.08f) else Color.White.copy(0.03f),
+        color = if (seleccionada) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(28.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp,
-            if (seleccionada) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.08f)),
+            if (seleccionada) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = if (seleccionada) MaterialTheme.colorScheme.tertiary.copy(0.15f) else Color.White.copy(0.05f),
+            Surface(color = if (seleccionada) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = RoundedCornerShape(16.dp), modifier = Modifier.size(56.dp)) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Storefront, "Sucursal",
-                        tint = if (seleccionada) MaterialTheme.colorScheme.tertiary else Color.White.copy(0.3f),
+                        tint = if (seleccionada) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(32.dp))
                 }
             }
             Spacer(Modifier.width(20.dp))
             Text(nombre.uppercase(java.util.Locale.getDefault()), fontWeight = FontWeight.Black, fontSize = 24.sp,
-                color = if (seleccionada) Color.White else Color.White.copy(0.4f), letterSpacing = 1.sp)
+                color = if (seleccionada) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurface, letterSpacing = 1.sp)
             Spacer(Modifier.weight(1f))
             if (seleccionada) Icon(Icons.Default.RadioButtonChecked, "Seleccionado",
                 tint = MaterialTheme.colorScheme.tertiary)
             else Icon(Icons.Default.RadioButtonUnchecked, "Sin seleccionar",
-                tint = Color.White.copy(0.1f))
+                tint = MaterialTheme.colorScheme.outlineVariant)
         }
     }
 }
@@ -247,9 +247,9 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column {
             Text("STOCK VENDIBLE PARA EL TURNO", fontWeight = FontWeight.Black,
-                style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
             Text("Bodega central sugiere el surtido; confirma o ajusta antes de abrir.",
-                color = Color.White.copy(0.6f), fontSize = 14.sp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         }
 
         vm.mensajeError?.let { error ->
@@ -315,7 +315,7 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
                             colors = CardDefaults.cardColors(
                                 containerColor = if (cantidad > 0)
                                     MaterialTheme.colorScheme.primary.copy(0.08f)
-                                else Color.White.copy(0.05f)),
+                                else MaterialTheme.colorScheme.surfaceContainerHigh),
                             border = if (cantidad > 0)
                                 androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(0.3f))
                             else null
@@ -332,12 +332,12 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
                                 Spacer(Modifier.width(16.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(nombre, fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp, color = Color.White)
+                                        fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                                     Text(
                                         if (disponible > 0) "Sucursal: $actualSucursal u - Bodega: $disponible u - Sugerido: ${item.cuotaSugeridaSucursal} u"
                                         else "Sucursal: $actualSucursal u - Sin stock en bodega",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (disponible > 0) Color.White.copy(0.4f)
+                                        color = if (disponible > 0) MaterialTheme.colorScheme.onSurfaceVariant
                                         else MaterialTheme.colorScheme.error.copy(0.7f)
                                     )
                                     Text(
@@ -349,21 +349,21 @@ fun ValidacionStockPremium(vm: AperturaViewModelV2, sucursal: String, usuarioId:
                                 }
                                 if (item.esFisico) {
                                     Row(verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.background(Color.White.copy(0.1f),
+                                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh,
                                             RoundedCornerShape(12.dp)).padding(2.dp)) {
                                         IconButton(onClick = { if (cantidad > 0) transferencias[id] = cantidad - 1 },
-                                            modifier = Modifier.size(36.dp)) {
+                                            modifier = Modifier.size(48.dp)) {
                                             Icon(Icons.Default.Remove, "Quitar",
-                                                modifier = Modifier.size(18.dp), tint = Color.White)
+                                                modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
                                         }
                                         Text(cantidad.toString(), fontWeight = FontWeight.Black,
                                             fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp),
-                                            color = if (cantidad > 0) MaterialTheme.colorScheme.primary else Color.White)
+                                            color = if (cantidad > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                                         IconButton(onClick = { if (cantidad < disponible + actualSucursal) transferencias[id] = cantidad + 1 },
-                                            modifier = Modifier.size(36.dp), enabled = disponible > 0) {
+                                            modifier = Modifier.size(48.dp), enabled = disponible > 0) {
                                             Icon(Icons.Default.Add, "Agregar",
                                                 tint = if (disponible > 0) MaterialTheme.colorScheme.primary
-                                                else Color.White.copy(0.3f),
+                                                else MaterialTheme.colorScheme.onSurface.copy(0.38f),
                                                 modifier = Modifier.size(18.dp))
                                         }
                                     }
@@ -456,9 +456,9 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
     ) {
         Column {
             Text("FONDO DE CAJA", fontWeight = FontWeight.ExtraBold,
-                style = MaterialTheme.typography.titleMedium, color = Color.White, letterSpacing = 1.sp)
+                style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, letterSpacing = 1.sp)
             Text("¿Cuánto efectivo tienes para dar cambio?",
-                color = Color.White.copy(0.5f), fontSize = 13.sp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         }
         if (sinConexion) {
             Surface(
@@ -478,9 +478,9 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
                 }
             }
         }
-        Surface(color = Color.White.copy(0.05f), shape = RoundedCornerShape(28.dp),
+        Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(28.dp),
             modifier = Modifier.fillMaxWidth(),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.08f))) {
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.AccountBalanceWallet, "Efectivo",
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(52.dp))
@@ -489,19 +489,19 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
                     value = fondo,
                     onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) fondo = it },
                     label = { Text("Fondo inicial") },
-                    prefix = { Text("$ ", color = Color.White.copy(0.3f)) },
+                    prefix = { Text("$ ", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.White.copy(0.2f),
-                        focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface, unfocusedTextColor = MaterialTheme.colorScheme.onSurface)
                 )
                 Spacer(Modifier.height(12.dp))
                 Text("Mínimo requerido: \$100.00",
-                    style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.4f))
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         vm.mensajeError?.let {
@@ -519,13 +519,13 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
             ) {
                 if (vm.cargando) {
-                    CircularProgressIndicator(color = Color.White,
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onTertiary,
                         modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Default.PlayArrow, "Iniciar", tint = Color.White)
+                    Icon(Icons.Default.PlayArrow, "Iniciar", tint = MaterialTheme.colorScheme.onTertiary)
                     Spacer(Modifier.width(12.dp))
                     Text("COMENZAR JORNADA", fontWeight = FontWeight.ExtraBold,
-                        fontSize = 18.sp, color = Color.White)
+                        fontSize = 18.sp, color = MaterialTheme.colorScheme.onTertiary)
                 }
             }
         }
@@ -553,5 +553,3 @@ fun FondoCajaPremium(vm: CajaViewModel, session: SessionViewModel, onFinish: () 
         }
     }
 }
-
-

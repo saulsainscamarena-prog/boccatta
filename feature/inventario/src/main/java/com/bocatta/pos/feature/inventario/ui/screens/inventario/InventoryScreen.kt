@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +27,7 @@ import com.bocatta.pos.feature.inventario.ui.components.ProductionRegistrationDi
 import com.bocatta.pos.presentation.ui.theme.*
 import com.bocatta.pos.feature.inventario.viewmodel.InventoryViewModel
 import com.bocatta.pos.feature.auth.viewmodel.SessionViewModel
+import com.bocatta.pos.core.ui.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +54,18 @@ fun InventoryScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color(0xFF10121A))))) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.surfaceContainerLow
+                    )
+                )
+            )
+    ) {
         Scaffold(contentWindowInsets = WindowInsets.safeDrawing,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = Color.Transparent,
@@ -60,14 +73,36 @@ fun InventoryScreen(
                 LargeTopAppBar(
                     title = {
                         Column {
-                            Text("GESTIÓN DE INVENTARIO", fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 2.sp, color = Color.White)
-                            Text("MONITOREO DE MATERIA PRIMA · ${session.sucursalActual.uppercase(java.util.Locale.getDefault())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Text(
+                                stringResource(R.string.inventory_title),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                stringResource(
+                                    R.string.inventory_subtitle,
+                                    session.sucursalActual.uppercase(java.util.Locale.getDefault())
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Surface(color = Color.White.copy(0.05f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.padding(10.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = CircleShape,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    stringResource(R.string.inventory_back),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(10.dp)
+                                )
                             }
                         }
                     },
@@ -75,7 +110,11 @@ fun InventoryScreen(
                         if (session.esAdmin) {
                             var mostrarPin by remember { mutableStateOf(false) }
                             IconButton(onClick = { mostrarPin = true }) {
-                                Icon(Icons.Default.FlashOn, "Encender", tint = MaterialTheme.colorScheme.tertiary)
+                                Icon(
+                                    Icons.Default.FlashOn,
+                                    stringResource(R.string.inventory_emergency_stock),
+                                    tint = MaterialTheme.bocattaSemanticColors.warning
+                                )
                             }
                             if (mostrarPin) {
                                 com.bocatta.pos.core.ui.components.AdminPinDialog(
@@ -91,19 +130,41 @@ fun InventoryScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = onAperturaInventario) { Icon(Icons.AutoMirrored.Filled.Login, "Iniciar sesion", tint = Color.White.copy(0.7f)) }
-                        IconButton(onClick = onCierreInventario) { Icon(Icons.AutoMirrored.Filled.Logout, "Cerrar sesion", tint = Color.White.copy(0.7f)) }
-                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) { Icon(Icons.Default.Refresh, "Actualizar", tint = MaterialTheme.colorScheme.primary) }
+                        IconButton(onClick = onAperturaInventario) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Login,
+                                stringResource(R.string.inventory_opening),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onCierreInventario) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Logout,
+                                stringResource(R.string.inventory_closing),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { vm.configurarSucursal(session.sucursalActual) }) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                stringResource(R.string.inventory_refresh),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, titleContentColor = Color.White)
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
             },
             floatingActionButton = {
-                NeonButton(
-                    texto = "REGISTRAR PRODUCCIÓN",
+                ExtendedFloatingActionButton(
                     onClick = { mostrarRegistroProduccion = true },
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.primary
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.inventory_register_production)) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             }
         ) { padding ->
@@ -151,11 +212,19 @@ fun InventoryScreen(
 fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, stockMinimo: Double) {
     val agotado = cantidad <= 0.0
     val bajoStock = cantidad <= stockMinimo
-    val colorEstado = BocattaDesign.getStockColor(cantidad, stockMinimo)
+    val semanticColors = MaterialTheme.bocattaSemanticColors
+    val colorEstado = when {
+        agotado -> MaterialTheme.colorScheme.error
+        bajoStock -> semanticColors.warning
+        else -> semanticColors.success
+    }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, if(bajoStock) colorEstado.copy(0.4f) else Color.White.copy(0.08f)),
+        border = BorderStroke(
+            1.dp,
+            if (bajoStock) colorEstado.copy(0.5f) else MaterialTheme.colorScheme.outlineVariant
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -175,14 +244,31 @@ fun InventoryCardPremium(nombre: String, cantidad: Double, unidad: String, stock
             }
             Spacer(Modifier.width(20.dp))
             Column(Modifier.weight(1f)) {
-                Text(nombre, fontWeight = FontWeight.Black, fontSize = 14.sp, color = Color.White, letterSpacing = 1.sp)
-                Text("${"%.1f".format(cantidad)} $unidad".uppercase(java.util.Locale.getDefault()), style = MaterialTheme.typography.labelSmall, color = if(bajoStock) colorEstado else Color.White.copy(0.5f), fontWeight = FontWeight.Bold)
-                Text("Minimo: ${"%.1f".format(stockMinimo)} $unidad", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(0.45f))
+                Text(
+                    nombre,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "${"%.1f".format(cantidad)} $unidad".uppercase(java.util.Locale.getDefault()),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (bajoStock) colorEstado else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    stringResource(R.string.inventory_minimum, "%.1f".format(stockMinimo), unidad),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             if (bajoStock) {
-                StatusBadgePremium(if (agotado) "AGOTADO" else "BAJO", colorEstado)
+                StatusBadgePremium(
+                    if (agotado) stringResource(R.string.inventory_out_of_stock)
+                    else stringResource(R.string.inventory_low_stock),
+                    colorEstado
+                )
             }
         }
     }
 }
-

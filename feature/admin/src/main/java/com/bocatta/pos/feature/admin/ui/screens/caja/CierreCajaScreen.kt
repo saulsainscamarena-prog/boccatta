@@ -361,14 +361,14 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 Icon(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = stringResource(R.string.cierre_alerta_advertencia),
-                                    tint = Color(0xFFFFB300),
+                                    tint = MaterialTheme.bocattaSemanticColors.warning,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "${stringResource(R.string.cierre_fallidas, countFallidas)} Â· ${stringResource(R.string.cierre_gestionar)}",
+                                    text = "${stringResource(R.string.cierre_fallidas, countFallidas)} · ${stringResource(R.string.cierre_gestionar)}",
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFFB300),
+                                    color = MaterialTheme.bocattaSemanticColors.warning,
                                     fontSize = 12.sp
                                 )
                             }
@@ -381,14 +381,14 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                 Icon(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = stringResource(R.string.cierre_alerta_advertencia),
-                                    tint = Color(0xFFFFB300).copy(0.7f),
+                                    tint = MaterialTheme.bocattaSemanticColors.warning.copy(0.7f),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = stringResource(R.string.cierre_fallidas, countFallidas),
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFFB300).copy(0.7f),
+                                    color = MaterialTheme.bocattaSemanticColors.warning.copy(0.7f),
                                     fontSize = 11.sp
                                 )
                             }
@@ -406,8 +406,8 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                                 Column(Modifier.weight(1f)) {
                                                     Text(compra.insumoNombre, fontWeight = FontWeight.Bold)
-                                                    Text("${compra.cantidadComprada} ${compra.presentacion} (${"%.0f".format(compra.contenidoUnidades)} uds) Â· $$${"%.2f".format(compra.precioPagado)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
-                                                    Text("${compra.compradoPorNombre} Â· ${java.text.SimpleDateFormat("dd/MM HH:mm", locale).format(java.util.Date(compra.fecha))}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
+                                                    Text("${compra.cantidadComprada} ${compra.presentacion} (${"%.0f".format(compra.contenidoUnidades)} uds) · $$${"%.2f".format(compra.precioPagado)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
+                                                    Text("${compra.compradoPorNombre} · ${java.text.SimpleDateFormat("dd/MM HH:mm", locale).format(java.util.Date(compra.fecha))}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.4f))
                                                 }
                                             }
                                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -428,7 +428,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
                         }
                     }
 
-                    // DiÃ¡logos de auditorÃ­a
+                    // Diálogos de auditoría
                     compraAccion?.let { compra ->
                         when (accionTipo) {
                             "reajustar" -> {
@@ -478,7 +478,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
 
                     Spacer(Modifier.height(16.dp))
 
-                    // â”€â”€ BOTÃ“N CIERRE INDUSTRIAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                    // Botón de cierre
                     val puedesCerrar = (session.esAdmin || vm.cadraCaja) &&
                         !(vm.tieneCancelacionesPendientes && !session.esAdmin)
 
@@ -509,7 +509,7 @@ fun CierreCajaScreen(vm: CajaViewModel, session: SessionViewModel, onBack: () ->
         }
     }
 
-    // â”€â”€ DIÃLOGO DE CONFIRMACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Diálogo de confirmación
     if (mostrarCierre) {
         AlertDialog(
             onDismissRequest = { mostrarCierre = false },
@@ -732,4 +732,3 @@ private fun DenominationInput(
         )
     }
 }
-

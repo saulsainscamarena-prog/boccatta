@@ -61,12 +61,12 @@ fun TabZonas(vm: MesaViewModel) {
                                             EstadoMesa.LIBRE -> MaterialTheme.colorScheme.primary
                                             EstadoMesa.OCUPADA -> MaterialTheme.colorScheme.error
                                             EstadoMesa.RESERVADA -> MaterialTheme.colorScheme.tertiary
-                                            EstadoMesa.INACTIVA -> Color.Gray
+                                            EstadoMesa.INACTIVA -> MaterialTheme.colorScheme.outline
                                         }
                                         Surface(color = color.copy(0.15f), shape = RoundedCornerShape(10.dp), modifier = Modifier.width(80.dp).padding(2.dp)) {
                                             Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Text(mesa.numero.toString(), fontWeight = FontWeight.Black, fontSize = 18.sp, color = color)
-                                                Text(mesa.estado.name.take(4), fontSize = 8.sp, color = Color.White.copy(0.7f))
+                                                Text(mesa.estado.name.take(4), fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                     }

@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -15,7 +16,7 @@ import com.bocatta.pos.domain.model.ThemeConfigV2
 @Composable
 fun M3Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     themeConfig: ThemeConfigV2? = null,
     content: @Composable () -> Unit
 ) {
@@ -35,18 +36,26 @@ fun M3Theme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = M3Typography,
-        shapes = M3Shapes,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalBocattaSemanticColors provides if (darkTheme) {
+            DarkBocattaSemanticColors
+        } else {
+            LightBocattaSemanticColors
+        }
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = M3Typography,
+            shapes = M3Shapes,
+            content = content
+        )
+    }
 }
 
 @Composable
 fun BocattaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     themeConfig: ThemeConfigV2? = null,
     content: @Composable () -> Unit
 ) {
