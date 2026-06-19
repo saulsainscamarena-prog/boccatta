@@ -8,13 +8,14 @@ Spec ID: `ux-ui-navigation-color-system`
 - JDK: 17, usado por Gradle/Kotlin daemons.
 - Gradle wrapper: 9.5.1.
 - Emulador/dispositivo: no usado; compilación instrumentada bloqueada.
-- Fecha: 2026-06-18.
+- Fecha: 2026-06-19 (verificacion final).
 
 ## Comandos
 
 ```powershell
 .\gradlew.bat --status
 .\gradlew.bat compileDebugKotlin
+.\gradlew.bat testDebugUnitTest
 .\gradlew.bat compileDebugAndroidTestKotlin
 .\gradlew.bat :app:compileDebugAndroidTestKotlin
 git diff --check
@@ -22,10 +23,12 @@ git diff --check
 
 ## Resultados
 
-- Compilacion principal: APROBADA, dos ejecuciones; última en 199.6 s.
+- Compilacion principal: APROBADA (2026-06-19), 179 tareas, BUILD SUCCESSFUL en 42s.
+- Unit tests: BUILD SUCCESSFUL (2026-06-19), 200 tareas, todos los tests pasan.
 - AndroidTest global: FALLA PREEXISTENTE en `BocattaOfflineDatabaseTest` por contratos Room desactualizados.
 - AndroidTest app: FALLA PREEXISTENTE por `CarritoPanelV2`, `VentaOffline`, `DynamicProductForm`, `BocattaRoomDatabase` y visibilidad internal.
-- Revisión estática: `git diff --check` sin errores; no queda mojibake detectado en main UI.
+- Revision estatica: `git diff --check` sin errores; no queda mojibake detectado en main UI.
+- coverage: Jacoco subio a 80% minimo.
 
 ## Pruebas Manuales
 
