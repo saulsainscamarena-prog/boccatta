@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -187,13 +188,8 @@ internal fun SalesTopBar(
                     containerColor = MaterialTheme.bocattaSemanticColors.successContainer,
                     onClick = onVerActividad
                 )
-                TopBarAction(
-                    icon = Icons.AutoMirrored.Filled.Logout,
-                    description = stringResource(R.string.sales_nav_logout),
-                    tint = MaterialTheme.colorScheme.error,
-                    containerColor = MaterialTheme.colorScheme.error.copy(0.1f),
-                    onClick = onLogout
-                )
+                // Logout removido de TopBar — solo accesible desde el drawer
+                // Un tap accidental en mostrador cerraba la sesión en plena venta
                 Spacer(Modifier.width(16.dp))
             }
         },
@@ -343,6 +339,7 @@ internal fun SalesCatalogSection(
                     columns = GridCells.Adaptive(productCardMinWidth),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 84.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredProducts, key = { it.id }) { prod ->

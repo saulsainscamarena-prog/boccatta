@@ -110,8 +110,8 @@ fun SalesScreen(
                 } else {
                     seleccionarProducto(prod)
                 }
-                scannerInput = ""
             }
+            scannerInput = "" // limpiar siempre, encontrado o no
         }
     }
 
