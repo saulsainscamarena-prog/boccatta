@@ -19,13 +19,8 @@ import java.util.Locale
 class AperturaViewModelV2 : BaseViewModel() {
     private val db = FirebaseFirestoreProvider.db
     private val allocationRepo = StockAllocationRepository()
-    private val itemsVendiblesApertura = listOf(
-        "masa_crepa",
-        "carlota_unidad",
-        "tiramisu_unidad",
-        "fresas_crema_unidad",
-        "duraznos_crema_unidad"
-    )
+    // itemsVendiblesApertura ahora viene del catálogo dinámico
+    private val itemsVendiblesApertura: List<String> get() = allocationRepo.itemsVendibles
 
     // Estado del Checklist
     var conteoPostres = mutableStateMapOf<String, String>()
@@ -53,6 +48,8 @@ class AperturaViewModelV2 : BaseViewModel() {
     fun cargarGlobalStock() {
         viewModelScope.launch {
             try {
+                // Refrescar catálogo dinámico antes de leer stock
+                allocationRepo.refreshCatalog()
                 val snap = db.collection(FirestoreCollections.INVENTARIO_GLOBAL).get().await()
                 globalStock.clear()
                 snap.documents.forEach { doc ->

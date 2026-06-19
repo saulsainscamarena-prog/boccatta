@@ -83,13 +83,29 @@ class FirebaseSalesRepositoryV2(
         }
 
         // 4. Iniciar transacción en la nube sin realizar lecturas pesadas de recetas ni stocks (Latencia reducida)
+        val ventaId = forcedVentaId ?: db.collection(FirestoreCollections.VENTAS).document().id
+
         return db.runTransaction { transaction ->
+            val ventaRef = db.collection(FirestoreCollections.VENTAS).document(ventaId)
+            val existingSale = transaction.get(ventaRef)
+            if (existingSale.exists()) {
+                val existingTicket = existingSale.getLong("numeroTicket")
+                    ?: existingSale.getLong("ticket")
+                    ?: 0L
+                val existingCode = existingSale.getString("codigoTicket")
+                    ?: TicketUtils.generarCodigoTicket(sucursalId, existingTicket)
+                return@runTransaction ResultadoVenta(
+                    numeroTicket = existingTicket,
+                    codigoTicket = existingCode,
+                    alreadyExisted = true
+                )
+            }
+
             val contadorRef = db.collection(FirestoreCollections.CONFIGURACION).document("contadores_$sucursalId")
             val counterDoc = transaction.get(contadorRef)
             val nextTicket = (counterDoc.getLong("ultimo_ticket") ?: 0L) + 1
             val codigoTicket = TicketUtils.generarCodigoTicket(sucursalId, nextTicket)
 
-            val ventaId = forcedVentaId ?: db.collection(FirestoreCollections.VENTAS).document().id
             val lineasVenta = carrito.map { item ->
                 ItemVendidoV2(
                     cartId = item.cartId,
@@ -166,16 +182,17 @@ class FirebaseSalesRepositoryV2(
                 }
             }
             transaction.set(
-                db.collection(FirestoreCollections.VENTAS).document(ventaId),
+                ventaRef,
                 ventaDocMap
             )
 
             if (clienteSeleccionado != null && !esConsumoEmpleado) {
+                val ciclo = FirestoreCollections.MEMBRESIA_CICLO_VISITAS
                 val clienteRef = db.collection(FirestoreCollections.CLIENTES).document(clienteSeleccionado.telefono)
-                val nuevasVisitas = if (clienteSeleccionado.visitasCicloActual >= 5) 1 else clienteSeleccionado.visitasCicloActual + 1
+                val nuevasVisitas = if (clienteSeleccionado.visitasCicloActual >= ciclo) 1 else clienteSeleccionado.visitasCicloActual + 1
                 transaction.update(clienteRef, "visitasCicloActual", nuevasVisitas)
                 transaction.update(clienteRef, "fechaUltimaVisita", System.currentTimeMillis())
-                if (clienteSeleccionado.visitasCicloActual >= 5) {
+                if (clienteSeleccionado.visitasCicloActual >= ciclo) {
                     transaction.update(clienteRef, "comprasCicloActual", listOf(totalParaLealtad))
                 } else {
                     transaction.update(clienteRef, "comprasCicloActual", FieldValue.arrayUnion(totalParaLealtad))
@@ -185,10 +202,37 @@ class FirebaseSalesRepositoryV2(
             val branchRef = db.collection(FirestoreCollections.INVENTARIO_SUCURSAL)
             val globalRef = db.collection(FirestoreCollections.INVENTARIO_GLOBAL)
 
-            // Aplicar decrementos atómicos en background (sin bloquear en transaction.get de stock)
+            // Leer stock de sucursal DENTRO de la transacción para activar optimistic locking
+            // de Firestore y prevenir race conditions entre ventas concurrentes.
+            val stockSnapshots = deducciones.keys
+                .filter { idsConCuotaSucursal.contains(it) }
+                .associateWith { insumoId ->
+                    transaction.get(branchRef.document("${sucursalId}_$insumoId"))
+                }
+
+            // Validar que ningún insumo quede negativo antes de escribir
+            deducciones.forEach { (insumoId, cantidad) ->
+                if (idsConCuotaSucursal.contains(insumoId)) {
+                    val snap = stockSnapshots[insumoId]
+                    val disponible = snap?.getDouble("cantidadEnBase")
+                        ?: snap?.getDouble("currentQty") ?: 0.0
+                    if (disponible - cantidad < 0) {
+                        throw IllegalStateException(
+                            "Stock insuficiente en Firestore para $insumoId: " +
+                            "disponible=$disponible requerido=$cantidad"
+                        )
+                    }
+                }
+            }
+
+            val now = System.currentTimeMillis()
             deducciones.forEach { (insumoId, cantidad) ->
                 if (idsConCuotaSucursal.contains(insumoId)) {
                     val stockRef = branchRef.document("${sucursalId}_$insumoId")
+                    val snap = stockSnapshots[insumoId]!!
+                    val disponible = snap.getDouble("cantidadEnBase")
+                        ?: snap.getDouble("currentQty") ?: 0.0
+                    val nuevoQty = disponible - cantidad
                     transaction.set(
                         stockRef,
                         mapOf(
@@ -197,10 +241,10 @@ class FirebaseSalesRepositoryV2(
                             "productId" to insumoId,
                             "sucursal" to sucursalId,
                             "branchId" to sucursalId,
-                            "cantidadEnBase" to FieldValue.increment(-cantidad),
-                            "cantidadDisponible" to FieldValue.increment(-cantidad),
-                            "currentQty" to FieldValue.increment(-cantidad),
-                            "ultimaActualizacion" to System.currentTimeMillis()
+                            "cantidadEnBase" to nuevoQty,
+                            "cantidadDisponible" to nuevoQty,
+                            "currentQty" to nuevoQty,
+                            "ultimaActualizacion" to now
                         ),
                         SetOptions.merge()
                     )
@@ -216,7 +260,7 @@ class FirebaseSalesRepositoryV2(
                             "cantidadEnBase" to FieldValue.increment(-cantidad),
                             "cantidadDisponible" to FieldValue.increment(-cantidad),
                             "currentQty" to FieldValue.increment(-cantidad),
-                            "ultimaActualizacion" to System.currentTimeMillis()
+                            "ultimaActualizacion" to now
                         ),
                         SetOptions.merge()
                     )
@@ -235,8 +279,8 @@ class FirebaseSalesRepositoryV2(
                         "sucursal" to sucursalId,
                         "branchId" to sucursalId,
                         "referenciaId" to ventaId,
-                        "fecha" to System.currentTimeMillis(),
-                        "timestamp" to System.currentTimeMillis(),
+                        "fecha" to now,
+                        "timestamp" to now,
                         "usuarioId" to usuarioNombre,
                         "userId" to usuarioNombre
                     )
@@ -337,4 +381,3 @@ class FirebaseSalesRepositoryV2(
         }
     }
 }
-

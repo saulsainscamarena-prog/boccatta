@@ -6,7 +6,8 @@ import kotlinx.coroutines.flow.Flow
 
 data class ResultadoVenta(
     val numeroTicket: Long,
-    val codigoTicket: String // ATL3004-001
+    val codigoTicket: String, // ATL3004-001
+    val alreadyExisted: Boolean = false
 )
 
 interface SalesRepository {

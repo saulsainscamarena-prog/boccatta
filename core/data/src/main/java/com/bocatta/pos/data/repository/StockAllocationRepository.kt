@@ -4,6 +4,7 @@ import com.bocatta.pos.core.constants.FirestoreCollections
 import com.bocatta.pos.network.firebase.FirebaseFirestoreProvider
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.util.Locale
 
 data class StockAllocationItem(
@@ -16,9 +17,20 @@ data class StockAllocationItem(
     val esFisico: Boolean = false
 )
 
-class StockAllocationRepository {
-    private val db = FirebaseFirestoreProvider.db
-
+/**
+ * Catalogo de insumos con cuota de sucursal.
+ * Se carga dinámicamente desde Firestore (v2_configuracion/pos_stock_catalog)
+ * con fallback a los defaults hardcodeados para evitar un release ante cada
+ * cambio de catálogo.
+ *
+ * Estructura del documento Firestore:
+ * {
+ *   "itemsVirtuales": ["masa_crepa"],
+ *   "itemsFisicos": ["carlota_unidad", "tiramisu_unidad", ...],
+ *   "nombres": { "masa_crepa": "Masa de Crepa", ... }  // opcional
+ * }
+ */
+object StockCatalogDefaults {
     val itemsVirtuales = listOf("masa_crepa")
     val itemsFisicos = listOf(
         "carlota_unidad",
@@ -26,15 +38,69 @@ class StockAllocationRepository {
         "fresas_crema_unidad",
         "duraznos_crema_unidad"
     )
-    val itemsVendibles = itemsVirtuales + itemsFisicos
-
-    private val nombres = mapOf(
+    val nombres = mapOf(
         "masa_crepa" to "Masa de Crepa",
         "carlota_unidad" to "Carlota de Limon",
         "tiramisu_unidad" to "Tiramisu",
         "fresas_crema_unidad" to "Fresas con Crema",
         "duraznos_crema_unidad" to "Duraznos con Crema"
     )
+    const val FIRESTORE_DOC = "pos_stock_catalog"
+}
+
+class StockAllocationRepository {
+    private val db = FirebaseFirestoreProvider.db
+
+    // Estado mutable del catálogo — inicializado con defaults, actualizable en runtime
+    @Volatile private var _itemsVirtuales: List<String> = StockCatalogDefaults.itemsVirtuales
+    @Volatile private var _itemsFisicos: List<String> = StockCatalogDefaults.itemsFisicos
+    @Volatile private var _nombres: Map<String, String> = StockCatalogDefaults.nombres
+
+    val itemsVirtuales: List<String> get() = _itemsVirtuales
+    val itemsFisicos: List<String> get() = _itemsFisicos
+    val itemsVendibles: List<String> get() = _itemsVirtuales + _itemsFisicos
+    val nombres: Map<String, String> get() = _nombres
+
+    /**
+     * Carga el catálogo desde Firestore. Llamar al inicio de sesión o apertura de turno.
+     * Si falla (offline / doc inexistente), conserva los defaults — no lanza excepción.
+     */
+    suspend fun refreshCatalog() {
+        try {
+            val doc = db.collection(FirestoreCollections.CONFIGURACION)
+                .document(StockCatalogDefaults.FIRESTORE_DOC)
+                .get()
+                .await()
+            if (!doc.exists()) {
+                Timber.tag("STOCK_CATALOG").i("No existe pos_stock_catalog, usando defaults")
+                return
+            }
+            @Suppress("UNCHECKED_CAST")
+            val virtuales = (doc.get("itemsVirtuales") as? List<*>)
+                ?.filterIsInstance<String>()
+            @Suppress("UNCHECKED_CAST")
+            val fisicos = (doc.get("itemsFisicos") as? List<*>)
+                ?.filterIsInstance<String>()
+            @Suppress("UNCHECKED_CAST")
+            val nombresRemoto = (doc.get("nombres") as? Map<*, *>)
+                ?.entries
+                ?.mapNotNull { (k, v) ->
+                    val key = k as? String
+                    val value = v as? String
+                    if (key != null && value != null) key to value else null
+                }
+                ?.toMap()
+
+            if (!virtuales.isNullOrEmpty()) _itemsVirtuales = virtuales
+            if (!fisicos.isNullOrEmpty()) _itemsFisicos = fisicos
+            if (!nombresRemoto.isNullOrEmpty()) _nombres = StockCatalogDefaults.nombres + nombresRemoto
+            Timber.tag("STOCK_CATALOG").i(
+                "Catálogo actualizado: virtuales=${_itemsVirtuales} fisicos=${_itemsFisicos}"
+            )
+        } catch (e: Exception) {
+            Timber.tag("STOCK_CATALOG").w(e, "Error cargando catálogo, usando defaults")
+        }
+    }
 
     suspend fun previewApertura(sucursal: String): List<StockAllocationItem> {
         val sucursalId = normalizarSucursal(sucursal)

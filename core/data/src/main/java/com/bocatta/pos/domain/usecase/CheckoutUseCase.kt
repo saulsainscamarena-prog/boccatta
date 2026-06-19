@@ -130,62 +130,94 @@ class CheckoutUseCase(
             OfflineManager.isNetworkAvailable(context)
         }
 
-        // 1. Validar Stock Pre-flight
-        val (stockValido, errorMsg) = validarStockCarrito(carrito, sucursal)
-        if (!stockValido) {
-            return CheckoutResult(success = false, online = online, ticketText = null, error = errorMsg)
-        }
-
-        val propinaSnapshot = if (esConsumoEmpleado) 0.0 else propina.coerceAtLeast(0.0)
-        val totalSinPropinaSnapshot = (carrito.sumOf { it.precioFinal.toDouble() * it.cantidad } - descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
-        val totalVenta = if (esConsumoEmpleado) 0.0 else totalSinPropinaSnapshot + propinaSnapshot
-
-        val metodoPago = if (esConsumoEmpleado) {
-            "Cortesia"
-        } else if (splitActivo) {
-            "Dividido: [" + splitPartes.joinToString(", ") { "${it.metodoPago.valor} $${"%.2f".format(it.monto)}" } + "]"
-        } else {
-            metodoPagoSeleccionado
-        }
-
         return try {
+            val (stockValido, errorMsg) = validarStockCarrito(carrito, sucursal)
+            if (!stockValido) {
+                return CheckoutResult(
+                    success = false,
+                    online = online,
+                    ticketText = null,
+                    error = errorMsg,
+                    failureKind = SalePersistenceFailureKind.BUSINESS
+                )
+            }
+
+            val propinaSnapshot = if (esConsumoEmpleado) 0.0 else propina.coerceAtLeast(0.0)
+            val totalSinPropinaSnapshot = (
+                carrito.sumOf { it.precioFinal.toDouble() * it.cantidad } -
+                    descuentoLealtad -
+                    descuentoPromociones -
+                    descuentoManual
+                ).coerceAtLeast(0.0)
+            val totalVenta = if (esConsumoEmpleado) 0.0 else totalSinPropinaSnapshot + propinaSnapshot
+
+            val metodoPago = if (esConsumoEmpleado) {
+                "Cortesia"
+            } else if (splitActivo) {
+                "Dividido: [" + splitPartes.joinToString(", ") { "${it.metodoPago.valor} $${"%.2f".format(it.monto)}" } + "]"
+            } else {
+                metodoPagoSeleccionado
+            }
+
+            var queuedOffline = false
             val resultado = if (!online) {
                 Timber.tag("SALE_FLOW").i("offline_save_start")
-                withContext(Dispatchers.IO) {
-                    OfflineManager.guardarVentaOffline(
-                        context = context,
+                guardarVentaLocal(
+                    carrito = carrito,
+                    sucursal = sucursal,
+                    usuarioNombre = usuarioNombre,
+                    totalVenta = totalVenta,
+                    descuentoLealtad = descuentoLealtad,
+                    descuentoPromociones = descuentoPromociones,
+                    descuentoManual = descuentoManual,
+                    clienteSeleccionado = clienteSeleccionado,
+                    metodoPago = metodoPago,
+                    esConsumoEmpleado = esConsumoEmpleado,
+                    propinaSnapshot = propinaSnapshot,
+                    notaOrden = notaOrden,
+                    forcedVentaId = forcedVentaId
+                )
+            } else {
+                Timber.tag("SALE_FLOW").i("online_save_start")
+                try {
+                    repository.finalizarVentaConInventario(
                         carrito = carrito,
                         sucursal = sucursal,
                         usuarioNombre = usuarioNombre,
-                        total = totalVenta,
+                        clienteSeleccionado = clienteSeleccionado,
+                        descuentoLealtad = descuentoLealtad,
+                        metodoPagoSeleccionado = metodoPago,
+                        esConsumoEmpleado = esConsumoEmpleado,
+                        descuentoPromociones = descuentoPromociones,
+                        descuentoManual = descuentoManual,
+                        propina = propinaSnapshot,
+                        notaOrden = notaOrden,
+                        splitPartes = splitPartes,
+                        forcedVentaId = forcedVentaId
+                    )
+                } catch (error: Exception) {
+                    val kind = SalePersistenceFailureClassifier.classify(error)
+                    if (kind != SalePersistenceFailureKind.TRANSIENT) {
+                        throw error
+                    }
+                    Timber.tag("SALE_FLOW").w(error, "online_transient_fallback_offline")
+                    queuedOffline = true
+                    guardarVentaLocal(
+                        carrito = carrito,
+                        sucursal = sucursal,
+                        usuarioNombre = usuarioNombre,
+                        totalVenta = totalVenta,
                         descuentoLealtad = descuentoLealtad,
                         descuentoPromociones = descuentoPromociones,
                         descuentoManual = descuentoManual,
                         clienteSeleccionado = clienteSeleccionado,
                         metodoPago = metodoPago,
                         esConsumoEmpleado = esConsumoEmpleado,
-                        propina = propinaSnapshot,
+                        propinaSnapshot = propinaSnapshot,
                         notaOrden = notaOrden,
                         forcedVentaId = forcedVentaId
                     )
                 }
-            } else {
-                Timber.tag("SALE_FLOW").i("online_save_start")
-                repository.finalizarVentaConInventario(
-                    carrito = carrito,
-                    sucursal = sucursal,
-                    usuarioNombre = usuarioNombre,
-                    clienteSeleccionado = clienteSeleccionado,
-                    descuentoLealtad = descuentoLealtad,
-                    metodoPagoSeleccionado = metodoPago,
-                    esConsumoEmpleado = esConsumoEmpleado,
-                    descuentoPromociones = descuentoPromociones,
-                    descuentoManual = descuentoManual,
-                    propina = propinaSnapshot,
-                    notaOrden = notaOrden,
-                    splitPartes = splitPartes,
-                    forcedVentaId = forcedVentaId
-                )
             }
 
             val ticketText = generarTicketWhatsAppUseCase(
@@ -199,25 +231,63 @@ class CheckoutUseCase(
                 metodoPago = metodoPago,
                 propina = propinaSnapshot,
                 notaOrden = notaOrden,
-                modoOperacion = if (online) "" else "Offline local"
+                modoOperacion = if (online && !queuedOffline) "" else "Offline local"
             )
 
             CheckoutResult(
                 success = true,
                 online = online,
+                queuedOffline = queuedOffline || !online,
                 ticketText = ticketText,
                 numeroTicket = resultado.numeroTicket,
-                codigoTicket = resultado.codigoTicket
+                codigoTicket = resultado.codigoTicket,
+                alreadyExisted = resultado.alreadyExisted
             )
         } catch (e: Exception) {
-            Timber.tag("SALE_FLOW").e(e, "Error finalizando venta")
+            val kind = SalePersistenceFailureClassifier.classify(e)
+            val operatorMessage = SalePersistenceFailureClassifier.operatorMessage(e, kind)
+            Timber.tag("SALE_FLOW").e(e, "Error finalizando venta kind=$kind")
             CheckoutResult(
                 success = false,
                 online = online,
                 ticketText = null,
-                error = e.message ?: "Error desconocido"
+                error = operatorMessage,
+                failureKind = kind
             )
         }
+    }
+
+    private suspend fun guardarVentaLocal(
+        carrito: List<ItemCarritoV2>,
+        sucursal: String,
+        usuarioNombre: String,
+        totalVenta: Double,
+        descuentoLealtad: Double,
+        descuentoPromociones: Double,
+        descuentoManual: Double,
+        clienteSeleccionado: ClienteV2?,
+        metodoPago: String,
+        esConsumoEmpleado: Boolean,
+        propinaSnapshot: Double,
+        notaOrden: String,
+        forcedVentaId: String?
+    ): ResultadoVenta = withContext(Dispatchers.IO) {
+        OfflineManager.guardarVentaOffline(
+            context = context,
+            carrito = carrito,
+            sucursal = sucursal,
+            usuarioNombre = usuarioNombre,
+            total = totalVenta,
+            descuentoLealtad = descuentoLealtad,
+            descuentoPromociones = descuentoPromociones,
+            descuentoManual = descuentoManual,
+            clienteSeleccionado = clienteSeleccionado,
+            metodoPago = metodoPago,
+            esConsumoEmpleado = esConsumoEmpleado,
+            propina = propinaSnapshot,
+            notaOrden = notaOrden,
+            forcedVentaId = forcedVentaId
+        )
     }
 }
 
@@ -227,8 +297,11 @@ class CheckoutUseCase(
 data class CheckoutResult(
     val success: Boolean,
     val online: Boolean,
-    val ticketText: String?,
+    val queuedOffline: Boolean = false,
+    val ticketText: String? = null,
     val error: String? = null,
     val numeroTicket: Long? = null,
-    val codigoTicket: String? = null
+    val codigoTicket: String? = null,
+    val failureKind: SalePersistenceFailureKind? = null,
+    val alreadyExisted: Boolean = false
 )

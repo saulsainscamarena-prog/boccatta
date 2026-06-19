@@ -48,7 +48,7 @@ object SyncScheduler {
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             "bocatta_immediate_sync",
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.KEEP,
             workRequest
         )
     }
@@ -57,5 +57,4 @@ object SyncScheduler {
         WorkManager.getInstance(context).cancelUniqueWork(SYNC_WORK_NAME)
     }
 }
-
 

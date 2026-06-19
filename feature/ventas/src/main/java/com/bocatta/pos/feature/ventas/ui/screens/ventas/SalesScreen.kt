@@ -377,9 +377,16 @@ fun SalesScreen(
                 onConfirm = { pin ->
                     session.validarPinAdmin(pin) { esValido ->
                         if (esValido) {
-                            vmV2.limpiarCarrito()
-                            mostrarCancelarVentaPin = false
-                            pinCancelError = false
+                            vmV2.cancelarCarritoCompleto(
+                                motivo = "Cancelacion completa de orden",
+                                usuarioNombre = session.nombreUsuario,
+                                sucursal = session.sucursalActual
+                            ) { success ->
+                                if (success) {
+                                    mostrarCancelarVentaPin = false
+                                    pinCancelError = false
+                                }
+                            }
                         } else {
                             pinCancelError = true
                         }
@@ -395,8 +402,15 @@ fun SalesScreen(
                 confirmButton = {
                     if (tieneItems) {
                         Button(onClick = {
-                            vmV2.limpiarCarrito()
-                            mostrarCancelarVentaPin = false
+                            vmV2.cancelarCarritoCompleto(
+                                motivo = "Cancelacion completa de orden",
+                                usuarioNombre = session.nombreUsuario,
+                                sucursal = session.sucursalActual
+                            ) { success ->
+                                if (success) {
+                                    mostrarCancelarVentaPin = false
+                                }
+                            }
                         }) { Text(context.getString(R.string.sales_dialog_boton_cancelar)) }
                     }
                 },
@@ -523,6 +537,18 @@ fun SalesScreen(
                     }
                 ) { padding ->
                     Row(modifier = Modifier.padding(padding).fillMaxSize()) {
+                        if (isTablet) {
+                            BocattaSalesNavigationRail(
+                                esAdmin = session.esAdmin,
+                                onVerCaja = onVerCaja,
+                                onVerInventario = onVerInventario,
+                                onVerGastos = onVerGastos,
+                                onVerDevoluciones = onVerDevoluciones,
+                                onVerAdmin = onVerAdmin,
+                                onVerReportes = onVerReportes,
+                                onVerActividad = onVerActividad
+                            )
+                        }
                         SalesCatalogSection(
                             catalogoProcesado = vmV2.catalogoProcesado,
                             filteredProducts = filteredProducts,

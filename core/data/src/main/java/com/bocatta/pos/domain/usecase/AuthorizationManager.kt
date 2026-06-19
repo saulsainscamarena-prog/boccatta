@@ -199,7 +199,7 @@ class AuthorizationManager(
         }
     }
 
-    internal fun evaluarPermisoFino(permiso: PermisoEmpleado, accion: AccionSensible): Boolean {
+    fun evaluarPermisoFino(permiso: PermisoEmpleado, accion: AccionSensible): Boolean {
         return when (accion) {
             AccionSensible.ABRIR_TURNO -> permiso.puedeTomarOrden
             AccionSensible.APLICAR_DESCUENTO -> permiso.puedeCobrarTarjeta || permiso.puedeCobrarEfectivo

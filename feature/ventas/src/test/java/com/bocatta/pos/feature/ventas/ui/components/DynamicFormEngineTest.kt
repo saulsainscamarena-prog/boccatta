@@ -1,4 +1,4 @@
-package com.bocatta.pos.presentation.ui.components
+package com.bocatta.pos.feature.ventas.ui.components
 
 import com.bocatta.pos.domain.model.InventoryProductV2
 import org.junit.Assert.*

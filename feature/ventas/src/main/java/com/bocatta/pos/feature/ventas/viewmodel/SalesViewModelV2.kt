@@ -30,8 +30,10 @@ import kotlinx.coroutines.withContext
 
 import com.bocatta.pos.domain.MembresiaManager
 import com.bocatta.pos.domain.MembresiaDiscountCalculator
-import com.bocatta.pos.data.repository.MembresiaRepository
 import com.bocatta.pos.domain.usecase.CheckoutUseCase
+import com.bocatta.pos.domain.usecase.CancellationRequest
+import com.bocatta.pos.domain.usecase.CancellationResult
+import com.bocatta.pos.domain.usecase.CancellationScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -100,7 +102,9 @@ class SalesViewModelV2(
 
    private val generarTicketWhatsAppUseCase: GenerarTicketWhatsAppUseCase = deps.generarTicketWhatsAppUseCase
 
-   private val registrarMermaProductoUseCase = deps.registrarMermaProductoUseCase
+    private val registrarMermaProductoUseCase = deps.registrarMermaProductoUseCase
+
+    private val registrarCancelacionUseCase = deps.registrarCancelacionUseCase
 
    private val promocionesEngine: PromocionesEngine = deps.promocionesEngine
 
@@ -588,10 +592,10 @@ class SalesViewModelV2(
             val promedio = MembresiaDiscountCalculator.calcularPromedio(cliente.comprasCicloActual)
             val descuento = MembresiaDiscountCalculator.calcularPorcentajeDescuento(promedio)
             _descuentoLealtad = descuento
-            lealtadMensaje = "┬íBeneficio de lealtad aplicado!"
+            lealtadMensaje = "¡Beneficio de lealtad aplicado!"
         } else {
             _descuentoLealtad = 0.0
-            lealtadMensaje = "${estado.nivel} ┬À ${estado.visitasRestantesParaPremio} visitas para beneficio"
+            lealtadMensaje = "${estado.nivel} · ${estado.visitasRestantesParaPremio} visitas para beneficio"
         }
     }
 
@@ -763,6 +767,10 @@ class SalesViewModelV2(
 
         _descuentoLealtad = 0.0
 
+        _lealtadMensaje = null
+
+        _descuentoManualPorcentaje = 0
+
         resetearEstadoPago()
 
         _activeHeldOrderId = null
@@ -795,57 +803,47 @@ class SalesViewModelV2(
 
         viewModelScope.launch {
             try {
+                val carritoSnapshot = _carrito.toList()
+                val clienteSnapshot = _clienteSeleccionado
+                val descuentoLealtadSnapshot = _descuentoLealtad
+                val descuentoPromocionesSnapshot = descuentoPromociones
+                val descuentoManualSnapshot = descuentoManual
+                val esConsumoEmpleadoSnapshot = _esConsumoEmpleado
+                val splitActivoSnapshot = splitActivo
+                val splitPartesSnapshot = if (splitActivoSnapshot) _splitPartes.toList() else emptyList()
+                val metodoPagoSnapshot = _metodoPagoSeleccionado.valor
+                val activeHeldOrderIdSnapshot = _activeHeldOrderId
                 val res = checkoutUseCase.finalizarVenta(
-                    carrito = _carrito.toList(),
+                    carrito = carritoSnapshot,
                     sucursal = sucursal,
                     usuarioNombre = usuarioNombre,
-                    clienteSeleccionado = _clienteSeleccionado,
-                    descuentoLealtad = _descuentoLealtad,
-                    descuentoPromociones = descuentoPromociones,
-                    descuentoManual = descuentoManual,
+                    clienteSeleccionado = clienteSnapshot,
+                    descuentoLealtad = descuentoLealtadSnapshot,
+                    descuentoPromociones = descuentoPromocionesSnapshot,
+                    descuentoManual = descuentoManualSnapshot,
                     propina = propina,
                     notaOrden = notaOrden,
-                    esConsumoEmpleado = _esConsumoEmpleado,
-                    splitActivo = splitActivo,
-                    splitPartes = if (splitActivo) _splitPartes.toList() else emptyList(),
-                    metodoPagoSeleccionado = _metodoPagoSeleccionado.valor,
+                    esConsumoEmpleado = esConsumoEmpleadoSnapshot,
+                    splitActivo = splitActivoSnapshot,
+                    splitPartes = splitPartesSnapshot,
+                    metodoPagoSeleccionado = metodoPagoSnapshot,
                     forcedVentaId = db.collection(FirestoreCollections.VENTAS).document().id
                 )
 
-                isOnline = res.online
                 if (res.success) {
                     ultimoTicketAsignado = res.numeroTicket ?: 0L
                     ultimoCodigoTicket = res.codigoTicket ?: ""
                     ultimoTicketTexto = res.ticketText ?: ""
                     mostrarConfirmacionVenta = true
-                    _lastCompletedHeldOrderId = _activeHeldOrderId
-                    mensajeFeedback = if (res.online) {
-                        "Venta finalizada: ticket #${res.codigoTicket}"
+                    _lastCompletedHeldOrderId = activeHeldOrderIdSnapshot
+                    mensajeFeedback = if (res.queuedOffline || !res.online) {
+                        "Venta guardada localmente (pendiente de sincronizar)"
                     } else {
-                        "Venta guardada localmente (modo offline)"
+                        "Venta finalizada: ticket #${res.codigoTicket}"
                     }
+                    limpiarEstadoPostVenta()
                     _uiState.update { it.copy(showSuccess = true, isLoading = false) }
                     Timber.tag("sale_finish_success").d("ticket=${res.codigoTicket}")
-
-                    // Post-sale loyalty visit increment
-                    viewModelScope.launch(Dispatchers.IO) {
-                        val cliente = _clienteSeleccionado
-                        if (cliente != null) {
-                            val premioAplicado = _descuentoLealtad > 0
-                            val subtotal = _carrito.sumOf { item -> item.precioFinal.toDouble() * item.cantidad }
-                            val totalSinPropina = (subtotal - _descuentoLealtad - descuentoPromociones - descuentoManual).coerceAtLeast(0.0)
-                            val totalVenta = if (_esConsumoEmpleado) 0.0 else totalSinPropina + propina.coerceAtLeast(0.0)
-                            MembresiaRepository().incrementarVisita(
-                                clienteId = cliente.idDocumento,
-                                montoCompra = totalVenta,
-                                premioAplicado = premioAplicado
-                            )
-                            if (premioAplicado) {
-                                _descuentoLealtad = 0.0
-                                lealtadMensaje = null
-                            }
-                        }
-                    }
                 } else {
                     mensajeError = res.error
                     _uiState.update { it.copy(error = res.error, isLoading = false) }
@@ -931,6 +929,56 @@ class SalesViewModelV2(
 
     }
 
+    fun cancelarCarritoCompleto(
+        motivo: String,
+        usuarioNombre: String,
+        sucursal: String,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+        val itemsSnapshot = _carrito.toList()
+        if (itemsSnapshot.isEmpty()) {
+            limpiarCarrito()
+            onResult(true)
+            return
+        }
+
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                registrarCancelacionUseCase(
+                    CancellationRequest(
+                        items = itemsSnapshot,
+                        scope = CancellationScope.CART,
+                        reason = motivo,
+                        userId = usuarioNombre,
+                        branch = sucursal
+                    )
+                )
+            }
+
+            when (result) {
+                is CancellationResult.Saved -> {
+                    cartManager.limpiarCarrito(guardarUndo = false)
+                    _clienteSeleccionado = null
+                    _descuentoLealtad = 0.0
+                    _lealtadMensaje = null
+                    _descuentoManualPorcentaje = 0
+                    resetearEstadoPago()
+                    _activeHeldOrderId = null
+                    _mesaIdSeleccionada = null
+                    _modalidadOrden = ModalidadOrden.LOCAL
+                    _uiState.update { SalesUiState() }
+                    mensajeFeedback = "Orden cancelada y enviada a revision"
+                    onResult(true)
+                }
+                is CancellationResult.Failed -> {
+                    mensajeError = result.operatorMessage
+                    _uiState.update { it.copy(error = result.operatorMessage) }
+                    onResult(false)
+                }
+            }
+        }
+    }
+
 
 
     fun cambiarModalidadOrden(modalidad: ModalidadOrden) {
@@ -956,49 +1004,26 @@ class SalesViewModelV2(
 
 
     fun cargarOrdenEnCarrito(
-
         items: List<ItemCarritoV2>,
-
         cliente: ClienteV2?,
-
         modalidad: ModalidadOrden,
-
         idMesa: String?,
-
         heldOrderId: String? = null
-
     ) {
-
         _carrito.clear()
-
         _carrito.addAll(items)
-
-        _clienteSeleccionado = cliente
-
         if (cliente != null) {
-
-            _descuentoLealtad = if (cliente.visitasCicloActual == FirestoreCollections.MEMBRESIA_CICLO_VISITAS) {
-
-                cliente.comprasCicloActual.average()
-
-            } else 0.0
-
+            // Reusar la misma lógica de selección para calcular el descuento correctamente
+            seleccionarCliente(cliente)
         } else {
-
+            _clienteSeleccionado = null
             _descuentoLealtad = 0.0
-
         }
-
         limpiarDescuentoManual()
-
         _modalidadOrden = modalidad
-
         _mesaIdSeleccionada = idMesa
-
         _activeHeldOrderId = heldOrderId
-
         _uiState.update { SalesUiState() }
-
     }
 
 

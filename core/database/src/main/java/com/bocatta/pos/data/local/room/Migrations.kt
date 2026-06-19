@@ -219,27 +219,31 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
 
 val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE turnos_contingencia ADD COLUMN tenantId TEXT NOT NULL DEFAULT 'tenant_pionero'")
-        db.execSQL("ALTER TABLE operaciones_pendientes ADD COLUMN tenantId TEXT NOT NULL DEFAULT 'tenant_pionero'")
-        db.execSQL("ALTER TABLE ventas_pendientes ADD COLUMN tenantId TEXT NOT NULL DEFAULT 'tenant_pionero'")
+        // Usar addColumnIfMissing para rutas de migración alternativas
+        addColumnIfMissing(db, "turnos_contingencia", "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+        addColumnIfMissing(db, "operaciones_pendientes", "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
+        addColumnIfMissing(db, "ventas_pendientes", "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
         addColumnIfMissing(db, "folios_offline", "tenantId", "TEXT NOT NULL DEFAULT 'tenant_pionero'")
     }
 }
 
 val MIGRATION_10_11 = object : Migration(10, 11) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE productos_v2 ADD COLUMN tenantId TEXT NOT NULL DEFAULT ''")
-        db.execSQL("ALTER TABLE productos_v2 ADD COLUMN businessType TEXT NOT NULL DEFAULT 'RESTAURANT'")
-        db.execSQL("ALTER TABLE productos_v2 ADD COLUMN requiresStock INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE productos_v2 ADD COLUMN hasVariants INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE productos_v2 ADD COLUMN barcode TEXT")
-        db.execSQL("ALTER TABLE productos_v2 ADD COLUMN activo INTEGER NOT NULL DEFAULT 1")
+        // tenantId ya existe en dispositivos migrados desde v1→v2 (MIGRATION_1_2 lo incluye).
+        // Usar addColumnIfMissing para evitar SQLiteException: duplicate column
+        addColumnIfMissing(db, "productos_v2", "tenantId", "TEXT NOT NULL DEFAULT ''")
+        addColumnIfMissing(db, "productos_v2", "businessType", "TEXT NOT NULL DEFAULT 'RESTAURANT'")
+        addColumnIfMissing(db, "productos_v2", "requiresStock", "INTEGER NOT NULL DEFAULT 0")
+        addColumnIfMissing(db, "productos_v2", "hasVariants", "INTEGER NOT NULL DEFAULT 0")
+        addColumnIfMissing(db, "productos_v2", "barcode", "TEXT")
+        addColumnIfMissing(db, "productos_v2", "activo", "INTEGER NOT NULL DEFAULT 1")
     }
 }
 
 val MIGRATION_11_12 = object : Migration(11, 12) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Current schema — no changes needed, version bump only
+        // Version bump sin cambio de esquema: alinea el número de versión
+        // después de consolidar rutas de migración duplicadas (1_2 vs 3_4).
     }
 }
 

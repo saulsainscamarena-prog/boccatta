@@ -2,19 +2,24 @@ package com.bocatta.pos.domain.usecase
 
 import android.content.Context
 import com.bocatta.pos.data.local.OfflineDatabase
+import com.bocatta.pos.data.sync.OfflineManager
 import com.bocatta.pos.domain.model.ItemCarritoV2
 import com.bocatta.pos.domain.model.SalesInventoryProductV2
 import com.bocatta.pos.domain.repository.IInventoryRepository
 import com.bocatta.pos.domain.repository.ResultadoVenta
 import com.bocatta.pos.domain.repository.SalesRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import java.io.IOException
 import java.math.BigDecimal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -31,12 +36,37 @@ class CheckoutUseCaseDurabilityTest {
 
     @Before
     fun setUp() {
+        mockkObject(OfflineManager)
         salesRepository = FakeSalesRepository()
+        every { OfflineManager.isNetworkAvailable(any()) } returns true
+        coEvery {
+            OfflineManager.guardarVentaOffline(
+                context = any(),
+                carrito = any(),
+                sucursal = any(),
+                usuarioNombre = any(),
+                total = any(),
+                descuentoLealtad = any(),
+                descuentoPromociones = any(),
+                descuentoManual = any(),
+                clienteSeleccionado = any(),
+                metodoPago = any(),
+                esConsumoEmpleado = any(),
+                propina = any(),
+                notaOrden = any(),
+                forcedVentaId = any()
+            )
+        } returns ResultadoVenta(7L, "ATL-LOCAL-7")
         every { offlineDatabase.obtenerInsumos() } returns emptyList()
         every { offlineDatabase.obtenerProductoPorId(any()) } returns null
         coEvery {
             inventoryRepository.hasSufficientStock(any(), any(), any(), any())
         } returns true
+    }
+
+    @After
+    fun tearDown() {
+        unmockkObject(OfflineManager)
     }
 
     @Test
@@ -89,10 +119,28 @@ class CheckoutUseCaseDurabilityTest {
 
         assertFalse(result.success)
         assertTrue(result.error.orEmpty().contains("Stock insuficiente"))
+        coVerify(exactly = 0) {
+            OfflineManager.guardarVentaOffline(
+                context = any(),
+                carrito = any(),
+                sucursal = any(),
+                usuarioNombre = any(),
+                total = any(),
+                descuentoLealtad = any(),
+                descuentoPromociones = any(),
+                descuentoManual = any(),
+                clienteSeleccionado = any(),
+                metodoPago = any(),
+                esConsumoEmpleado = any(),
+                propina = any(),
+                notaOrden = any(),
+                forcedVentaId = any()
+            )
+        }
     }
 
     @Test
-    fun `repository error fails gracefully`() = runTest {
+    fun `transient online repository error is saved offline with same sale id`() = runTest {
         salesRepository.failure = IOException("connection reset")
         val useCase = createUseCase()
 
@@ -113,7 +161,27 @@ class CheckoutUseCaseDurabilityTest {
             forcedVentaId = "sale-err"
         )
 
-        assertFalse(result.success)
+        assertTrue(result.success)
+        assertTrue(result.queuedOffline)
+        assertEquals("ATL-LOCAL-7", result.codigoTicket)
+        coVerify(exactly = 1) {
+            OfflineManager.guardarVentaOffline(
+                context = context,
+                carrito = any(),
+                sucursal = "atlixco",
+                usuarioNombre = "cashier",
+                total = 40.0,
+                descuentoLealtad = 0.0,
+                descuentoPromociones = 0.0,
+                descuentoManual = 0.0,
+                clienteSeleccionado = null,
+                metodoPago = "Efectivo",
+                esConsumoEmpleado = false,
+                propina = 0.0,
+                notaOrden = "",
+                forcedVentaId = "sale-err"
+            )
+        }
     }
 
     private fun createUseCase(): CheckoutUseCase =

@@ -22,6 +22,7 @@ import com.bocatta.pos.domain.usecase.PromocionesEngine
 import com.bocatta.pos.domain.usecase.PromotionsEngineV2
 import com.bocatta.pos.domain.usecase.ProductionBatchUseCase
 import com.bocatta.pos.domain.usecase.RegistrarMermaProductoUseCase
+import com.bocatta.pos.domain.usecase.RegistrarCancelacionUseCase
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
 import com.bocatta.pos.domain.usecase.AuthorizationManager
 import com.bocatta.pos.domain.usecase.CatalogoOperativoUseCase
@@ -105,6 +106,7 @@ val appModule = module {
     single { SalesFlowUseCase(get(), get(), get()) }
     single { ProductionBatchUseCase(get(), get()) }
     single { RegistrarMermaProductoUseCase(androidApplication(), get(), get()) }
+    single { RegistrarCancelacionUseCase(androidApplication()) }
     single<PinRateLimitStore> { SharedPreferencesPinRateLimitStore(androidApplication()) }
     single { AuthorizationManager(get()) }
     single<CatalogoOperativoUseCase> { CatalogoOperativoUseCaseImpl() }
@@ -122,6 +124,7 @@ val appModule = module {
             repository = get(),
             generarTicketWhatsAppUseCase = get(),
             registrarMermaProductoUseCase = get(),
+            registrarCancelacionUseCase = get(),
             promocionesEngine = get(),
             promocionesRepository = get()
         )
@@ -159,4 +162,3 @@ val appModule = module {
     viewModel { SolicitudViewModel() }
     viewModel { SalarioViewModel() }
 }
-

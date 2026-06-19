@@ -8,14 +8,14 @@ import java.io.File
 class MostradorStabilityContractTest {
 
     private val root: File
-        get() = generateSequence(File(System.getProperty("user.dir"))) { it.parentFile }
+        get() = generateSequence(File(System.getProperty("user.dir") ?: ".")) { it.parentFile }
             .first { File(it, "app").exists() }
 
     @Test
     fun salesViewModelUsesMonotonicCartIdsInsteadOfTimestampOnlyIds() {
         val source = File(
             root,
-            "app/src/main/java/com/bocatta/pos/presentation/viewmodel/SalesViewModelV2.kt"
+            "feature/ventas/src/main/java/com/bocatta/pos/feature/ventas/viewmodel/SalesViewModelV2.kt"
         ).readText()
 
         assertTrue(source.contains("private val cartIdSequence = AtomicLong"))
@@ -27,7 +27,7 @@ class MostradorStabilityContractTest {
     fun manualDiscountIsStoredAsPercentageAndDerivedFromCurrentCartTotal() {
         val source = File(
             root,
-            "app/src/main/java/com/bocatta/pos/presentation/viewmodel/SalesViewModelV2.kt"
+            "feature/ventas/src/main/java/com/bocatta/pos/feature/ventas/viewmodel/SalesViewModelV2.kt"
         ).readText()
 
         assertTrue(source.contains("_descuentoManualPorcentaje"))

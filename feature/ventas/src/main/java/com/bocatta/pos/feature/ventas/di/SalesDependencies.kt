@@ -3,6 +3,7 @@ package com.bocatta.pos.feature.ventas.di
 import com.bocatta.pos.domain.usecase.SalesFlowUseCase
 import com.bocatta.pos.domain.usecase.GenerarTicketWhatsAppUseCase
 import com.bocatta.pos.domain.usecase.RegistrarMermaProductoUseCase
+import com.bocatta.pos.domain.usecase.RegistrarCancelacionUseCase
 import com.bocatta.pos.domain.usecase.PromocionesEngine
 import com.bocatta.pos.data.repository.PromocionesRepository
 import com.bocatta.pos.domain.repository.SalesRepository
@@ -16,6 +17,7 @@ data class SalesDependencies(
     val repository: SalesRepository,
     val generarTicketWhatsAppUseCase: GenerarTicketWhatsAppUseCase,
     val registrarMermaProductoUseCase: RegistrarMermaProductoUseCase,
+    val registrarCancelacionUseCase: RegistrarCancelacionUseCase,
     val promocionesEngine: PromocionesEngine,
     val promocionesRepository: PromocionesRepository
 )

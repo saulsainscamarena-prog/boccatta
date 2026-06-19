@@ -171,32 +171,13 @@ class SyncWorker(
 
 
         var ventasSincronizadas = 0
+        var ventaTransitoriaPendiente = false
 
         val ahora = System.currentTimeMillis()
 
 
 
         for (venta in ventasPendientes) {
-
-            if (venta.intentos >= VentaOffline.MAX_INTENTOS) {
-
-                database.marcarVentaFallidaCritica(venta.id, ahora)
-
-                reportCriticalSaleSyncError(
-
-                    venta = venta,
-
-                    error = null,
-
-                    reason = "Max sale sync attempts exceeded before retry"
-
-                )
-
-                continue
-
-            }
-
-
 
             try {
 
@@ -234,33 +215,17 @@ class SyncWorker(
 
                         val nextAttempt = venta.intentos + 1
 
-                        if (nextAttempt >= VentaOffline.MAX_INTENTOS) {
+                        database.registrarIntentoVentaFallido(venta.id, ahora)
 
-                            database.marcarVentaFallidaCritica(venta.id, ahora)
+                        Timber.tag("SYNC_WORKER").w(
 
-                            reportCriticalSaleSyncError(
+                            e,
 
-                                venta = venta,
+                            "Transient sale sync failure for ${venta.id}. Attempt $nextAttempt. Stopping queue sync."
 
-                                error = e,
+                        )
 
-                                reason = "Transient sale sync failure reached max attempts"
-
-                            )
-
-                        } else {
-
-                            database.registrarIntentoVentaFallido(venta.id, ahora)
-
-                            Timber.tag("SYNC_WORKER").w(
-
-                                e,
-
-                                "Transient sale sync failure for ${venta.id}. Attempt $nextAttempt/${VentaOffline.MAX_INTENTOS}. Stopping queue sync."
-
-                            )
-
-                        }
+                        ventaTransitoriaPendiente = true
 
                         break // Interrupt the loop immediately to avoid burning other sales
 
@@ -270,6 +235,10 @@ class SyncWorker(
 
             }
 
+        }
+
+        if (ventaTransitoriaPendiente) {
+            return@withContext Result.retry()
         }
 
 
@@ -323,10 +292,9 @@ class SyncWorker(
 
 
         // -- Process pending offline operations (devoluciones, cancelaciones, mermas) -----
+        var operacionTransitoriaPendiente = false
 
         for (op in operacionesPendientes) {
-
-            if (op.intentos >= OperacionOffline.MAX_INTENTOS) continue
 
             try {
 
@@ -336,24 +304,29 @@ class SyncWorker(
 
             } catch (e: Exception) {
 
-                val nextAttempt = op.intentos + 1
-                if (nextAttempt >= OperacionOffline.MAX_INTENTOS) {
-                    database.marcarOperacionFallida(op.id)
-                    Timber.tag("SYNC_WORKER").e(
-                        e,
-                        "Operation ${op.id} reached max sync attempts (${OperacionOffline.MAX_INTENTOS})"
-                    )
-                } else {
-                    database.registrarIntentoOperacionFallido(op.id)
-                    Timber.tag("SYNC_WORKER").w(
-                        e,
-                        "Transient operation sync failure for ${op.id}. Attempt $nextAttempt/${OperacionOffline.MAX_INTENTOS}. Stopping operation queue sync."
-                    )
-                    break
+                when (classifySaleSyncFailure(e)) {
+                    SaleSyncFailure.CRITICAL -> {
+                        database.marcarOperacionFallida(op.id)
+                        Timber.tag("SYNC_WORKER").e(e, "Critical operation sync failure for ${op.id}")
+                    }
+                    SaleSyncFailure.TRANSIENT -> {
+                        val nextAttempt = op.intentos + 1
+                        database.registrarIntentoOperacionFallido(op.id)
+                        Timber.tag("SYNC_WORKER").w(
+                            e,
+                            "Transient operation sync failure for ${op.id}. Attempt $nextAttempt. Stopping operation queue sync."
+                        )
+                        operacionTransitoriaPendiente = true
+                        break
+                    }
                 }
 
             }
 
+        }
+
+        if (operacionTransitoriaPendiente) {
+            return@withContext Result.retry()
         }
 
 
@@ -436,14 +409,6 @@ class SyncWorker(
 
         db.runTransaction { transaction ->
 
-            val contadorRef = db.collection(FirestoreCollections.CONFIGURACION).document("contadores_$sucursalId")
-
-            val counterDoc = transaction.get(contadorRef)
-
-            val currentServerTicket = counterDoc.getLong("ultimo_ticket") ?: 0L
-
-            // --- IDEMPOTENCY CHECK ---
-
             val ventaRef = db.collection(FirestoreCollections.VENTAS).document(venta.id)
 
             val existingSnap = transaction.get(ventaRef)
@@ -455,6 +420,22 @@ class SyncWorker(
                 return@runTransaction null
 
             }
+
+            val contadorRef = db.collection(FirestoreCollections.CONFIGURACION).document("contadores_$sucursalId")
+
+            val counterDoc = transaction.get(contadorRef)
+
+            val currentServerTicket = counterDoc.getLong("ultimo_ticket") ?: 0L
+
+            val clienteId = venta.clienteId
+
+            val clienteRef = if (!clienteId.isNullOrBlank() && !venta.esConsumoEmpleado) {
+                db.collection(FirestoreCollections.CLIENTES).document(clienteId)
+            } else {
+                null
+            }
+
+            val clienteSnap = clienteRef?.let { transaction.get(it) }
 
 
 
@@ -574,7 +555,7 @@ class SyncWorker(
 
 
 
-            transaction.set(db.collection(FirestoreCollections.VENTAS).document(venta.id), ventaData + mapOf("productos" to productos, "productosIds" to productosIds))
+            transaction.set(ventaRef, ventaData + mapOf("productos" to productos, "productosIds" to productosIds))
 
             if (venta.ticket > currentServerTicket) {
 
@@ -598,10 +579,7 @@ class SyncWorker(
 
             }
 
-            val clienteId = venta.clienteId
-            if (!clienteId.isNullOrBlank() && !venta.esConsumoEmpleado) {
-                val clienteRef = db.collection(FirestoreCollections.CLIENTES).document(clienteId)
-                val clienteSnap = transaction.get(clienteRef)
+            if (clienteRef != null && clienteSnap != null) {
                 if (clienteSnap.exists()) {
                     val visitasActuales = clienteSnap.getLong("visitasCicloActual") ?: 0L
                     val nuevasVisitas = if (visitasActuales >= 5L) 1L else visitasActuales + 1L

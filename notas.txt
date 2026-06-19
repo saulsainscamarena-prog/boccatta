@@ -1817,4 +1817,14 @@ Spec ID: `testing-offline`
    
 5. **Commit**
    - `git add .` y `git commit -m "Refactor: Extract hardcoded strings to strings.xml via automation"`
+# BCT-F15-MOSTRADOR-STABLE - Pendientes de estabilizacion checkout/sync (2026-06-17)
+
+- `BCT-F15-P0-001`: Venta exitosa debe limpiar carrito y estado post-venta exactamente una vez.
+- `BCT-F15-P0-002`: Fallo online transitorio durante checkout debe guardarse offline con el mismo `forcedVentaId`.
+- `BCT-F15-P0-003`: `SyncWorker` no debe marcar ventas transitorias como criticas solo por intentos.
+- `BCT-F15-P0-004`: Transacciones Firestore de sync deben leer venta/contador/cliente antes de escribir.
+- `BCT-F15-P1-005`: Lealtad no debe incrementarse desde ViewModel y repositorio/sync a la vez.
+- `BCT-F15-P1-006`: Cancelacion completa de carrito debe auditarse antes de limpiar.
+- `BCT-F15-P1-007`: Sync inmediato no debe cancelar un worker activo por usar `REPLACE`.
+- `BCT-F15-P1-008`: Errores visibles de checkout deben usar mensajes operativos estables, no `e.message` crudo.
 

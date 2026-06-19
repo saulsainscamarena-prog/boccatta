@@ -42,3 +42,6 @@ ksp_versions.xml
 # Scripts de migración/fix que ya no corresponden
 fix_*.py
 *.bat
+
+# Firebase config — nunca debe commitearse
+google-services.json

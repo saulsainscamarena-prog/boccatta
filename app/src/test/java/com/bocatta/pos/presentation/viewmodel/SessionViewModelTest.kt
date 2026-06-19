@@ -1,5 +1,7 @@
 package com.bocatta.pos.presentation.viewmodel
 
+import com.bocatta.pos.core.ui.viewmodel.BaseAndroidViewModel
+import com.bocatta.pos.feature.auth.viewmodel.SessionViewModel
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
